@@ -1,5 +1,5 @@
-/* Basic Reset */
-body, h1, h2, h3, p, ul, ol {
+/* Reset CSS */
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -7,112 +7,90 @@ body, h1, h2, h3, p, ul, ol {
 
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f4f8;
+    background-color: #f8f9fa;
     color: #333;
     line-height: 1.6;
-    margin: 0;
-    padding: 0;
 }
 
-/* Header */
-.header {
+/* App Container */
+.App {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Styling */
+header {
     background-color: #002d72;
     color: #fff;
     padding: 20px;
     text-align: center;
-    font-size: 24px;
-    font-weight: bold;
+    border-radius: 8px;
+    margin-bottom: 20px;
 }
 
-.header img {
+header img {
     width: 150px;
     height: auto;
 }
 
-/* Container */
-.container {
-    margin: 20px auto;
-    max-width: 800px;
+header h1 {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Main Content Styling */
+main {
+    background: #fff;
     padding: 20px;
-    background-color: #ffffff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
-/* Project List */
-.project-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+/* Select Dropdown Component Styling */
+.SelectDropdownComponent {
+    margin-bottom: 20px;
 }
 
-.project-list li {
-    background-color: #f8f9fa;
-    margin-bottom: 10px;
+.SelectDropdownComponent select {
+    width: 100%;
     padding: 10px;
+    border: 1px solid #ccc;
     border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    font-size: 16px;
 }
 
-.project-list li:hover {
-    background-color: #e2e6ea;
+/* Multi-Step Tracker Component Styling */
+.MultiStepTrackerComponent {
+    padding: 15px;
+    background-color: #e9ecef;
+    border-radius: 8px;
 }
 
-.project-list button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+.MultiStepTrackerComponent .step {
+    margin-bottom: 10px;
 }
 
-.project-list button:hover {
-    background-color: #0056b3;
+.MultiStepTrackerComponent .step.completed {
+    color: #28a745;
+    font-weight: bold;
 }
 
-/* Loading Spinner */
-.loading-spinner {
+.MultiStepTrackerComponent .step.pending {
+    color: #ffc107;
+}
+
+/* Loading and Error Messages */
+.loading {
     text-align: center;
-    margin-top: 20px;
-}
-
-.loading-spinner::after {
-    content: 'Loading...';
     font-size: 18px;
     color: #007bff;
 }
 
-/* Error Message */
-.error-message {
+.error {
     color: #ff0000;
     text-align: center;
-    margin: 20px 0;
-}
-
-/* Project Status */
-.project-status {
-    background-color: #e9ecef;
-    padding: 15px;
-    border-radius: 4px;
     margin-top: 20px;
-    font-weight: bold;
-    color: #495057;
-}
-
-/* Footer */
-.footer {
-    text-align: center;
-    padding: 20px;
-    background-color: #002d72;
-    color: #fff;
-    margin-top: 20px;
-    border-radius: 5px;
-}
-
-.footer p {
-    margin: 0;
 }
