@@ -1,108 +1,97 @@
-Certainly. Here's a sample code for a PieChart.js component that you can create to use in your App.js:
+To adapt this Highcharts pie chart configuration for use with Chart.js in your React application, you'll need to make some adjustments. Here's how you can modify your Chart.js component to incorporate similar settings:
+
+1. First, update your PieChart.js component:
 
 javascript
 import React from 'react';
 import { Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-const PieChart = ({ data }) => {
-  const chartData = {
-    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+const PieChart = () => {
+  const data = {
+    labels: ['Firefox', 'IE/11', 'Edge', 'Chrome', 'Safari', 'Other'],
     datasets: [
       {
-        label: '# of Votes',
-        data: data,
+        data: [20, 5, 10, 40, 24, 1],
         backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          '#9966FF',
+          '#C9CBCF'
         ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-        ],
-        borderWidth: 1,
       },
     ],
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'right',
       },
       title: {
         display: true,
-        text: 'Project Distribution',
+        text: 'Browser Usage',
+        align: 'start',
+        padding: {
+          top: 10,
+          bottom: 30
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            return `${label}: ${value}%`;
+          },
+        },
       },
     },
   };
 
-  return <Pie data={chartData} options={options} />;
+  return (
+    <div style={{ width: '100%', height: '400px' }}>
+      <Pie data={data} options={options} />
+    </div>
+  );
 };
 
 export default PieChart;
 
 
-To use this component in your App.js:
-
-1. Save the above code as PieChart.js in your components folder.
-
-2. Import and use the PieChart component in your App.js:
+2. In your App.js or wherever you want to use this chart:
 
 javascript
 import PieChart from './components/PieChart';
 
-// In your App function, add state for chart data:
-const [chartData, setChartData] = useState([12, 19, 3, 5, 2, 3]);
+function App() {
+  return (
+    <div className="App">
+      {/* Your other components */}
+      <div id="pie" className="dls-data-visualization hc-pie">
+        <PieChart />
+      </div>
+    </div>
+  );
+}
 
-// In your JSX return statement, add:
-<PieChart data={chartData} />
-
-
-3. You might want to update the chartData based on your project data. For example, in your fetchProjects function, you could process the data to update the chart:
-
-javascript
-const fetchProjects = useCallback(async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const response = await axios.get('http://127.0.0.1:5000/projects-list');
-    setProjects(response.data.projects);
-    
-    // Process data for chart
-    const projectCounts = processProjectsForChart(response.data.projects);
-    setChartData(projectCounts);
-
-  } catch (error) {
-    setError('Error fetching projects');
-  } finally {
-    setLoading(false);
-  }
-}, []);
-
-// Add this function to process your project data
-const processProjectsForChart = (projects) => {
-  // This is just an example. Adjust according to your actual data structure
-  const counts = projects.reduce((acc, project) => {
-    acc[project.status] = (acc[project.status] || 0) + 1;
-    return acc;
-  }, {});
-  
-  return Object.values(counts);
-};
+export default App;
 
 
-This setup allows you to have a reusable PieChart component that you can easily update with new data as your application state changes. Remember to adjust the labels in the PieChart component to match your actual data categories.
+This Chart.js version mimics the Highcharts configuration from your image:
 
-Would you like me to explain any part of this code or provide more information on how to integrate it with your existing application?
+- It sets up a similar data structure with browser usage percentages.
+- The chart title is set to "Browser Usage" and aligned to the left.
+- The legend is positioned on the right side of the chart.
+- The tooltip shows the percentage for each slice.
+- The chart is responsive and takes up 100% width and 400px height of its container.
+
+Note that Chart.js doesn't have an exact equivalent for some Highcharts features like styledMode or the specific hover effects shown in your Highcharts configuration. However, this setup provides a close approximation of the visual style and functionality.
+
+Remember to adjust the colors, data, and any other specifics to match your exact requirements. You may also need to style the container div (dls-data-visualization hc-pie) to match your design system's requirements.
