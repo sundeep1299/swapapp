@@ -1,39 +1,48 @@
-.select-dropdown-container {
-  display: flex;
-  flex-direction: column;
-  max-width: 300px;
-  margin: 20px auto;
-  font-family: Arial, sans-serif;
-}
+# Lumi Insight Web Application
 
-.select-label {
-  color: #0056b3;
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
+Lumi Insight is a web application designed to provide insights into project status. The app displays a list of projects, allows users to check the status of each project, and visualizes the data in a pie chart for easy analysis.
 
-.loading-text {
-  color: #999999;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
+## Features
 
-.error-text {
-  color: #d9534f;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
+- **Project List**: Displays a list of projects fetched from the backend.
+- **Project Status**: Allows users to check the status of a selected project.
+- **Pie Chart Visualization**: Visualizes the project data in a pie chart.
+- **Error Handling**: Provides error messages when data fetching fails.
+- **Loading State**: Shows loading indicators while data is being fetched.
 
-.Select {
-  padding: 8px;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333333;
-}
+## Technologies Used
 
-.SelectOption {
-  padding: 8px;
-  font-size: 14px;
-}
+- **Frontend**: React.js, Axios, Chart.js
+- **Backend**: Flask (or any other backend technology that serves the API)
+- **Styling**: CSS
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js and npm installed on your machine
+- A running backend server that provides the necessary API endpoints
+
+### Installation
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/your-username/lumi-insight.git
+   cd lumi-insight
+
+
+lumi-insight/
+├── public/
+│   ├── index.html
+│   └── logo.png
+├── src/
+│   ├── components/
+│   │   ├── SelectDropdown.js
+│   │   ├── MultiStepTracker.js
+│   │   └── PieChart.js
+│   ├── App.js
+│   ├── index.js
+│   └── app.css
+├── package.json
+└── README.md
