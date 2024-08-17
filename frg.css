@@ -61,6 +61,7 @@ const BarChart = () => {
       <HighchartsReact
         highcharts={Highcharts}
         options={options}
+        containerProps={{ style: { height: '400px' } }} // Ensure the container has a height
       />
       <p className="highcharts-description">
         This chart shows the duration of different projects in days.
