@@ -1,1 +1,35 @@
-o
+import React, { useState } from 'react';
+
+const ViewFilter = ({ onFilterChange }) => {
+  const [selectedFilter, setSelectedFilter] = useState('weekly');
+
+  const handleFilterChange = (filter) => {
+    setSelectedFilter(filter);
+    onFilterChange(filter);
+  };
+
+  return (
+    <div className="view-filter">
+      <button
+        className={selectedFilter === 'weekly' ? 'active' : ''}
+        onClick={() => handleFilterChange('weekly')}
+      >
+        Weekly
+      </button>
+      <button
+        className={selectedFilter === 'biweekly' ? 'active' : ''}
+        onClick={() => handleFilterChange('biweekly')}
+      >
+        Bi-Weekly
+      </button>
+      <button
+        className={selectedFilter === 'monthly' ? 'active' : ''}
+        onClick={() => handleFilterChange('monthly')}
+      >
+        Monthly
+      </button>
+    </div>
+  );
+};
+
+export default ViewFilter;
