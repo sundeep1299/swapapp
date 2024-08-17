@@ -1,8 +1,87 @@
-<div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
-          <div style={{ width: '48%' }}>
-            <PieChart />
-          </div>
-          <div style={{ width: '48%' }}>
-            <BarChart />
-          </div>
-        </div>
+Here's the modified code for the BarChart component based on your requirements:
+
+javascript
+import React from 'react';
+import Highcharts from 'highcharts';
+import highchartsAccessibility from 'highcharts/modules/accessibility';
+import HighchartsReact from 'highcharts-react-official';
+
+highchartsAccessibility(Highcharts);
+
+const BarChart = () => {
+  const options = {
+    chart: {
+      type: 'bar',
+      inverted: true,
+    },
+    title: {
+      text: 'Project Duration',
+      align: 'left',
+    },
+    xAxis: {
+      accessibility: {
+        description: 'Days taken'
+      },
+      title: {
+        text: 'Days',
+        align: 'high'
+      }
+    },
+    yAxis: {
+      accessibility: {
+        description: 'Projects'
+      },
+      title: {
+        text: 'Project Names',
+        align: 'high'
+      },
+      categories: ['Project 1', 'Project 2', 'Project 3'], // Replace with your actual project names
+    },
+    plotOptions: {
+      series: {
+        borderRadius: 3,
+        pointWidth: 20,
+      },
+    },
+    tooltip: {
+      formatter() {
+        return `<b>${this.y}</b> days for <b>${this.x}</b>`;
+      }
+    },
+    legend: {
+      enabled: false,
+    },
+    series: [{
+      name: 'Days taken',
+      data: [10, 15, 20], // Replace with the actual number of days for each project
+      color: '#7cb5ec', // You can change this color as needed
+    }],
+  };
+
+  return (
+    <div className="d15-hc pad-responsive d15-white-bg">
+      <HighchartsReact
+        highcharts={Highcharts}
+        options={options}
+      />
+      <p className="highcharts-description">
+        This chart shows the duration of different projects in days.
+      </p>
+    </div>
+  );
+};
+
+export default BarChart;
+
+
+This code creates a horizontal bar chart with project names on the y-axis and the number of days on the x-axis. Here are the key changes:
+
+1. The chart type is set to 'bar' and inverted to make it horizontal.
+2. The xAxis now represents days, and the yAxis represents project names.
+3. The series data structure is simplified to match the new chart type.
+4. The tooltip is customized to show the number of days for each project.
+5. The legend is disabled since we only have one series.
+
+Remember to replace the placeholder data in the categories and data arrays with your actual project names and durations.
+
+Would you like me to explain any part of this code further?
