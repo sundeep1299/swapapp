@@ -1,57 +1,8 @@
-import React, { useState } from 'react';
-
-const ViewFilter = ({ onFilterChange }) => {
-  const [selectedFilter, setSelectedFilter] = useState('weekly');
-
-  const handleFilterChange = (filter) => {
-    setSelectedFilter(filter);
-    onFilterChange(filter);
-  };
-
-  const buttonStyle = {
-    padding: '10px 20px',
-    margin: '0 5px',
-    border: 'none',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all 0.3s ease',
-  };
-
-  const activeButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: '#007bff',
-    color: 'white',
-  };
-
-  const inactiveButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: '#f0f0f0',
-    color: '#333',
-  };
-
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-      <button
-        style={selectedFilter === 'weekly' ? activeButtonStyle : inactiveButtonStyle}
-        onClick={() => handleFilterChange('weekly')}
-      >
-        Weekly
-      </button>
-      <button
-        style={selectedFilter === 'biweekly' ? activeButtonStyle : inactiveButtonStyle}
-        onClick={() => handleFilterChange('biweekly')}
-      >
-        Bi-Weekly
-      </button>
-      <button
-        style={selectedFilter === 'monthly' ? activeButtonStyle : inactiveButtonStyle}
-        onClick={() => handleFilterChange('monthly')}
-      >
-        Monthly
-      </button>
-    </div>
-  );
-};
-
-export default ViewFilter;
+<div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0' }}>
+          <div style={{ width: '48%' }}>
+            <PieChart />
+          </div>
+          <div style={{ width: '48%' }}>
+            <BarChart />
+          </div>
+        </div>
