@@ -8,22 +8,44 @@ const ViewFilter = ({ onFilterChange }) => {
     onFilterChange(filter);
   };
 
+  const buttonStyle = {
+    padding: '10px 20px',
+    margin: '0 5px',
+    border: 'none',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'all 0.3s ease',
+  };
+
+  const activeButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: '#007bff',
+    color: 'white',
+  };
+
+  const inactiveButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: '#f0f0f0',
+    color: '#333',
+  };
+
   return (
-    <div className="view-filter">
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
       <button
-        className={selectedFilter === 'weekly' ? 'active' : ''}
+        style={selectedFilter === 'weekly' ? activeButtonStyle : inactiveButtonStyle}
         onClick={() => handleFilterChange('weekly')}
       >
         Weekly
       </button>
       <button
-        className={selectedFilter === 'biweekly' ? 'active' : ''}
+        style={selectedFilter === 'biweekly' ? activeButtonStyle : inactiveButtonStyle}
         onClick={() => handleFilterChange('biweekly')}
       >
         Bi-Weekly
       </button>
       <button
-        className={selectedFilter === 'monthly' ? 'active' : ''}
+        style={selectedFilter === 'monthly' ? activeButtonStyle : inactiveButtonStyle}
         onClick={() => handleFilterChange('monthly')}
       >
         Monthly
