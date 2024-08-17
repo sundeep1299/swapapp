@@ -1,14 +1,35 @@
-Here's the modified code for the BarChart component based on your requirements:
+importReact, { useEffect, useState } from'react';
+importHighchartsfrom'highcharts';
+import highchartsAccessibility from'highcharts/modules/accessibility';
+importHighchartsReactfrom'highcharts-react-official';
+import axios from'axios'; // Assuming you are using axios to fetch datahighchartsAccessibility(Highcharts);
 
-javascript
-import React from 'react';
-import Highcharts from 'highcharts';
-import highchartsAccessibility from 'highcharts/modules/accessibility';
-import HighchartsReact from 'highcharts-react-official';
+constBarChart = () => {
+  const [projectData, setProjectData] = useState({
+    categories: [],
+    durations: []
+  });
 
-highchartsAccessibility(Highcharts);
+  // Fetch project data from the backenduseEffect(() => {
+    constfetchProjectData = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:5000/project-data'); // Replace with your actual backend endpointconst data = response.data;
+        
+        // Assuming your backend returns an array of objects with 'name' and 'duration' fieldsconst categories = data.map(project => project.name);
+        const durations = data.map(project => project.duration);
 
-const BarChart = () => {
+        setProjectData({
+          categories,
+          durations
+        });
+      } catch (error) {
+        console.error('Error fetching project data:', error);
+      }
+    };
+
+    fetchProjectData();
+  }, []);
+
   const options = {
     chart: {
       type: 'bar',
@@ -35,7 +56,7 @@ const BarChart = () => {
         text: 'Project Names',
         align: 'high'
       },
-      categories: ['Project 1', 'Project 2', 'Project 3'], // Replace with your actual project names
+      categories: projectData.categories, // Dynamic project names
     },
     plotOptions: {
       series: {
@@ -45,7 +66,7 @@ const BarChart = () => {
     },
     tooltip: {
       formatter() {
-        return `<b>${this.y}</b> days for <b>${this.x}</b>`;
+        return`<b>${this.y}</b> days for <b>${this.x}</b>`;
       }
     },
     legend: {
@@ -53,35 +74,18 @@ const BarChart = () => {
     },
     series: [{
       name: 'Days taken',
-      data: [10, 15, 20], // Replace with the actual number of days for each project
-      color: '#7cb5ec', // You can change this color as needed
+      data: projectData.durations, // Dynamic project durationscolor: '#7cb5ec', // You can change this color as needed
     }],
   };
 
   return (
-    <div className="d15-hc pad-responsive d15-white-bg">
-      <HighchartsReact
+    <divclassName="d15-hc pad-responsive d15-white-bg"><HighchartsReact
         highcharts={Highcharts}
         options={options}
-      />
-      <p className="highcharts-description">
+      /><p className="highcharts-description">
         This chart shows the duration of different projects in days.
-      </p>
-    </div>
+      </p></div>
   );
 };
 
-export default BarChart;
-
-
-This code creates a horizontal bar chart with project names on the y-axis and the number of days on the x-axis. Here are the key changes:
-
-1. The chart type is set to 'bar' and inverted to make it horizontal.
-2. The xAxis now represents days, and the yAxis represents project names.
-3. The series data structure is simplified to match the new chart type.
-4. The tooltip is customized to show the number of days for each project.
-5. The legend is disabled since we only have one series.
-
-Remember to replace the placeholder data in the categories and data arrays with your actual project names and durations.
-
-Would you like me to explain any part of this code further?
+exportdefaultBarChart;
