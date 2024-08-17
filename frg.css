@@ -1,35 +1,12 @@
-importReact, { useEffect, useState } from'react';
-importHighchartsfrom'highcharts';
-import highchartsAccessibility from'highcharts/modules/accessibility';
-importHighchartsReactfrom'highcharts-react-official';
-import axios from'axios'; // Assuming you are using axios to fetch datahighchartsAccessibility(Highcharts);
+import React from 'react';
+import Highcharts from 'highcharts';
+import highchartsAccessibility from 'highcharts/modules/accessibility';
+import HighchartsReact from 'highcharts-react-official';
 
-constBarChart = () => {
-  const [projectData, setProjectData] = useState({
-    categories: [],
-    durations: []
-  });
+// Initialize the accessibility module
+highchartsAccessibility(Highcharts);
 
-  // Fetch project data from the backenduseEffect(() => {
-    constfetchProjectData = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:5000/project-data'); // Replace with your actual backend endpointconst data = response.data;
-        
-        // Assuming your backend returns an array of objects with 'name' and 'duration' fieldsconst categories = data.map(project => project.name);
-        const durations = data.map(project => project.duration);
-
-        setProjectData({
-          categories,
-          durations
-        });
-      } catch (error) {
-        console.error('Error fetching project data:', error);
-      }
-    };
-
-    fetchProjectData();
-  }, []);
-
+const BarChart = () => {
   const options = {
     chart: {
       type: 'bar',
@@ -41,22 +18,22 @@ constBarChart = () => {
     },
     xAxis: {
       accessibility: {
-        description: 'Days taken'
+        description: 'Days taken',
       },
       title: {
         text: 'Days',
-        align: 'high'
-      }
+        align: 'high', // Align the title to the top
+      },
     },
     yAxis: {
       accessibility: {
-        description: 'Projects'
+        description: 'Projects',
       },
       title: {
         text: 'Project Names',
-        align: 'high'
+        align: 'high', // Align the title to the top
       },
-      categories: projectData.categories, // Dynamic project names
+      categories: ['Project 1', 'Project 2', 'Project 3'], // Replace with your actual project names
     },
     plotOptions: {
       series: {
@@ -65,27 +42,31 @@ constBarChart = () => {
       },
     },
     tooltip: {
-      formatter() {
-        return`<b>${this.y}</b> days for <b>${this.x}</b>`;
-      }
+      formatter: function() {
+        return `<b>${this.y}</b> days for <b>${this.x}</b>`;
+      },
     },
     legend: {
       enabled: false,
     },
     series: [{
       name: 'Days taken',
-      data: projectData.durations, // Dynamic project durationscolor: '#7cb5ec', // You can change this color as needed
+      data: [10, 15, 20], // Replace with the actual number of days for each project
+      color: '#7cb5ec', // You can change this color as needed
     }],
   };
 
   return (
-    <divclassName="d15-hc pad-responsive d15-white-bg"><HighchartsReact
+    <div className="d15-hc pad-responsive d15-white-bg">
+      <HighchartsReact
         highcharts={Highcharts}
         options={options}
-      /><p className="highcharts-description">
+      />
+      <p className="highcharts-description">
         This chart shows the duration of different projects in days.
-      </p></div>
+      </p>
+    </div>
   );
 };
 
-exportdefaultBarChart;
+export default BarChart;
