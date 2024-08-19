@@ -1,5 +1,115 @@
-Algorithm Design:
-Resource Evaluation: For each payload request, evaluate whether the required resources are available on the Nvidia NCP.
-Stacking Payloads: If resources are available, schedule the payload immediately. If not, place the payload in a waiting queue.
-Dynamic Rescheduling: As resources become available or as payloads complete, check the waiting queue to see which payload can now be scheduled. Reevaluate the order based on resource matching.
-Backfilling: If a high-resource payload is waiting, you might consider running smaller, lower-resource payloads in the meantime to maximize resource utilization.
+Here's the complete code incorporating the new buttons and necessary changes:
+
+jsx
+const ViewFilter = ({ onFilterChange=()=>{} }) => {
+  const [selectedFilter, setSelectedFilter] = useState('weekly');
+
+  const handleFilterChange = (filter) => {
+    setSelectedFilter(filter);
+    let timeSpan;
+    switch (filter) {
+      case 'weekly':
+        timeSpan='last_week';
+        break;
+      case 'biweekly':
+        timeSpan='last_two_weeks';
+        break;
+      case 'monthly':
+        timeSpan='last_month';
+        break;
+      case 'initiated':
+        timeSpan='initiated';
+        break;
+      case 'inprogress':
+        timeSpan='in_progress';
+        break;
+      case 'completed':
+        timeSpan='completed';
+        break;
+      default:
+        timeSpan='last_week';
+        break;
+    }
+    onFilterChange(timeSpan);
+  };
+
+  const buttonStyle = {
+    padding: '10px 20px',
+    margin: '0 5px',
+    border: 'none',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'all 0.3s ease',
+  };
+
+  const activeButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: '#007bff',
+    color: 'white',
+  };
+
+  const inactiveButtonStyle = {
+    ...buttonStyle,
+    backgroundColor: '#f0f0f0',
+    color: '#333',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '20px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+        <button
+          style={selectedFilter === 'weekly' ? activeButtonStyle : inactiveButtonStyle}
+          onClick={() => handleFilterChange("weekly")}
+        >
+          Weekly
+        </button>
+        <button
+          style={selectedFilter === 'biweekly' ? activeButtonStyle : inactiveButtonStyle}
+          onClick={() => handleFilterChange("biweekly")}
+        >
+          Bi-Weekly
+        </button>
+        <button
+          style={selectedFilter === 'monthly' ? activeButtonStyle : inactiveButtonStyle}
+          onClick={() => handleFilterChange("monthly")}
+        >
+          Monthly
+        </button>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+        <button
+          style={selectedFilter === 'initiated' ? activeButtonStyle : inactiveButtonStyle}
+          onClick={() => handleFilterChange("initiated")}
+        >
+          Initiated
+        </button>
+        <button
+          style={selectedFilter === 'inprogress' ? activeButtonStyle : inactiveButtonStyle}
+          onClick={() => handleFilterChange("inprogress")}
+        >
+          In Progress
+        </button>
+        <button
+          style={selectedFilter === 'completed' ? activeButtonStyle : inactiveButtonStyle}
+          onClick={() => handleFilterChange("completed")}
+        >
+          Completed
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ViewFilter;
+
+
+This code:
+
+1. Maintains the original functionality for the weekly, biweekly, and monthly filters.
+2. Adds three new buttons: Initiated, In Progress, and Completed.
+3. Updates the handleFilterChange function to handle the new filter types.
+4. Organizes the buttons into two rows using flexbox.
+5. Uses the same styling for all buttons, with active and inactive states.
+
+The component will now display two rows of buttons: the time-based filters (Weekly, Bi-Weekly, Monthly) on top, and the status-based filters (Initiated, In Progress, Completed) below.
