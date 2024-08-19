@@ -5,23 +5,7 @@ import HighchartsReact from 'highcharts-react-official';
 const BarChart = () => {
     const options = {
         chart: {
-            type: 'bar',
-            colorCount: 1,
-        },
-        plotOptions: {
-            series: {
-                borderRadius: 3,
-                dataLabels: {
-                    enabled: true,
-                    align: 'right',
-                    inside: true,
-                    style: {
-                        fontSize: '12px',
-                    },
-                },
-                pointPadding: 0.1,
-                groupPadding: 0.2,
-            },
+            type: 'column',  // Changed to column for vertical bars
         },
         title: {
             text: 'Project Data Visualization',
@@ -34,12 +18,24 @@ const BarChart = () => {
             },
         },
         yAxis: {
+            min: 0,  // Start y-axis at 0
             title: {
                 text: 'Days Taken',
             },
         },
         legend: {
             enabled: true,
+        },
+        tooltip: {
+            shared: true,
+        },
+        plotOptions: {
+            column: {
+                stacking: 'normal',
+                dataLabels: {
+                    enabled: true,
+                },
+            },
         },
         series: [
             {
