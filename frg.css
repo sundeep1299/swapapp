@@ -1,4 +1,6 @@
-To correct the code so that the projects are on the Y-axis and the categories are on the X-axis, you need to swap the `categories` between the `yAxis` and `xAxis`. Additionally, you need to adjust the `data` in the `series` to match the new configuration. Here's the corrected code:
+To correct the code and ensure that the first two projects are displayed and the rest start as numbers on the x-axis, you need to adjust the `xAxis` categories and ensure that the data structure is appropriate for a bar chart.
+
+Here is the corrected code:
 
 ```javascript
 import React from 'react';
@@ -34,15 +36,15 @@ const BarChart = () => {
             useHTML: true,
         },
         yAxis: {
-            categories: ['prj-d-regrep', 'prj-d-ind-regrep', 'prj-d-ind-Jumi-egress'],
-            title: {
-                text: 'Projects',
-            },
-        },
-        xAxis: {
             categories: ['ARB', 'PBS', 'PBC', 'FR', 'FC', 'PH'],
             title: {
                 text: 'Categories',
+            },
+        },
+        xAxis: {
+            categories: ['prj-d-regrep', 'prj-d-ind-regrep', '3', '4', '5', '6'],
+            title: {
+                text: 'Projects',
             },
             labels: {
                 style: {
@@ -56,24 +58,12 @@ const BarChart = () => {
         series: [{
             name: 'Data',
             data: [
-                { y: 0, x: 0, value: 3 }, // Data for 'ARB' and 'prj-d-regrep'
-                { y: 0, x: 1, value: 7 }, // Data for 'PBS' and 'prj-d-regrep'
-                { y: 0, x: 2, value: 2 }, // Data for 'PBC' and 'prj-d-regrep'
-                { y: 0, x: 3, value: 3 }, // Data for 'FR' and 'prj-d-regrep'
-                { y: 0, x: 4, value: 1 }, // Data for 'FC' and 'prj-d-regrep'
-                { y: 0, x: 5, value: 6 }, // Data for 'PH' and 'prj-d-regrep'
-                { y: 1, x: 0, value: 2 }, // Data for 'ARB' and 'prj-d-ind-regrep'
-                { y: 1, x: 1, value: 1 }, // Data for 'PBS' and 'prj-d-ind-regrep'
-                { y: 1, x: 2, value: 4 }, // Data for 'PBC' and 'prj-d-ind-regrep'
-                { y: 1, x: 3, value: 5 }, // Data for 'FR' and 'prj-d-ind-regrep'
-                { y: 1, x: 4, value: 3 }, // Data for 'FC' and 'prj-d-ind-regrep'
-                { y: 1, x: 5, value: 2 }, // Data for 'PH' and 'prj-d-ind-regrep'
-                { y: 2, x: 0, value: 5 }, // Data for 'ARB' and 'prj-d-ind-Jumi-egress'
-                { y: 2, x: 1, value: 4 }, // Data for 'PBS' and 'prj-d-ind-Jumi-egress'
-                { y: 2, x: 2, value: 6 }, // Data for 'PBC' and 'prj-d-ind-Jumi-egress'
-                { y: 2, x: 3, value: 7 }, // Data for 'FR' and 'prj-d-ind-Jumi-egress'
-                { y: 2, x: 4, value: 4 }, // Data for 'FC' and 'prj-d-ind-Jumi-egress'
-                { y: 2, x: 5, value: 5 }, // Data for 'PH' and 'prj-d-ind-Jumi-egress'
+                { y: 3, name: 'prj-d-regrep' },
+                { y: 7, name: 'prj-d-ind-regrep' },
+                { y: 2, name: '3' },
+                { y: 3, name: '4' },
+                { y: 1, name: '5' },
+                { y: 6, name: '6' },
             ],
             dataLabels: {
                 enabled: true,
@@ -97,4 +87,8 @@ const BarChart = () => {
 export default BarChart;
 ```
 
-In this corrected version, the `yAxis` now contains the projects, and the `xAxis` contains the categories. The `data` in the `series` is adjusted to reflect this new configuration, with each data point specifying its `y` (project index) and `x` (category index) coordinates along with the value.
+### Explanation of Changes:
+1. **xAxis Categories**: Adjusted the `xAxis` categories to include the first two project names and then numbers for the rest.
+2. **Series Data**: Changed the `series` data to match the new `xAxis` categories. Each data point now includes a `name` property to correspond with the `xAxis` categories.
+
+This should ensure that the first two projects are displayed with their names, and the rest are displayed as numbers on the x-axis.
