@@ -5,17 +5,15 @@ import HighchartsReact from 'highcharts-react-official';
 const BarChart = () => {
     const options = {
         chart: {
-            styledMode: true,
             type: 'bar',
             colorCount: 1,
-            className: 'hc-x-none',
         },
         plotOptions: {
             series: {
                 borderRadius: 3,
                 dataLabels: {
                     enabled: true,
-                    align: 'center',
+                    align: 'right',
                     inside: true,
                     style: {
                         fontSize: '12px',
@@ -28,48 +26,44 @@ const BarChart = () => {
         title: {
             text: 'Project Data Visualization',
             align: 'left',
-            useHTML: true,
-        },
-        yAxis: {
-            categories: ['prj-d-regrep', 'prj-d-ind-regrep', 'prj-d-ind-Jumi-egress'],
-            title: {
-                text: 'Projects',
-            },
         },
         xAxis: {
             categories: ['ARB', 'PBS', 'PBC', 'FR', 'FC', 'PH'],
             title: {
                 text: 'Categories',
             },
-            labels: {
-                style: {
-                    fontSize: '12px',
-                },
+        },
+        yAxis: {
+            title: {
+                text: 'Days Taken',
             },
         },
         legend: {
-            enabled: false,
+            enabled: true,
         },
-        series: [{
-            name: 'Days Taken',
-            data: [
-                [9, 4, 7, 10, 5, 3],  // Days for 'prj-d-regrep'
-                [6, 8, 5, 7, 6, 9],   // Days for 'prj-d-ind-regrep'
-                [8, 3, 9, 6, 4, 7]    // Days for 'prj-d-ind-Jumi-egress'
-            ],
-            dataLabels: {
-                enabled: true,
+        series: [
+            {
+                name: 'prj-d-regrep',
+                data: [9, 4, 7, 10, 5, 3],
             },
-        }],
+            {
+                name: 'prj-d-ind-regrep',
+                data: [6, 8, 5, 7, 6, 9],
+            },
+            {
+                name: 'prj-d-ind-Jumi-egress',
+                data: [8, 3, 9, 6, 4, 7],
+            },
+        ],
     };
 
     return (
-        <div className="dls-hc pad-responsive dis-white-bg">
+        <div className="chart-container">
             <HighchartsReact
                 highcharts={Highcharts}
                 options={options}
             />
-            <p className="highcharts-description">
+            <p className="chart-description">
                 This chart displays the number of days taken to complete various categories for different projects.
             </p>
         </div>
