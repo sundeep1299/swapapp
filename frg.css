@@ -52,28 +52,55 @@ const BarChart = () => {
         },
         series: [
             {
-                name: 'ARB',
-                data: [3, 2, 1], // Values for each project in the 'ARB' category
+                name: 'prj-d-regrep',
+                data: [
+                    { y: 3, days: 9 }, // ARB
+                    { y: 2, days: 5 }, // PBS
+                    { y: 5, days: 7 }, // PBC
+                    { y: 7, days: 10 }, // FR
+                    { y: 1, days: 2 }, // FC
+                    { y: 4, days: 6 }, // PH
+                ],
+                dataLabels: {
+                    enabled: true,
+                    formatter: function () {
+                        return this.point.days + ' days';
+                    },
+                },
             },
             {
-                name: 'PBS',
-                data: [7, 4, 3], // Values for each project in the 'PBS' category
+                name: 'prj-d-ind-regrep',
+                data: [
+                    { y: 2, days: 8 }, // ARB
+                    { y: 4, days: 6 }, // PBS
+                    { y: 6, days: 9 }, // PBC
+                    { y: 3, days: 4 }, // FR
+                    { y: 5, days: 7 }, // FC
+                    { y: 7, days: 11 }, // PH
+                ],
+                dataLabels: {
+                    enabled: true,
+                    formatter: function () {
+                        return this.point.days + ' days';
+                    },
+                },
             },
             {
-                name: 'PBC',
-                data: [5, 6, 4], // Values for each project in the 'PBC' category
-            },
-            {
-                name: 'FR',
-                data: [7, 3, 6], // Values for each project in the 'FR' category
-            },
-            {
-                name: 'FC',
-                data: [1, 5, 2], // Values for each project in the 'FC' category
-            },
-            {
-                name: 'PH',
-                data: [4, 7, 5], // Values for each project in the 'PH' category
+                name: 'prj-d-ind-reg',
+                data: [
+                    { y: 1, days: 7 }, // ARB
+                    { y: 3, days: 5 }, // PBS
+                    { y: 4, days: 8 }, // PBC
+                    { y: 6, days: 10 }, // FR
+                    { y: 2, days: 3 }, // FC
+                    { y: 5, days: 6 }, // PH
+                ],
+                dataLabels: {
+                    enabled: true,
+                    formatter: function () {
+                        return this.point.days + ' days';
+                    },
+                },
             },
         ],
     };
