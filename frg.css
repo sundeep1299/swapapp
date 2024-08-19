@@ -1,102 +1,82 @@
-I apologize for the misunderstanding. You're right, and I'll correct the implementation to meet your requirements. Let's modify the code so that the user must select one option from each row - one from the time-based filters (weekly/biweekly/monthly) and one from the status-based filters (initiated/inprogress/completed).
+import React from 'react';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 
-Here's the updated code that implements this functionality:
+const BarChart = () => {
+    const options = {
+        chart: {
+            styledMode: true,
+            type: 'bar',
+            colorCount: 1,
+            className: 'hc-x-none',
+        },
+        accessibility: {
+            point: {
+                valueSuffix: ' dollars spent',
+            },
+        },
+        plotOptions: {
+            series: {
+                borderRadius: 3,
+            },
+            pointWidth: 15,
+        },
+        title: {
+            text: 'Project Spend by Category',
+            align: 'left',
+            useHTML: true,
+        },
+        xAxis: {
+            categories: ['ARB', 'PBS', 'PBC', 'FR', 'FC', 'PH'],
+            labels: {
+                align: 'right',
+            },
+            title: {
+                text: 'Categories',
+            },
+        },
+        yAxis: {
+            categories: ['prj-d-regrep', 'prj-d-ind-regrep', 'prj-d-ind-Jumi-egress'],
+            title: {
+                text: 'Projects',
+            },
+            labels: {
+                formatter() {
+                    return `${this.value}`;
+                },
+            },
+        },
+        legend: {
+            enabled: false,
+        },
+        tooltip: {
+            enabled: true,
+            padding: 12,
+            formatter() {
+                return `${this.series.name} - ${this.x}: $${this.y}`;
+            },
+        },
+        series: [{
+            name: 'Dollars Spent',
+            data: [
+                [700, 400, 200], // Data for 'prj-d-regrep'
+                [500, 300, 100], // Data for 'prj-d-ind-regrep'
+                [300, 200, 100]  // Data for 'prj-d-ind-Jumi-egress'
+            ],
+        }],
+    };
 
-jsx
-import React, { useState, useEffect } from 'react';
-
-const ViewFilter = ({ onFilterChange = () => {} }) => {
-  const [selectedTimeFilter, setSelectedTimeFilter] = useState('weekly');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('initiated');
-
-  useEffect(() => {
-    // Call onFilterChange whenever either filter changes
-    onFilterChange({
-      timeSpan: getTimeSpan(selectedTimeFilter),
-      status: selectedStatusFilter
-    });
-  }, [selectedTimeFilter, selectedStatusFilter, onFilterChange]);
-
-  const handleFilterChange = (filterType, filter) => {
-    if (filterType === 'time') {
-      setSelectedTimeFilter(filter);
-    } else if (filterType === 'status') {
-      setSelectedStatusFilter(filter);
-    }
-  };
-
-  const getTimeSpan = (filter) => {
-    switch (filter) {
-      case 'weekly': return 'last_week';
-      case 'biweekly': return 'last_two_weeks';
-      case 'monthly': return 'last_month';
-      default: return 'last_week';
-    }
-  };
-
-  const buttonStyle = {
-    padding: '10px 20px',
-    margin: '0 5px',
-    border: 'none',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all 0.3s ease',
-  };
-
-  const activeButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: '#007bff',
-    color: 'white',
-  };
-
-  const inactiveButtonStyle = {
-    ...buttonStyle,
-    backgroundColor: '#f0f0f0',
-    color: '#333',
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '20px 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-        {['weekly', 'biweekly', 'monthly'].map((filter) => (
-          <button
-            key={filter}
-            style={selectedTimeFilter === filter ? activeButtonStyle : inactiveButtonStyle}
-            onClick={() => handleFilterChange('time', filter)}
-          >
-            {filter.charAt(0).toUpperCase() + filter.slice(1)}
-          </button>
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-        {['initiated', 'inprogress', 'completed'].map((filter) => (
-          <button
-            key={filter}
-            style={selectedStatusFilter === filter ? activeButtonStyle : inactiveButtonStyle}
-            onClick={() => handleFilterChange('status', filter)}
-          >
-            {filter === 'inprogress' ? 'In Progress' : filter.charAt(0).toUpperCase() + filter.slice(1)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+    return (
+        <div className="dls-hc pad-responsive dis-white-bg">
+            <HighchartsReact
+                highcharts={Highcharts}
+                options={options}
+            />
+            <p className="highcharts-description">
+                This chart displays the dollars spent across various projects and categories.
+            </p>
+        </div>
+    );
 };
 
-export default ViewFilter;
-
-
-Key changes in this updated version:
-
-1. Both selectedTimeFilter and selectedStatusFilter are initialized with default values ('weekly' and 'initiated' respectively), ensuring that one option from each row is always selected.
-
-2. We use the useEffect hook to call onFilterChange whenever either filter changes. This ensures that the parent component always has the most up-to-date filter selections.
-
-3. The handleFilterChange function updates the appropriate state variable based on which type of filter was clicked.
-
-4. Both rows of buttons are always displayed, and one button in each row is always active.
-
-5. The onFilterChange callback receives an object with both timeSpan and status, representing the current selections from both filter criteria.
-
-This implementation ensures that the user always has one selection from the time-based filters (weekly/biweekly/monthly) and one from the status-based filters (initiated/inprogress/completed). The component will update and notify the parent component whenever either selection changes.
+export default BarChart;
