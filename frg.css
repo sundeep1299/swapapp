@@ -1,36 +1,37 @@
-Here's the complete code incorporating the new buttons and necessary changes:
+I apologize for the misunderstanding. You're right, and I'll correct the implementation to meet your requirements. Let's modify the code so that the user must select one option from each row - one from the time-based filters (weekly/biweekly/monthly) and one from the status-based filters (initiated/inprogress/completed).
+
+Here's the updated code that implements this functionality:
 
 jsx
-const ViewFilter = ({ onFilterChange=()=>{} }) => {
-  const [selectedFilter, setSelectedFilter] = useState('weekly');
+import React, { useState, useEffect } from 'react';
 
-  const handleFilterChange = (filter) => {
-    setSelectedFilter(filter);
-    let timeSpan;
-    switch (filter) {
-      case 'weekly':
-        timeSpan='last_week';
-        break;
-      case 'biweekly':
-        timeSpan='last_two_weeks';
-        break;
-      case 'monthly':
-        timeSpan='last_month';
-        break;
-      case 'initiated':
-        timeSpan='initiated';
-        break;
-      case 'inprogress':
-        timeSpan='in_progress';
-        break;
-      case 'completed':
-        timeSpan='completed';
-        break;
-      default:
-        timeSpan='last_week';
-        break;
+const ViewFilter = ({ onFilterChange = () => {} }) => {
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState('weekly');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('initiated');
+
+  useEffect(() => {
+    // Call onFilterChange whenever either filter changes
+    onFilterChange({
+      timeSpan: getTimeSpan(selectedTimeFilter),
+      status: selectedStatusFilter
+    });
+  }, [selectedTimeFilter, selectedStatusFilter, onFilterChange]);
+
+  const handleFilterChange = (filterType, filter) => {
+    if (filterType === 'time') {
+      setSelectedTimeFilter(filter);
+    } else if (filterType === 'status') {
+      setSelectedStatusFilter(filter);
     }
-    onFilterChange(timeSpan);
+  };
+
+  const getTimeSpan = (filter) => {
+    switch (filter) {
+      case 'weekly': return 'last_week';
+      case 'biweekly': return 'last_two_weeks';
+      case 'monthly': return 'last_month';
+      default: return 'last_week';
+    }
   };
 
   const buttonStyle = {
@@ -58,44 +59,26 @@ const ViewFilter = ({ onFilterChange=()=>{} }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '20px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-        <button
-          style={selectedFilter === 'weekly' ? activeButtonStyle : inactiveButtonStyle}
-          onClick={() => handleFilterChange("weekly")}
-        >
-          Weekly
-        </button>
-        <button
-          style={selectedFilter === 'biweekly' ? activeButtonStyle : inactiveButtonStyle}
-          onClick={() => handleFilterChange("biweekly")}
-        >
-          Bi-Weekly
-        </button>
-        <button
-          style={selectedFilter === 'monthly' ? activeButtonStyle : inactiveButtonStyle}
-          onClick={() => handleFilterChange("monthly")}
-        >
-          Monthly
-        </button>
+        {['weekly', 'biweekly', 'monthly'].map((filter) => (
+          <button
+            key={filter}
+            style={selectedTimeFilter === filter ? activeButtonStyle : inactiveButtonStyle}
+            onClick={() => handleFilterChange('time', filter)}
+          >
+            {filter.charAt(0).toUpperCase() + filter.slice(1)}
+          </button>
+        ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-        <button
-          style={selectedFilter === 'initiated' ? activeButtonStyle : inactiveButtonStyle}
-          onClick={() => handleFilterChange("initiated")}
-        >
-          Initiated
-        </button>
-        <button
-          style={selectedFilter === 'inprogress' ? activeButtonStyle : inactiveButtonStyle}
-          onClick={() => handleFilterChange("inprogress")}
-        >
-          In Progress
-        </button>
-        <button
-          style={selectedFilter === 'completed' ? activeButtonStyle : inactiveButtonStyle}
-          onClick={() => handleFilterChange("completed")}
-        >
-          Completed
-        </button>
+        {['initiated', 'inprogress', 'completed'].map((filter) => (
+          <button
+            key={filter}
+            style={selectedStatusFilter === filter ? activeButtonStyle : inactiveButtonStyle}
+            onClick={() => handleFilterChange('status', filter)}
+          >
+            {filter === 'inprogress' ? 'In Progress' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -104,12 +87,16 @@ const ViewFilter = ({ onFilterChange=()=>{} }) => {
 export default ViewFilter;
 
 
-This code:
+Key changes in this updated version:
 
-1. Maintains the original functionality for the weekly, biweekly, and monthly filters.
-2. Adds three new buttons: Initiated, In Progress, and Completed.
-3. Updates the handleFilterChange function to handle the new filter types.
-4. Organizes the buttons into two rows using flexbox.
-5. Uses the same styling for all buttons, with active and inactive states.
+1. Both selectedTimeFilter and selectedStatusFilter are initialized with default values ('weekly' and 'initiated' respectively), ensuring that one option from each row is always selected.
 
-The component will now display two rows of buttons: the time-based filters (Weekly, Bi-Weekly, Monthly) on top, and the status-based filters (Initiated, In Progress, Completed) below.
+2. We use the useEffect hook to call onFilterChange whenever either filter changes. This ensures that the parent component always has the most up-to-date filter selections.
+
+3. The handleFilterChange function updates the appropriate state variable based on which type of filter was clicked.
+
+4. Both rows of buttons are always displayed, and one button in each row is always active.
+
+5. The onFilterChange callback receives an object with both timeSpan and status, representing the current selections from both filter criteria.
+
+This implementation ensures that the user always has one selection from the time-based filters (weekly/biweekly/monthly) and one from the status-based filters (initiated/inprogress/completed). The component will update and notify the parent component whenever either selection changes.
