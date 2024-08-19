@@ -22,27 +22,30 @@ const BarChart = () => {
             pointWidth: 15,
         },
         title: {
-            text: 'Project Spend by Category',
+            text: 'Bar Chart Example',
             align: 'left',
             useHTML: true,
         },
         xAxis: {
-            categories: ['ARB', 'PBS', 'PBC', 'FR', 'FC', 'PH'],
+            accessibility: {
+                description: 'vendors',
+            },
+            categories: ['prj-d-regrep', 'prj-d-ind-regrep', 'prj-d-ind-Jumi-egress'],
             labels: {
                 align: 'right',
             },
-            title: {
-                text: 'Categories',
-            },
         },
         yAxis: {
-            categories: ['prj-d-regrep', 'prj-d-ind-regrep', 'prj-d-ind-Jumi-egress'],
+            accessibility: {
+                description: 'dollars spent',
+            },
             title: {
-                text: 'Projects',
+                text: null,
             },
             labels: {
+                y: 60,
                 formatter() {
-                    return `${this.value}`;
+                    return `$${this.value}`;
                 },
             },
         },
@@ -53,16 +56,11 @@ const BarChart = () => {
             enabled: true,
             padding: 12,
             formatter() {
-                return `${this.series.name} - ${this.x}: $${this.y}`;
+                return `${this.x}: $${this.y}`;
             },
         },
         series: [{
-            name: 'Dollars Spent',
-            data: [
-                [700, 400, 200], // Data for 'prj-d-regrep'
-                [500, 300, 100], // Data for 'prj-d-ind-regrep'
-                [300, 200, 100]  // Data for 'prj-d-ind-Jumi-egress'
-            ],
+            data: [700, 400, 200],
         }],
     };
 
@@ -73,7 +71,7 @@ const BarChart = () => {
                 options={options}
             />
             <p className="highcharts-description">
-                This chart displays the dollars spent across various projects and categories.
+                This chart displays the dollars spent across various projects.
             </p>
         </div>
     );
