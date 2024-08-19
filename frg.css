@@ -5,10 +5,10 @@ import HighchartsReact from 'highcharts-react-official';
 const BarChart = () => {
     const options = {
         chart: {
-            type: 'column',  // Changed to column for vertical bars
+            type: 'bar',
         },
         title: {
-            text: 'Project Data Visualization',
+            text: 'Days Taken for Project Categories',
             align: 'left',
         },
         xAxis: {
@@ -18,39 +18,37 @@ const BarChart = () => {
             },
         },
         yAxis: {
-            min: 0,  // Start y-axis at 0
+            min: 0,
             title: {
                 text: 'Days Taken',
             },
         },
         legend: {
-            enabled: true,
+            enabled: false,
         },
         tooltip: {
-            shared: true,
+            headerFormat: '<b>{point.x}</b><br/>',
+            pointFormat: '{point.y} days'
         },
         plotOptions: {
-            column: {
-                stacking: 'normal',
+            bar: {
                 dataLabels: {
                     enabled: true,
+                    format: '{y} days',
                 },
             },
         },
-        series: [
-            {
-                name: 'prj-d-regrep',
-                data: [9, 4, 7, 10, 5, 3],
-            },
-            {
-                name: 'prj-d-ind-regrep',
-                data: [6, 8, 5, 7, 6, 9],
-            },
-            {
-                name: 'prj-d-ind-Jumi-egress',
-                data: [8, 3, 9, 6, 4, 7],
-            },
-        ],
+        series: [{
+            name: 'Days',
+            data: [
+                {y: 9, x: 0},
+                {y: 4, x: 1},
+                {y: 7, x: 2},
+                {y: 10, x: 3},
+                {y: 5, x: 4},
+                {y: 3, x: 5},
+            ],
+        }],
     };
 
     return (
@@ -60,7 +58,7 @@ const BarChart = () => {
                 options={options}
             />
             <p className="chart-description">
-                This chart displays the number of days taken to complete various categories for different projects.
+                This chart displays the number of days taken to complete various categories for the project prj-d-regrep.
             </p>
         </div>
     );
