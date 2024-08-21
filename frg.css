@@ -57,7 +57,7 @@ const Table = () => {
               column.steps.map((step, stepIndex) => (
                 <td 
                   key={`${column.department}-${stepIndex}`} 
-                  style={{...cellStyle, backgroundColor: column.color}}
+                  style={cellStyle}
                 >
                   {step}
                 </td>
