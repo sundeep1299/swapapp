@@ -1,79 +1,51 @@
 import React from 'react';
 
-const Table = ({ data }) => {
+const Table = () => {
+  const tableData = [
+    {
+      department: 'UCE',
+      steps: ['ARB Approval']
+    },
+    {
+      department: 'Platform Engineering',
+      steps: ['Project Build Start', 'Project Build Complete']
+    },
+    {
+      department: 'UCE',
+      steps: ['Project Build Start', 'Project Build Complete']
+    },
+    {
+      department: 'Platform Engineering',
+      steps: ['Project Hand Over']
+    }
+  ];
+
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-300">
+    <div className="p-4">
+      <table className="w-full border-collapse border border-gray-300">
         <thead>
           <tr>
-            {data.headers.map((header, index) => (
-              <th 
-                key={index} 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b"
-                colSpan={header.colspan}
-              >
-                {header.text}
-              </th>
-            ))}
-          </tr>
-          <tr>
-            {data.subheaders.map((subheader, index) => (
-              <th 
-                key={index} 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b"
-              >
-                {subheader}
+            {tableData.map((column, index) => (
+              <th key={index} className="border border-gray-300 p-2 bg-gray-100" colSpan={column.steps.length}>
+                {column.department}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {data.rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-              {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b">
-                  {cell}
+          <tr>
+            {tableData.map((column) =>
+              column.steps.map((step, stepIndex) => (
+                <td key={`${column.department}-${stepIndex}`} className="border border-gray-300 p-2">
+                  {step}
                 </td>
-              ))}
-            </tr>
-          ))}
+              ))
+            )}
+          </tr>
         </tbody>
       </table>
     </div>
   );
 };
 
-// Sample data structure
-const sampleData = {
-  headers: [
-    { text: 'UCE', colspan: 2 },
-    { text: 'Platform Engineering', colspan: 2 },
-    { text: 'UCE', colspan: 2 },
-    { text: 'Platform Engineering', colspan: 1 },
-  ],
-  subheaders: [
-    'Project Name',
-    'ARB Approval',
-    'Project Build Start',
-    'Project Build Complete',
-    'Project Build Start',
-    'Project Build Complete',
-    'Project Hand over'
-  ],
-  rows: [
-    ['Project A', 'Approved', '2023-01-01', '2023-03-01', '2023-03-15', '2023-05-15', 'Completed'],
-    ['Project B', 'Pending', '2023-02-01', '2023-04-01', '2023-04-15', '2023-06-15', 'In Progress'],
-    // Add more rows as needed
-  ]
-};
-
-// Usage example
-const App = () => {
-  return (
-    <div className="p-4">
-      <Table data={sampleData} />
-    </div>
-  );
-};
-
-export default App;
+export default Table;
