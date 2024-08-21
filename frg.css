@@ -1,67 +1,79 @@
 import React from 'react';
-import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
 
-const BarChart = () => {
-    const options = {
-        chart: {
-            type: 'bar',
-        },
-        title: {
-            text: 'Days Taken for Project Categories',
-            align: 'left',
-        },
-        xAxis: {
-            categories: ['ARB', 'PBS', 'PBC', 'FR', 'FC', 'PH'],
-            title: {
-                text: 'Categories',
-            },
-        },
-        yAxis: {
-            min: 0,
-            title: {
-                text: 'Days Taken',
-            },
-        },
-        legend: {
-            enabled: false,
-        },
-        tooltip: {
-            headerFormat: '<b>{point.x}</b><br/>',
-            pointFormat: '{point.y} days'
-        },
-        plotOptions: {
-            bar: {
-                dataLabels: {
-                    enabled: true,
-                    format: '{y} days',
-                },
-            },
-        },
-        series: [{
-            name: 'Days',
-            data: [
-                {y: 9, x: 0},
-                {y: 4, x: 1},
-                {y: 7, x: 2},
-                {y: 10, x: 3},
-                {y: 5, x: 4},
-                {y: 3, x: 5},
-            ],
-        }],
-    };
-
-    return (
-        <div className="chart-container">
-            <HighchartsReact
-                highcharts={Highcharts}
-                options={options}
-            />
-            <p className="chart-description">
-                This chart displays the number of days taken to complete various categories for the project prj-d-regrep.
-            </p>
-        </div>
-    );
+const Table = ({ data }) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white border border-gray-300">
+        <thead>
+          <tr>
+            {data.headers.map((header, index) => (
+              <th 
+                key={index} 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b"
+                colSpan={header.colspan}
+              >
+                {header.text}
+              </th>
+            ))}
+          </tr>
+          <tr>
+            {data.subheaders.map((subheader, index) => (
+              <th 
+                key={index} 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b"
+              >
+                {subheader}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.rows.map((row, rowIndex) => (
+            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+              {row.map((cell, cellIndex) => (
+                <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
-export default BarChart;
+// Sample data structure
+const sampleData = {
+  headers: [
+    { text: 'UCE', colspan: 2 },
+    { text: 'Platform Engineering', colspan: 2 },
+    { text: 'UCE', colspan: 2 },
+    { text: 'Platform Engineering', colspan: 1 },
+  ],
+  subheaders: [
+    'Project Name',
+    'ARB Approval',
+    'Project Build Start',
+    'Project Build Complete',
+    'Project Build Start',
+    'Project Build Complete',
+    'Project Hand over'
+  ],
+  rows: [
+    ['Project A', 'Approved', '2023-01-01', '2023-03-01', '2023-03-15', '2023-05-15', 'Completed'],
+    ['Project B', 'Pending', '2023-02-01', '2023-04-01', '2023-04-15', '2023-06-15', 'In Progress'],
+    // Add more rows as needed
+  ]
+};
+
+// Usage example
+const App = () => {
+  return (
+    <div className="p-4">
+      <Table data={sampleData} />
+    </div>
+  );
+};
+
+export default App;
