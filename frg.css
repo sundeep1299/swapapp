@@ -4,29 +4,48 @@ const Table = () => {
   const tableData = [
     {
       department: 'UCE',
-      steps: ['ARB Approval']
+      steps: ['ARB Approval'],
+      color: '#e6ffe6'  // Light green
     },
     {
       department: 'Platform Engineering',
-      steps: ['Project Build Start', 'Project Build Complete']
+      steps: ['Project Build Start', 'Project Build Complete'],
+      color: '#e6f3ff'  // Light blue
     },
     {
       department: 'UCE',
-      steps: ['Project Build Start', 'Project Build Complete']
+      steps: ['Project Build Start', 'Project Build Complete'],
+      color: '#e6ffe6'  // Light green
     },
     {
       department: 'Platform Engineering',
-      steps: ['Project Hand Over']
+      steps: ['Project Hand Over'],
+      color: '#e6f3ff'  // Light blue
     }
   ];
 
+  const tableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    border: '1px solid #ccc'
+  };
+
+  const cellStyle = {
+    border: '1px solid #ccc',
+    padding: '8px'
+  };
+
   return (
-    <div className="p-4">
-      <table className="w-full border-collapse border border-gray-300">
+    <div style={{ padding: '16px' }}>
+      <table style={tableStyle}>
         <thead>
           <tr>
             {tableData.map((column, index) => (
-              <th key={index} className="border border-gray-300 p-2 bg-gray-100" colSpan={column.steps.length}>
+              <th 
+                key={index} 
+                style={{...cellStyle, backgroundColor: column.color}} 
+                colSpan={column.steps.length}
+              >
                 {column.department}
               </th>
             ))}
@@ -36,7 +55,10 @@ const Table = () => {
           <tr>
             {tableData.map((column) =>
               column.steps.map((step, stepIndex) => (
-                <td key={`${column.department}-${stepIndex}`} className="border border-gray-300 p-2">
+                <td 
+                  key={`${column.department}-${stepIndex}`} 
+                  style={{...cellStyle, backgroundColor: column.color}}
+                >
                   {step}
                 </td>
               ))
