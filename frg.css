@@ -1,25 +1,39 @@
 import React from 'react';
 
 const Table = ({ tableData }) => {
+  const tableContainerStyle = {
+    maxHeight: '400px', // Adjust this value to change the table's height
+    overflowY: 'auto',
+    border: '1px solid #ccc',
+  };
+
   const tableStyle = {
     width: '100%',
-    borderCollapse: 'collapse',
-    border: '1px solid #ccc',
-    padding: '8px',
+    borderCollapse: 'separate',
+    borderSpacing: 0,
   };
 
   const cellStyle = {
     border: '1px solid #ccc',
     padding: '8px',
+    backgroundColor: 'white',
   };
 
   const headerCellStyle = {
     ...cellStyle,
-    backgroundColor: '#e6f7e6',
+    position: 'sticky',
+    top: 0,
+    zIndex: 1,
+    backgroundColor: '#f0f0f0',
+  };
+
+  const subHeaderCellStyle = {
+    ...headerCellStyle,
+    top: '39px', // Adjust this value based on the height of the first header row
   };
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div style={tableContainerStyle}>
       <table style={tableStyle}>
         <thead>
           <tr>
@@ -29,13 +43,13 @@ const Table = ({ tableData }) => {
             <th style={{ ...headerCellStyle, backgroundColor: '#e6f3ff' }} colSpan={1}>Platform Engineering</th>
           </tr>
           <tr>
-            <th style={headerCellStyle}>Project Name</th>
-            <th style={headerCellStyle}>ARB Approval</th>
-            <th style={headerCellStyle}>Project Build Start</th>
-            <th style={headerCellStyle}>Project Build Complete</th>
-            <th style={headerCellStyle}>Firewall Request</th>
-            <th style={headerCellStyle}>Firewall Completed</th>
-            <th style={headerCellStyle}>Project Hand Over</th>
+            <th style={subHeaderCellStyle}>Project Name</th>
+            <th style={subHeaderCellStyle}>ARB Approval</th>
+            <th style={subHeaderCellStyle}>Project Build Start</th>
+            <th style={subHeaderCellStyle}>Project Build Complete</th>
+            <th style={subHeaderCellStyle}>Firewall Request</th>
+            <th style={subHeaderCellStyle}>Firewall Completed</th>
+            <th style={subHeaderCellStyle}>Project Hand Over</th>
           </tr>
         </thead>
         <tbody>
