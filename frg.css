@@ -1,71 +1,186 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
-const Table = ({ tableData }) => {
-  const tableContainerStyle = {
-    maxHeight: '400px', // Adjust this value to change the table's height
-    overflowY: 'auto',
-    border: '1px solid #ccc',
+const Form = () => {
+  const [formData, setFormData] = useState({
+    projectName: '',
+    priority: '',
+    jiraLink: '',
+    arbApprovalDate: '',
+    projectBuildStartDate: '',
+    aclRaisedDate: '',
+    firewallAclReqRaisedDate: '',
+    firewallAclReqCompleteDate: '',
+    projectBuildCompleteDate: '',
+    projectValidationDate: '',
+    projectHandoverDate: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
 
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'separate',
-    borderSpacing: 0,
+  const handlePriorityChange = (value) => {
+    setFormData(prevState => ({
+      ...prevState,
+      priority: value
+    }));
   };
 
-  const cellStyle = {
-    border: '1px solid #ccc',
-    padding: '8px',
-    backgroundColor: 'white',
-  };
-
-  const headerCellStyle = {
-    ...cellStyle,
-    position: 'sticky',
-    top: 0,
-    zIndex: 1,
-    backgroundColor: '#f0f0f0',
-  };
-
-  const subHeaderCellStyle = {
-    ...headerCellStyle,
-    top: '39px', // Adjust this value based on the height of the first header row
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    // Here you would typically send the data to your backend
+    // which would then insert it into BigQuery
+    console.log('Form submitted:', formData);
+    // Placeholder for BigQuery insertion
+    alert('Form submitted. Data would be inserted into BigQuery.');
   };
 
   return (
-    <div style={tableContainerStyle}>
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={{ ...headerCellStyle, backgroundColor: '#e6f7e6' }} colSpan={2}>UCE</th>
-            <th style={{ ...headerCellStyle, backgroundColor: '#e6f3ff' }} colSpan={2}>Platform Engineering</th>
-            <th style={{ ...headerCellStyle, backgroundColor: '#e6f7e6' }} colSpan={2}>UCE</th>
-            <th style={{ ...headerCellStyle, backgroundColor: '#e6f3ff' }} colSpan={1}>Platform Engineering</th>
-          </tr>
-          <tr>
-            <th style={subHeaderCellStyle}>Project Name</th>
-            <th style={subHeaderCellStyle}>ARB Approval</th>
-            <th style={subHeaderCellStyle}>Project Build Start</th>
-            <th style={subHeaderCellStyle}>Project Build Complete</th>
-            <th style={subHeaderCellStyle}>Firewall Request</th>
-            <th style={subHeaderCellStyle}>Firewall Completed</th>
-            <th style={subHeaderCellStyle}>Project Hand Over</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tableData.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((cell, cellIndex) => (
-                <td key={cellIndex} style={cellStyle}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="projectName">Project Name</Label>
+        <Input
+          id="projectName"
+          name="projectName"
+          value={formData.projectName}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="priority">Priority</Label>
+        <Select onValueChange={handlePriorityChange} required>
+          <SelectTrigger>
+            <SelectValue placeholder="Select priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label htmlFor="jiraLink">Jira Link</Label>
+        <Input
+          id="jiraLink"
+          name="jiraLink"
+          value={formData.jiraLink}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="arbApprovalDate">ARB Approval Date</Label>
+        <Input
+          id="arbApprovalDate"
+          name="arbApprovalDate"
+          type="date"
+          value={formData.arbApprovalDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="projectBuildStartDate">Project Build Start Date</Label>
+        <Input
+          id="projectBuildStartDate"
+          name="projectBuildStartDate"
+          type="date"
+          value={formData.projectBuildStartDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="aclRaisedDate">ACL Raised Date</Label>
+        <Input
+          id="aclRaisedDate"
+          name="aclRaisedDate"
+          type="date"
+          value={formData.aclRaisedDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="firewallAclReqRaisedDate">Firewall ACL Request Raised Date</Label>
+        <Input
+          id="firewallAclReqRaisedDate"
+          name="firewallAclReqRaisedDate"
+          type="date"
+          value={formData.firewallAclReqRaisedDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="firewallAclReqCompleteDate">Firewall ACL Request Complete Date</Label>
+        <Input
+          id="firewallAclReqCompleteDate"
+          name="firewallAclReqCompleteDate"
+          type="date"
+          value={formData.firewallAclReqCompleteDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="projectBuildCompleteDate">Project Build Complete Date</Label>
+        <Input
+          id="projectBuildCompleteDate"
+          name="projectBuildCompleteDate"
+          type="date"
+          value={formData.projectBuildCompleteDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="projectValidationDate">Project Validation Date</Label>
+        <Input
+          id="projectValidationDate"
+          name="projectValidationDate"
+          type="date"
+          value={formData.projectValidationDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="projectHandoverDate">Project Handover Date</Label>
+        <Input
+          id="projectHandoverDate"
+          name="projectHandoverDate"
+          type="date"
+          value={formData.projectHandoverDate}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <Button type="submit">Submit</Button>
+    </form>
   );
 };
 
-export default Table;
+export default Form;
