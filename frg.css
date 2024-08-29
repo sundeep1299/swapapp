@@ -34,7 +34,6 @@ const StatusForm = () => {
 
   const formatDate = (date) => {
     if (!date) return '';
-    if (typeof date === 'string') return date;
     if (date instanceof Date) {
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -42,7 +41,7 @@ const StatusForm = () => {
         day: '2-digit'
       });
     }
-    return '';
+    return String(date);  // fallback for any unexpected types
   };
 
   const renderDatePicker = (label, name) => (
@@ -135,7 +134,58 @@ const StatusForm = () => {
 };
 
 const styles = {
-  // ... (previous styles remain the same)
+  form: {
+    width: '100%',
+  },
+  formContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: '20px',
+  },
+  teamColumn: {
+    width: '24%',
+    marginRight: '1%',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  teamName: {
+    padding: '8px',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    borderRadius: '5px 5px 0 0',
+    fontSize: '14px',
+  },
+  teamFields: {
+    padding: '8px',
+    backgroundColor: '#ffffff',
+    borderRadius: '0 0 5px 5px',
+    flexGrow: 1,
+  },
+  fieldContainer: {
+    marginBottom: '10px',
+  },
+  label: {
+    display: 'block',
+    marginBottom: '3px',
+    fontWeight: 'bold',
+    fontSize: '12px',
+  },
+  input: {
+    width: '100%',
+    padding: '4px',
+    fontSize: '12px',
+  },
+  submitContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  submitButton: {
+    padding: '8px 16px',
+    fontSize: '14px',
+    width: '200px',
+  },
   selectedDate: {
     fontSize: '12px',
     marginTop: '4px',
