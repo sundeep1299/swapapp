@@ -1,98 +1,45 @@
-import React, { useState } from 'react';
-import { ButtonPrimary, Input, Select, SelectOption, Label } from '@americanexpress/dls-react';
+.form-table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
 
-const StatusForm = () => {
-  const [formData, setFormData] = useState({
-    projectName: '',
-    priority: '',
-    jiraLink: '',
-    arbApprovalDate: '',
-    projectBuildStartDate: '',
-    projectBuildStartStep1: '',
-    aclRaisedDate: '',
-    firewallReqCompleteDate: '',
-    projectBuildDate: '',
-    projectValidationDate: '',
-    projectHandoverDate: '',
-    issues: '',
-  });
+.form-row {
+  display: table-row;
+}
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
+.team-column {
+  display: table-cell;
+  width: 200px;
+  background-color: #f0f0f0;
+  padding: 10px;
+  font-weight: bold;
+  vertical-align: top;
+  border: 1px solid #ccc;
+}
 
-  const handleSubmit = (fieldName) => (e) => {
-    e.preventDefault();
-    console.log(`Submitted ${fieldName}:`, formData[fieldName]);
-    // Here you would typically send the specific field data to your backend
-    alert(`Submitted ${fieldName}: ${formData[fieldName]}`);
-  };
+.question-column {
+  display: table-cell;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
 
-  const renderField = (label, name, type = "text") => (
-    <div className="field-container">
-      <Label htmlFor={name}>{label}</Label>
-      {type === "select" ? (
-        <Select name={name} value={formData[name]} onChange={handleChange} required>
-          <SelectOption value="">Select Priority</SelectOption>
-          <SelectOption value="p0">P0</SelectOption>
-          <SelectOption value="p1">P1</SelectOption>
-          <SelectOption value="p2">P2</SelectOption>
-          <SelectOption value="p3">P3</SelectOption>
-        </Select>
-      ) : (
-        <Input
-          type={type}
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          required
-        />
-      )}
-      <ButtonPrimary type="button" onClick={handleSubmit(name)}>Submit</ButtonPrimary>
-    </div>
-  );
+.question-row {
+  margin-bottom: 20px;
+}
 
-  return (
-    <div className="team-segregated-form">
-      <div className="team-row">
-        <div className="team-name">UCE</div>
-        <div className="team-fields">
-          {renderField("Project Name", "projectName")}
-          {renderField("Priority", "priority", "select")}
-          {renderField("Jira Link", "jiraLink")}
-          {renderField("ARB Approval Date", "arbApprovalDate", "date")}
-        </div>
-      </div>
-      <div className="team-row">
-        <div className="team-name">Platform Engineering</div>
-        <div className="team-fields">
-          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
-          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
-        </div>
-      </div>
-      <div className="team-row">
-        <div className="team-name">UCE</div>
-        <div className="team-fields">
-          {renderField("ACL Raised Date", "aclRaisedDate", "date")}
-          {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
-        </div>
-      </div>
-      <div className="team-row">
-        <div className="team-name">Platform Engineering</div>
-        <div className="team-fields">
-          {renderField("Project Build Date", "projectBuildDate", "date")}
-          {renderField("Project Validation Date", "projectValidationDate", "date")}
-          {renderField("Project Handover Date", "projectHandoverDate", "date")}
-          {renderField("Issues / Remarks", "issues", "textarea")}
-        </div>
-      </div>
-    </div>
-  );
-};
+.question-row label {
+  display: block;
+  margin-bottom: 5px;
+}
 
-export default StatusForm;
+.question-row input,
+.question-row select {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.question-row button {
+  display: block;
+  margin-top: 5px;
+}
