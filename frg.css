@@ -22,8 +22,8 @@ const StatusForm = () => {
     setFormData(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleDateChange = (name) => (date) => {
-    setFormData(prevState => ({ ...prevState, [name]: date }));
+  const handleDateChange = (name) => (dateString) => {
+    setFormData(prevState => ({ ...prevState, [name]: dateString }));
   };
 
   const handleSubmit = (e) => {
@@ -36,8 +36,10 @@ const StatusForm = () => {
     <div style={styles.fieldContainer}>
       <Label htmlFor={name} style={styles.label}>{label}</Label>
       <DatePicker
-        date={formData[name]}
-        onDateChange={handleDateChange(name)}
+        id={`${name}-default`}
+        name={name}
+        value={formData[name]}
+        onChange={handleDateChange(name)}
         placeholder="MM/DD/YYYY"
       />
     </div>
@@ -58,15 +60,6 @@ const StatusForm = () => {
             <SelectOption value="p2">P2</SelectOption>
             <SelectOption value="p3">P3</SelectOption>
           </Select>
-        ) : type === "textarea" ? (
-          <textarea
-            id={name}
-            name={name}
-            value={formData[name]}
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
         ) : (
           <Input
             type={type}
