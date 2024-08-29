@@ -22,14 +22,8 @@ const StatusForm = () => {
     setFormData(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-  };
-
-  const handleDateChange = (name) => (date) => {
-    setFormData(prevState => ({ ...prevState, [name]: formatDate(date) }));
+  const handleDateChange = (name) => (dateString) => {
+    setFormData(prevState => ({ ...prevState, [name]: dateString }));
   };
 
   const handleSubmit = (e) => {
@@ -44,20 +38,9 @@ const StatusForm = () => {
       <DatePicker
         id={`${name}-default`}
         name={name}
-        date={formData[name]}
-        onDateChange={handleDateChange(name)}
-        placeholder="MM/DD/YYYY"
-        dateLabels={{
-          getPrimaryLabel: () => label,
-          getSecondaryLabel: () => '',
-        }}
-      />
-      <Input 
-        type="text"
         value={formData[name]}
-        onChange={(e) => handleChange({ target: { name, value: e.target.value } })}
+        onChange={handleDateChange(name)}
         placeholder="MM/DD/YYYY"
-        style={styles.dateInput}
       />
     </div>
   );
@@ -91,24 +74,3 @@ const StatusForm = () => {
       </div>
     );
   };
-
-  // ... (rest of the component remains the same)
-
-  return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      {/* ... (form content remains the same) ... */}
-    </form>
-  );
-};
-
-const styles = {
-  // ... (previous styles remain the same)
-  dateInput: {
-    width: '100%',
-    padding: '4px',
-    fontSize: '12px',
-    marginTop: '5px',
-  },
-};
-
-export default StatusForm;
