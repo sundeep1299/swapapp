@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, ButtonPrimary } from '@americanexpress/dls-react';
+import { DatePicker } from '@americanexpress/dls-react';
+import { ButtonPrimary } from '@americanexpress/dls-react';
+import { Input } from '@americanexpress/dls-react';
+import { Select, SelectOption } from '@americanexpress/dls-react';
+import { Label } from '@americanexpress/dls-react';
 
 const StatusForm = () => {
   const [formData, setFormData] = useState({
@@ -10,11 +14,11 @@ const StatusForm = () => {
     projectBuildStartDate: '',
     projectBuildStartStep1: '',
     aclRaisedDate: '',
-    firewallAclReqCompleteDate: '',
-    projectBuildCompleteDate: '',
+    firewallReqCompleteDate: '',
+    projectBuildDate: '',
     projectValidationDate: '',
     projectHandoverDate: '',
-    projectIssues: '',
+    issues: '',
   });
 
   const handleChange = (e) => {
@@ -25,74 +29,113 @@ const StatusForm = () => {
     }));
   };
 
-  const handlePriorityChange = (value) => {
+  const handleDateChange = (name) => (date) => {
     setFormData(prevState => ({
       ...prevState,
-      priority: value
+      [name]: date
     }));
   };
 
-  const handleSubmit = (e, field) => {
+  const handleSubmit = (fieldName) => (e) => {
     e.preventDefault();
-    console.log(`Submitted ${field}:`, formData[field]);
+    console.log(`Submitted ${fieldName}:`, formData[fieldName]);
     // Here you would typically send the specific field data to your backend
-    alert(`${field} submitted successfully!`);
+    alert(`Submitted ${fieldName}: ${formData[fieldName]}`);
   };
 
+  const renderField = (label, name, type = "text") => (
+    <div style={styles.fieldContainer}>
+      <Label htmlFor={name}>{label}</Label>
+      {type === "select" ? (
+        <Select name={name} value={formData[name]} onChange={handleChange} required>
+          <SelectOption value="">Select Priority</SelectOption>
+          <SelectOption value="p0">P0</SelectOption>
+          <SelectOption value="p1">P1</SelectOption>
+          <SelectOption value="p2">P2</SelectOption>
+          <SelectOption value="p3">P3</SelectOption>
+        </Select>
+      ) : type === "date" ? (
+        <DatePicker
+          id={name}
+          name={name}
+          value={formData[name]}
+          onChange={handleDateChange(name)}
+          required
+        />
+      ) : (
+        <Input
+          type={type}
+          id={name}
+          name={name}
+          value={formData[name]}
+          onChange={handleChange}
+          required
+        />
+      )}
+      <ButtonPrimary type="button" onClick={handleSubmit(name)}>Submit</ButtonPrimary>
+    </div>
+  );
+
   return (
-    <div className="form-table">
-      <div className="form-row">
-        <div className="team-column">UCE Team</div>
-        <div className="question-column">
-          <div className="question-row">
-            <label htmlFor="projectName">Project Name</label>
-            <Input
-              id="projectName"
-              name="projectName"
-              value={formData.projectName}
-              onChange={handleChange}
-              required
-            />
-            <ButtonPrimary onClick={(e) => handleSubmit(e, 'projectName')}>Submit</ButtonPrimary>
-          </div>
-          <div className="question-row">
-            <label htmlFor="priority">Priority</label>
-            <Select onValueChange={handlePriorityChange} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="p0">p0</SelectItem>
-                <SelectItem value="p1">p1</SelectItem>
-                <SelectItem value="p2">p2</SelectItem>
-                <SelectItem value="p3">p3</SelectItem>
-              </SelectContent>
-            </Select>
-            <ButtonPrimary onClick={(e) => handleSubmit(e, 'priority')}>Submit</ButtonPrimary>
-          </div>
-          {/* Add more UCE Team questions here */}
+    <div style={styles.teamSegregatedForm}>
+      <div style={styles.teamRow}>
+        <div style={styles.teamName}>UCE</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Name", "projectName")}
+          {renderField("Priority", "priority", "select")}
+          {renderField("Jira Link", "jiraLink")}
+          {renderField("ARB Approval Date", "arbApprovalDate", "date")}
         </div>
       </div>
-      <div className="form-row">
-        <div className="team-column">Platform Engineering Team</div>
-        <div className="question-column">
-          <div className="question-row">
-            <label htmlFor="projectBuildStartDate">Project Build Start Date</label>
-            <Input
-              id="projectBuildStartDate"
-              name="projectBuildStartDate"
-              type="date"
-              value={formData.projectBuildStartDate}
-              onChange={handleChange}
-              required
-            />
-            <ButtonPrimary onClick={(e) => handleSubmit(e, 'projectBuildStartDate')}>Submit</ButtonPrimary>
-          </div>
-          {/* Add more Platform Engineering Team questions here */}
+      <div style={styles.teamRow}>
+        <div style={styles.teamName}>Platform Engineering</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
+          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
+        </div>
+      </div>
+      <div style={styles.teamRow}>
+        <div style={styles.teamName}>UCE</div>
+        <div style={styles.teamFields}>
+          {renderField("ACL Raised Date", "aclRaisedDate", "date")}
+          {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
+        </div>
+      </div>
+      <div style={styles.teamRow}>
+        <div style={styles.teamName}>Platform Engineering</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Build Date", "projectBuildDate", "date")}
+          {renderField("Project Validation Date", "projectValidationDate", "date")}
+          {renderField("Project Handover Date", "projectHandoverDate", "date")}
+          {renderField("Issues / Remarks", "issues", "textarea")}
         </div>
       </div>
     </div>
   );
+};
+
+const styles = {
+  teamSegregatedForm: {
+    display: 'table',
+    width: '100%',
+  },
+  teamRow: {
+    display: 'table-row',
+  },
+  teamName: {
+    display: 'table-cell',
+    width: '200px',
+    padding: '10px',
+    fontWeight: 'bold',
+    verticalAlign: 'top',
+  },
+  teamFields: {
+    display: 'table-cell',
+    padding: '10px',
+  },
+  fieldContainer: {
+    marginBottom: '15px',
+  },
 };
 
 export default StatusForm;
