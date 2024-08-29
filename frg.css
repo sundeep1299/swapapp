@@ -22,10 +22,10 @@ const StatusForm = () => {
     setFormData(prevState => ({ ...prevState, [name]: date }));
   };
 
-  const handleSubmit = (fieldName) => (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(`Submitted ${fieldName}:`, formData[fieldName]);
-    alert(`Submitted ${fieldName}: ${formData[fieldName]}`);
+    console.log('Form submitted:', formData);
+    alert('Form submitted successfully!');
   };
 
   const renderField = (label, name, type = "text") => (
@@ -59,54 +59,62 @@ const StatusForm = () => {
           style={styles.input}
         />
       )}
-      <ButtonPrimary type="button" onClick={handleSubmit(name)} style={styles.button}>Submit</ButtonPrimary>
     </div>
   );
 
   return (
-    <div style={styles.formContainer}>
-      <div style={styles.teamColumn}>
-        <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
-        <div style={styles.teamFields}>
-          {renderField("Project Name", "projectName")}
-          {renderField("Priority", "priority", "select")}
-          {renderField("Jira Link", "jiraLink")}
+    <form onSubmit={handleSubmit} style={styles.form}>
+      <div style={styles.formContainer}>
+        <div style={styles.teamColumn}>
+          <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
+          <div style={styles.teamFields}>
+            {renderField("Project Name", "projectName")}
+            {renderField("Priority", "priority", "select")}
+            {renderField("Jira Link", "jiraLink")}
+          </div>
+        </div>
+        <div style={styles.teamColumn}>
+          <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
+          <div style={styles.teamFields}>
+            {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
+            {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
+          </div>
+        </div>
+        <div style={styles.teamColumn}>
+          <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
+          <div style={styles.teamFields}>
+            {renderField("ARB Approval Date", "arbApprovalDate", "date")}
+            {renderField("ACL Raised Date", "aclRaisedDate", "date")}
+            {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
+          </div>
+        </div>
+        <div style={styles.teamColumn}>
+          <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
+          <div style={styles.teamFields}>
+            {renderField("Project Build Date", "projectBuildDate", "date")}
+            {renderField("Project Validation Date", "projectValidationDate", "date")}
+            {renderField("Project Handover Date", "projectHandoverDate", "date")}
+            {renderField("Issues / Remarks", "issues", "textarea")}
+          </div>
         </div>
       </div>
-      <div style={styles.teamColumn}>
-        <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
-        <div style={styles.teamFields}>
-          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
-          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
-        </div>
+      <div style={styles.submitContainer}>
+        <ButtonPrimary type="submit" style={styles.submitButton}>Submit Form</ButtonPrimary>
       </div>
-      <div style={styles.teamColumn}>
-        <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
-        <div style={styles.teamFields}>
-          {renderField("ARB Approval Date", "arbApprovalDate", "date")}
-          {renderField("ACL Raised Date", "aclRaisedDate", "date")}
-          {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
-        </div>
-      </div>
-      <div style={styles.teamColumn}>
-        <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
-        <div style={styles.teamFields}>
-          {renderField("Project Build Date", "projectBuildDate", "date")}
-          {renderField("Project Validation Date", "projectValidationDate", "date")}
-          {renderField("Project Handover Date", "projectHandoverDate", "date")}
-          {renderField("Issues / Remarks", "issues", "textarea")}
-        </div>
-      </div>
-    </div>
+    </form>
   );
 };
 
 const styles = {
+  form: {
+    width: '100%',
+  },
   formContainer: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginBottom: '20px',
   },
   teamColumn: {
     width: '24%',
@@ -140,12 +148,15 @@ const styles = {
     width: '100%',
     padding: '4px',
     fontSize: '12px',
-    marginBottom: '5px',
   },
-  button: {
-    padding: '4px 8px',
-    fontSize: '12px',
-    width: '100%',
+  submitContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  submitButton: {
+    padding: '8px 16px',
+    fontSize: '14px',
+    width: '200px',
   },
 };
 
