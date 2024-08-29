@@ -1,68 +1,164 @@
-.team-segregated-form {
-  display: table;
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 15px;
-}
+import React, { useState } from 'react';
+import { DatePicker } from '@americanexpress/dls-react';
+import { ButtonPrimary } from '@americanexpress/dls-react';
+import { Input } from '@americanexpress/dls-react';
+import { Select, SelectOption } from '@americanexpress/dls-react';
+import { Label } from '@americanexpress/dls-react';
 
-.team-row {
-  display: table-row;
-}
+const StatusForm = () => {
+  const [formData, setFormData] = useState({
+    projectName: '',
+    priority: '',
+    jiraLink: '',
+    arbApprovalDate: '',
+    projectBuildStartDate: '',
+    projectBuildStartStep1: '',
+    aclRaisedDate: '',
+    firewallReqCompleteDate: '',
+    projectBuildDate: '',
+    projectValidationDate: '',
+    projectHandoverDate: '',
+    issues: '',
+  });
 
-.team-name {
-  display: table-cell;
-  width: 200px;
-  padding: 10px;
-  font-weight: bold;
-  vertical-align: top;
-  background-color: #f0f0f0;
-  border-radius: 5px 0 0 5px;
-}
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
 
-.team-fields {
-  display: table-cell;
-  padding: 10px;
-  background-color: #ffffff;
-  border-radius: 0 5px 5px 0;
-}
+  const handleDateChange = (name) => (date) => {
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: date
+    }));
+  };
 
-.field-container {
-  margin-bottom: 20px;
-}
+  const handleSubmit = (fieldName) => (e) => {
+    e.preventDefault();
+    console.log(`Submitted ${fieldName}:`, formData[fieldName]);
+    alert(`Submitted ${fieldName}: ${formData[fieldName]}`);
+  };
 
-.field-container label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
+  const renderField = (label, name, type = "text") => (
+    <div style={styles.fieldContainer}>
+      <Label htmlFor={name} style={styles.label}>{label}</Label>
+      {type === "select" ? (
+        <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
+          <SelectOption value="">Select Priority</SelectOption>
+          <SelectOption value="p0">P0</SelectOption>
+          <SelectOption value="p1">P1</SelectOption>
+          <SelectOption value="p2">P2</SelectOption>
+          <SelectOption value="p3">P3</SelectOption>
+        </Select>
+      ) : type === "date" ? (
+        <DatePicker
+          id={name}
+          name={name}
+          value={formData[name]}
+          onChange={handleDateChange(name)}
+          required
+          style={styles.input}
+        />
+      ) : (
+        <Input
+          type={type}
+          id={name}
+          name={name}
+          value={formData[name]}
+          onChange={handleChange}
+          required
+          style={styles.input}
+        />
+      )}
+      <ButtonPrimary type="button" onClick={handleSubmit(name)} style={styles.button}>Submit</ButtonPrimary>
+    </div>
+  );
 
-.field-container input,
-.field-container select {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
+  return (
+    <div style={styles.teamSegregatedForm}>
+      <div style={styles.teamRow}>
+        <div style={{...styles.teamName, backgroundColor: '#FFD700'}}>UCE</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Name", "projectName")}
+          {renderField("Priority", "priority", "select")}
+          {renderField("Jira Link", "jiraLink")}
+          {renderField("ARB Approval Date", "arbApprovalDate", "date")}
+        </div>
+      </div>
+      <div style={styles.teamRow}>
+        <div style={{...styles.teamName, backgroundColor: '#98FB98'}}>Platform Engineering</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
+          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
+        </div>
+      </div>
+      <div style={styles.teamRow}>
+        <div style={{...styles.teamName, backgroundColor: '#FFD700'}}>UCE</div>
+        <div style={styles.teamFields}>
+          {renderField("ACL Raised Date", "aclRaisedDate", "date")}
+          {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
+        </div>
+      </div>
+      <div style={styles.teamRow}>
+        <div style={{...styles.teamName, backgroundColor: '#98FB98'}}>Platform Engineering</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Build Date", "projectBuildDate", "date")}
+          {renderField("Project Validation Date", "projectValidationDate", "date")}
+          {renderField("Project Handover Date", "projectHandoverDate", "date")}
+          {renderField("Issues / Remarks", "issues", "textarea")}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-.field-container button {
-  margin-top: 5px;
-}
+const styles = {
+  teamSegregatedForm: {
+    display: 'table',
+    width: '100%',
+    borderCollapse: 'separate',
+    borderSpacing: '0 15px',
+  },
+  teamRow: {
+    display: 'table-row',
+  },
+  teamName: {
+    display: 'table-cell',
+    width: '200px',
+    padding: '10px',
+    fontWeight: 'bold',
+    verticalAlign: 'top',
+    borderRadius: '5px 0 0 5px',
+    color: '#000',  // Ensuring text is visible on colored background
+  },
+  teamFields: {
+    display: 'table-cell',
+    padding: '10px',
+    backgroundColor: '#ffffff',
+    borderRadius: '0 5px 5px 0',
+  },
+  fieldContainer: {
+    marginBottom: '15px',
+  },
+  label: {
+    display: 'block',
+    marginBottom: '5px',
+    fontWeight: '500',
+  },
+  input: {
+    width: '70%',  // Reduced width of input fields
+    padding: '8px',
+    marginBottom: '10px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+  },
+  button: {
+    marginTop: '5px',
+    marginLeft: '10px',
+  },
+};
 
-@media (max-width: 768px) {
-  .team-segregated-form,
-  .team-row,
-  .team-name,
-  .team-fields {
-    display: block;
-    width: 100%;
-  }
-
-  .team-name {
-    border-radius: 5px 5px 0 0;
-  }
-
-  .team-fields {
-    border-radius: 0 0 5px 5px;
-  }
-}
+export default StatusForm;
