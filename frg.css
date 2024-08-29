@@ -7,33 +7,19 @@ import { Label } from '@americanexpress/dls-react';
 
 const StatusForm = () => {
   const [formData, setFormData] = useState({
-    projectName: '',
-    priority: '',
-    jiraLink: '',
-    arbApprovalDate: '',
-    projectBuildStartDate: '',
-    projectBuildStartStep1: '',
-    aclRaisedDate: '',
-    firewallReqCompleteDate: '',
-    projectBuildDate: '',
-    projectValidationDate: '',
-    projectHandoverDate: '',
-    issues: '',
+    projectName: '', priority: '', jiraLink: '', arbApprovalDate: '',
+    projectBuildStartDate: '', projectBuildStartStep1: '',
+    aclRaisedDate: '', firewallReqCompleteDate: '',
+    projectBuildDate: '', projectValidationDate: '', projectHandoverDate: '', issues: '',
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+    setFormData(prevState => ({ ...prevState, [name]: value }));
   };
 
   const handleDateChange = (name) => (date) => {
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: date
-    }));
+    setFormData(prevState => ({ ...prevState, [name]: date }));
   };
 
   const handleSubmit = (fieldName) => (e) => {
@@ -45,58 +31,66 @@ const StatusForm = () => {
   const renderField = (label, name, type = "text") => (
     <div style={styles.fieldContainer}>
       <Label htmlFor={name} style={styles.label}>{label}</Label>
-      <div style={styles.inputButtonContainer}>
-        {type === "select" ? (
-          <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
-            <SelectOption value="">Select Priority</SelectOption>
-            <SelectOption value="p0">P0</SelectOption>
-            <SelectOption value="p1">P1</SelectOption>
-            <SelectOption value="p2">P2</SelectOption>
-            <SelectOption value="p3">P3</SelectOption>
-          </Select>
-        ) : type === "date" ? (
-          <DatePicker
-            id={name}
-            name={name}
-            value={formData[name]}
-            onChange={handleDateChange(name)}
-            required
-            style={styles.input}
-          />
-        ) : (
-          <Input
-            type={type}
-            id={name}
-            name={name}
-            value={formData[name]}
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
-        )}
-        <ButtonPrimary type="button" onClick={handleSubmit(name)} style={styles.button}>Submit</ButtonPrimary>
-      </div>
+      {type === "select" ? (
+        <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
+          <SelectOption value="">Select Priority</SelectOption>
+          <SelectOption value="p0">P0</SelectOption>
+          <SelectOption value="p1">P1</SelectOption>
+          <SelectOption value="p2">P2</SelectOption>
+          <SelectOption value="p3">P3</SelectOption>
+        </Select>
+      ) : type === "date" ? (
+        <DatePicker
+          id={name}
+          name={name}
+          value={formData[name]}
+          onChange={handleDateChange(name)}
+          required
+          style={styles.input}
+        />
+      ) : (
+        <Input
+          type={type}
+          id={name}
+          name={name}
+          value={formData[name]}
+          onChange={handleChange}
+          required
+          style={styles.input}
+        />
+      )}
+      <ButtonPrimary type="button" onClick={handleSubmit(name)} style={styles.button}>Submit</ButtonPrimary>
     </div>
   );
 
   return (
     <div style={styles.formContainer}>
       <div style={styles.teamColumn}>
-        <div style={{...styles.teamName, backgroundColor: '#FFD700'}}>UCE</div>
+        <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
         <div style={styles.teamFields}>
           {renderField("Project Name", "projectName")}
           {renderField("Priority", "priority", "select")}
           {renderField("Jira Link", "jiraLink")}
+        </div>
+      </div>
+      <div style={styles.teamColumn}>
+        <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
+        <div style={styles.teamFields}>
+          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
+          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
+        </div>
+      </div>
+      <div style={styles.teamColumn}>
+        <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
+        <div style={styles.teamFields}>
           {renderField("ARB Approval Date", "arbApprovalDate", "date")}
           {renderField("ACL Raised Date", "aclRaisedDate", "date")}
           {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
         </div>
       </div>
       <div style={styles.teamColumn}>
-        <div style={{...styles.teamName, backgroundColor: '#98FB98'}}>Platform Engineering</div>
+        <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
         <div style={styles.teamFields}>
-          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
-          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
           {renderField("Project Build Date", "projectBuildDate", "date")}
           {renderField("Project Validation Date", "projectValidationDate", "date")}
           {renderField("Project Handover Date", "projectHandoverDate", "date")}
@@ -110,24 +104,28 @@ const StatusForm = () => {
 const styles = {
   formContainer: {
     display: 'flex',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    fontSize: '14px',  // Smaller overall font size
   },
   teamColumn: {
-    width: '48%',  // Slightly less than 50% to account for margin
+    width: '24%',
+    marginRight: '1%',
+    display: 'flex',
+    flexDirection: 'column',
   },
   teamName: {
-    padding: '10px',
+    padding: '8px',
     fontWeight: 'bold',
-    borderRadius: '5px 5px 0 0',
-    color: '#000',
     textAlign: 'center',
+    borderRadius: '5px 5px 0 0',
+    fontSize: '14px',
   },
   teamFields: {
-    padding: '10px',
+    padding: '8px',
     backgroundColor: '#ffffff',
     borderRadius: '0 0 5px 5px',
+    flexGrow: 1,
   },
   fieldContainer: {
     marginBottom: '10px',
@@ -135,23 +133,19 @@ const styles = {
   label: {
     display: 'block',
     marginBottom: '3px',
-    fontWeight: '500',
-  },
-  inputButtonContainer: {
-    display: 'flex',
-    alignItems: 'center',
+    fontWeight: 'bold',
+    fontSize: '12px',
   },
   input: {
-    width: '60%',  // Reduced width of input fields
-    padding: '5px',
-    fontSize: '12px',  // Smaller font size for inputs
-    border: '1px solid #ccc',
-    borderRadius: '4px',
+    width: '100%',
+    padding: '4px',
+    fontSize: '12px',
+    marginBottom: '5px',
   },
   button: {
-    marginLeft: '5px',
-    padding: '5px 10px',
-    fontSize: '12px',  // Smaller font size for buttons
+    padding: '4px 8px',
+    fontSize: '12px',
+    width: '100%',
   },
 };
 
