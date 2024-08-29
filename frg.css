@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { DatePicker } from '@americanexpress/dls-react';
-import { ButtonPrimary } from '@americanexpress/dls-react';
-import { Input } from '@americanexpress/dls-react';
-import { Select, SelectOption } from '@americanexpress/dls-react';
-import { Label } from '@americanexpress/dls-react';
+import { DatePicker, ButtonPrimary, Input, Select, SelectOption, Label } from '@americanexpress/dls-react';
 
 const StatusForm = () => {
   const [formData, setFormData] = useState({
-    projectName: '', priority: '', jiraLink: '', arbApprovalDate: '',
-    projectBuildStartDate: '', projectBuildStartStep1: '',
-    aclRaisedDate: '', firewallReqCompleteDate: '',
-    projectBuildDate: '', projectValidationDate: '', projectHandoverDate: '', issues: '',
+    projectName: '',
+    priority: '',
+    jiraLink: '',
+    arbApprovalDate: '',
+    projectBuildStartDate: '',
+    projectBuildStartStep1: '',
+    aclRaisedDate: '',
+    firewallReqCompleteDate: '',
+    projectBuildDate: '',
+    projectValidationDate: '',
+    projectHandoverDate: '',
+    issues: '',
   });
 
   const handleChange = (e) => {
@@ -28,39 +32,69 @@ const StatusForm = () => {
     alert('Form submitted successfully!');
   };
 
-  const renderField = (label, name, type = "text") => (
+  const renderDatePicker = (label, name) => (
     <div style={styles.fieldContainer}>
       <Label htmlFor={name} style={styles.label}>{label}</Label>
-      {type === "select" ? (
-        <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
-          <SelectOption value="">Select Priority</SelectOption>
-          <SelectOption value="p0">P0</SelectOption>
-          <SelectOption value="p1">P1</SelectOption>
-          <SelectOption value="p2">P2</SelectOption>
-          <SelectOption value="p3">P3</SelectOption>
-        </Select>
-      ) : type === "date" ? (
-        <DatePicker
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleDateChange(name)}
-          required
-          style={styles.input}
-        />
-      ) : (
-        <Input
-          type={type}
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-      )}
+      <DatePicker
+        aria-labelledby={`${name}-label`}
+        dpicker-messages={`${name}-messages`}
+        autoFocus={name === 'arbApprovalDate' ? "8/29/2024" : undefined}
+        date={formData[name]}
+        dateLabels={{
+          getPrimaryLabel: () => {},
+          getSecondaryLabel: () => {},
+        }}
+        datesDescribedBy={`${name}-label`}
+        disabledDates={[
+          {
+            from: '2024-09-01',
+            to: '2024-09-02'
+          },
+          '2024-08-28'
+        ]}
+        errorMessage="The date you have entered is not valid"
+        footer={<span>Some future dates may be unavailable due to your Payment Due Date and statement balance.</span>}
+        id={`${name}-default`}
+        maxDate="2024-12-31"
+        minDate="2024-01-01"
+        onDateChange={handleDateChange(name)}
+        placeholder="MM/DD/YYYY"
+        primaryDate="2024-08-30"
+        secondaryDate="2024-09-05"
+        showLegend
+      />
     </div>
   );
+
+  const renderField = (label, name, type = "text") => {
+    if (type === "date") {
+      return renderDatePicker(label, name);
+    }
+    return (
+      <div style={styles.fieldContainer}>
+        <Label htmlFor={name} style={styles.label}>{label}</Label>
+        {type === "select" ? (
+          <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
+            <SelectOption value="">Select Priority</SelectOption>
+            <SelectOption value="p0">P0</SelectOption>
+            <SelectOption value="p1">P1</SelectOption>
+            <SelectOption value="p2">P2</SelectOption>
+            <SelectOption value="p3">P3</SelectOption>
+          </Select>
+        ) : (
+          <Input
+            type={type}
+            id={name}
+            name={name}
+            value={formData[name]}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
@@ -71,6 +105,7 @@ const StatusForm = () => {
             {renderField("Project Name", "projectName")}
             {renderField("Priority", "priority", "select")}
             {renderField("Jira Link", "jiraLink")}
+            {renderField("ARB Approval Date", "arbApprovalDate", "date")}
           </div>
         </div>
         <div style={styles.teamColumn}>
@@ -83,7 +118,6 @@ const StatusForm = () => {
         <div style={styles.teamColumn}>
           <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
           <div style={styles.teamFields}>
-            {renderField("ARB Approval Date", "arbApprovalDate", "date")}
             {renderField("ACL Raised Date", "aclRaisedDate", "date")}
             {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
           </div>
