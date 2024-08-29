@@ -6,14 +6,14 @@ const StatusForm = () => {
     projectName: '',
     priority: '',
     jiraLink: '',
-    arbApprovalDate: '',
-    projectBuildStartDate: '',
-    projectBuildStartStep1: '',
-    aclRaisedDate: '',
-    firewallReqCompleteDate: '',
-    projectBuildDate: '',
-    projectValidationDate: '',
-    projectHandoverDate: '',
+    arbApprovalDate: null,
+    projectBuildStartDate: null,
+    projectBuildStartStep1: null,
+    aclRaisedDate: null,
+    firewallReqCompleteDate: null,
+    projectBuildDate: null,
+    projectValidationDate: null,
+    projectHandoverDate: null,
     issues: '',
   });
 
@@ -36,32 +36,15 @@ const StatusForm = () => {
     <div style={styles.fieldContainer}>
       <Label htmlFor={name} style={styles.label}>{label}</Label>
       <DatePicker
-        aria-labelledby={`${name}-label`}
-        dpicker-messages={`${name}-messages`}
-        autoFocus={name === 'arbApprovalDate' ? "8/29/2024" : undefined}
-        date={formData[name]}
-        dateLabels={{
-          getPrimaryLabel: () => {},
-          getSecondaryLabel: () => {},
-        }}
-        datesDescribedBy={`${name}-label`}
-        disabledDates={[
-          {
-            from: '2024-09-01',
-            to: '2024-09-02'
-          },
-          '2024-08-28'
-        ]}
-        errorMessage="The date you have entered is not valid"
-        footer={<span>Some future dates may be unavailable due to your Payment Due Date and statement balance.</span>}
         id={`${name}-default`}
-        maxDate="2024-12-31"
-        minDate="2024-01-01"
+        name={name}
+        date={formData[name]}
         onDateChange={handleDateChange(name)}
         placeholder="MM/DD/YYYY"
-        primaryDate="2024-08-30"
-        secondaryDate="2024-09-05"
-        showLegend
+        dateLabels={{
+          getPrimaryLabel: () => label,
+          getSecondaryLabel: () => '',
+        }}
       />
     </div>
   );
