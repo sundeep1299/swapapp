@@ -45,66 +45,58 @@ const StatusForm = () => {
   const renderField = (label, name, type = "text") => (
     <div style={styles.fieldContainer}>
       <Label htmlFor={name} style={styles.label}>{label}</Label>
-      {type === "select" ? (
-        <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
-          <SelectOption value="">Select Priority</SelectOption>
-          <SelectOption value="p0">P0</SelectOption>
-          <SelectOption value="p1">P1</SelectOption>
-          <SelectOption value="p2">P2</SelectOption>
-          <SelectOption value="p3">P3</SelectOption>
-        </Select>
-      ) : type === "date" ? (
-        <DatePicker
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleDateChange(name)}
-          required
-          style={styles.input}
-        />
-      ) : (
-        <Input
-          type={type}
-          id={name}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          required
-          style={styles.input}
-        />
-      )}
-      <ButtonPrimary type="button" onClick={handleSubmit(name)} style={styles.button}>Submit</ButtonPrimary>
+      <div style={styles.inputButtonContainer}>
+        {type === "select" ? (
+          <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
+            <SelectOption value="">Select Priority</SelectOption>
+            <SelectOption value="p0">P0</SelectOption>
+            <SelectOption value="p1">P1</SelectOption>
+            <SelectOption value="p2">P2</SelectOption>
+            <SelectOption value="p3">P3</SelectOption>
+          </Select>
+        ) : type === "date" ? (
+          <DatePicker
+            id={name}
+            name={name}
+            value={formData[name]}
+            onChange={handleDateChange(name)}
+            required
+            style={styles.input}
+          />
+        ) : (
+          <Input
+            type={type}
+            id={name}
+            name={name}
+            value={formData[name]}
+            onChange={handleChange}
+            required
+            style={styles.input}
+          />
+        )}
+        <ButtonPrimary type="button" onClick={handleSubmit(name)} style={styles.button}>Submit</ButtonPrimary>
+      </div>
     </div>
   );
 
   return (
     <div style={styles.formContainer}>
-      <div style={styles.teamRow}>
-        <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
+      <div style={styles.teamColumn}>
+        <div style={{...styles.teamName, backgroundColor: '#FFD700'}}>UCE</div>
         <div style={styles.teamFields}>
           {renderField("Project Name", "projectName")}
           {renderField("Priority", "priority", "select")}
           {renderField("Jira Link", "jiraLink")}
           {renderField("ARB Approval Date", "arbApprovalDate", "date")}
-        </div>
-      </div>
-      <div style={styles.teamRow}>
-        <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
-        <div style={styles.teamFields}>
-          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
-          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
-        </div>
-      </div>
-      <div style={styles.teamRow}>
-        <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
-        <div style={styles.teamFields}>
           {renderField("ACL Raised Date", "aclRaisedDate", "date")}
           {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
         </div>
       </div>
-      <div style={styles.teamRow}>
-        <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
+      <div style={styles.teamColumn}>
+        <div style={{...styles.teamName, backgroundColor: '#98FB98'}}>Platform Engineering</div>
         <div style={styles.teamFields}>
+          {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
+          {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
           {renderField("Project Build Date", "projectBuildDate", "date")}
           {renderField("Project Validation Date", "projectValidationDate", "date")}
           {renderField("Project Handover Date", "projectHandoverDate", "date")}
@@ -117,28 +109,25 @@ const StatusForm = () => {
 
 const styles = {
   formContainer: {
-    display: 'table',
+    display: 'flex',
+    justifyContent: 'space-between',
     width: '100%',
-    borderCollapse: 'separate',
-    borderSpacing: '0 15px',
+    fontSize: '14px',  // Smaller overall font size
   },
-  teamRow: {
-    display: 'table-row',
+  teamColumn: {
+    width: '48%',  // Slightly less than 50% to account for margin
   },
   teamName: {
-    display: 'table-cell',
-    width: '150px',
-    padding: '8px',
+    padding: '10px',
     fontWeight: 'bold',
-    verticalAlign: 'top',
-    borderRadius: '5px 0 0 5px',
-    fontSize: '14px',
+    borderRadius: '5px 5px 0 0',
+    color: '#000',
+    textAlign: 'center',
   },
   teamFields: {
-    display: 'table-cell',
-    padding: '8px',
+    padding: '10px',
     backgroundColor: '#ffffff',
-    borderRadius: '0 5px 5px 0',
+    borderRadius: '0 0 5px 5px',
   },
   fieldContainer: {
     marginBottom: '10px',
@@ -146,19 +135,23 @@ const styles = {
   label: {
     display: 'block',
     marginBottom: '3px',
-    fontWeight: 'bold',
-    fontSize: '12px',
+    fontWeight: '500',
+  },
+  inputButtonContainer: {
+    display: 'flex',
+    alignItems: 'center',
   },
   input: {
-    width: '200px',
-    marginRight: '10px',
-    padding: '4px',
-    fontSize: '12px',
+    width: '60%',  // Reduced width of input fields
+    padding: '5px',
+    fontSize: '12px',  // Smaller font size for inputs
+    border: '1px solid #ccc',
+    borderRadius: '4px',
   },
   button: {
-    marginTop: '3px',
-    padding: '4px 8px',
-    fontSize: '12px',
+    marginLeft: '5px',
+    padding: '5px 10px',
+    fontSize: '12px',  // Smaller font size for buttons
   },
 };
 
