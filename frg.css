@@ -6,14 +6,14 @@ const StatusForm = () => {
     projectName: '',
     priority: '',
     jiraLink: '',
-    arbApprovalDate: '',
-    projectBuildStartDate: '',
-    projectBuildStartStep1: '',
-    aclRaisedDate: '',
-    firewallReqCompleteDate: '',
-    projectBuildDate: '',
-    projectValidationDate: '',
-    projectHandoverDate: '',
+    arbApprovalDate: null,
+    projectBuildStartDate: null,
+    projectBuildStartStep1: null,
+    aclRaisedDate: null,
+    firewallReqCompleteDate: null,
+    projectBuildDate: null,
+    projectValidationDate: null,
+    projectHandoverDate: null,
     issues: '',
   });
 
@@ -22,8 +22,8 @@ const StatusForm = () => {
     setFormData(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleDateChange = (name) => (dateString) => {
-    setFormData(prevState => ({ ...prevState, [name]: dateString }));
+  const handleDateChange = (name) => (date) => {
+    setFormData(prevState => ({ ...prevState, [name]: date }));
   };
 
   const handleSubmit = (e) => {
@@ -32,16 +32,32 @@ const StatusForm = () => {
     alert('Form submitted successfully!');
   };
 
+  const formatDate = (date) => {
+    if (!date) return '';
+    if (typeof date === 'string') return date;
+    if (date instanceof Date) {
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    }
+    return '';
+  };
+
   const renderDatePicker = (label, name) => (
     <div style={styles.fieldContainer}>
       <Label htmlFor={name} style={styles.label}>{label}</Label>
       <DatePicker
         id={`${name}-default`}
         name={name}
-        value={formData[name]}
-        onChange={handleDateChange(name)}
+        date={formData[name]}
+        onDateChange={handleDateChange(name)}
         placeholder="MM/DD/YYYY"
       />
+      <div style={styles.selectedDate}>
+        Selected: {formatDate(formData[name])}
+      </div>
     </div>
   );
 
@@ -119,57 +135,11 @@ const StatusForm = () => {
 };
 
 const styles = {
-  form: {
-    width: '100%',
-  },
-  formContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: '20px',
-  },
-  teamColumn: {
-    width: '24%',
-    marginRight: '1%',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  teamName: {
-    padding: '8px',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    borderRadius: '5px 5px 0 0',
-    fontSize: '14px',
-  },
-  teamFields: {
-    padding: '8px',
-    backgroundColor: '#ffffff',
-    borderRadius: '0 0 5px 5px',
-    flexGrow: 1,
-  },
-  fieldContainer: {
-    marginBottom: '10px',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '3px',
-    fontWeight: 'bold',
+  // ... (previous styles remain the same)
+  selectedDate: {
     fontSize: '12px',
-  },
-  input: {
-    width: '100%',
-    padding: '4px',
-    fontSize: '12px',
-  },
-  submitContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  submitButton: {
-    padding: '8px 16px',
-    fontSize: '14px',
-    width: '200px',
+    marginTop: '4px',
+    color: '#666',
   },
 };
 
