@@ -1,45 +1,98 @@
-.form-table {
-  display: table;
-  width: 100%;
-  border-collapse: collapse;
-}
+import React, { useState } from 'react';
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, ButtonPrimary } from '@americanexpress/dls-react';
 
-.form-row {
-  display: table-row;
-}
+const StatusForm = () => {
+  const [formData, setFormData] = useState({
+    projectName: '',
+    priority: '',
+    jiraLink: '',
+    arbApprovalDate: '',
+    projectBuildStartDate: '',
+    projectBuildStartStep1: '',
+    aclRaisedDate: '',
+    firewallAclReqCompleteDate: '',
+    projectBuildCompleteDate: '',
+    projectValidationDate: '',
+    projectHandoverDate: '',
+    projectIssues: '',
+  });
 
-.team-column {
-  display: table-cell;
-  width: 200px;
-  background-color: #f0f0f0;
-  padding: 10px;
-  font-weight: bold;
-  vertical-align: top;
-  border: 1px solid #ccc;
-}
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
 
-.question-column {
-  display: table-cell;
-  padding: 10px;
-  border: 1px solid #ccc;
-}
+  const handlePriorityChange = (value) => {
+    setFormData(prevState => ({
+      ...prevState,
+      priority: value
+    }));
+  };
 
-.question-row {
-  margin-bottom: 20px;
-}
+  const handleSubmit = (e, field) => {
+    e.preventDefault();
+    console.log(`Submitted ${field}:`, formData[field]);
+    // Here you would typically send the specific field data to your backend
+    alert(`${field} submitted successfully!`);
+  };
 
-.question-row label {
-  display: block;
-  margin-bottom: 5px;
-}
+  return (
+    <div className="form-table">
+      <div className="form-row">
+        <div className="team-column">UCE Team</div>
+        <div className="question-column">
+          <div className="question-row">
+            <label htmlFor="projectName">Project Name</label>
+            <Input
+              id="projectName"
+              name="projectName"
+              value={formData.projectName}
+              onChange={handleChange}
+              required
+            />
+            <ButtonPrimary onClick={(e) => handleSubmit(e, 'projectName')}>Submit</ButtonPrimary>
+          </div>
+          <div className="question-row">
+            <label htmlFor="priority">Priority</label>
+            <Select onValueChange={handlePriorityChange} required>
+              <SelectTrigger>
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="p0">p0</SelectItem>
+                <SelectItem value="p1">p1</SelectItem>
+                <SelectItem value="p2">p2</SelectItem>
+                <SelectItem value="p3">p3</SelectItem>
+              </SelectContent>
+            </Select>
+            <ButtonPrimary onClick={(e) => handleSubmit(e, 'priority')}>Submit</ButtonPrimary>
+          </div>
+          {/* Add more UCE Team questions here */}
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="team-column">Platform Engineering Team</div>
+        <div className="question-column">
+          <div className="question-row">
+            <label htmlFor="projectBuildStartDate">Project Build Start Date</label>
+            <Input
+              id="projectBuildStartDate"
+              name="projectBuildStartDate"
+              type="date"
+              value={formData.projectBuildStartDate}
+              onChange={handleChange}
+              required
+            />
+            <ButtonPrimary onClick={(e) => handleSubmit(e, 'projectBuildStartDate')}>Submit</ButtonPrimary>
+          </div>
+          {/* Add more Platform Engineering Team questions here */}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-.question-row input,
-.question-row select {
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-.question-row button {
-  display: block;
-  margin-top: 5px;
-}
+export default StatusForm;
