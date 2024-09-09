@@ -38,34 +38,90 @@ const StatusForm = () => {
     // Add your form submission logic here
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="max-w-full mx-auto mt-8 p-6 bg-white rounded shadow-md">
-      <h2 className="text-2xl font-bold mb-6">Status Form</h2>
+  const formStyle = {
+    maxWidth: '1200px',
+    margin: '20px auto',
+    padding: '20px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+  };
 
-      <div className="flex flex-wrap -mx-2">
+  const flexContainerStyle = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    margin: '0 -10px'
+  };
+
+  const columnStyle = {
+    flex: '1',
+    minWidth: '300px',
+    padding: '0 10px',
+    marginBottom: '20px'
+  };
+
+  const headingStyle = {
+    fontSize: '24px',
+    fontWeight: 'bold',
+    marginBottom: '20px'
+  };
+
+  const subHeadingStyle = {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    marginBottom: '15px'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '8px',
+    marginBottom: '15px',
+    border: '1px solid #ccc',
+    borderRadius: '4px'
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '5px'
+  };
+
+  const buttonStyle = {
+    backgroundColor: '#007bff',
+    color: 'white',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={formStyle}>
+      <h2 style={headingStyle}>Status Form</h2>
+
+      <div style={flexContainerStyle}>
         {/* UCE Team Section */}
-        <div className="w-full md:w-1/3 px-2 mb-4">
-          <h3 className="text-xl font-semibold mb-4 text-blue-600">UCE Team</h3>
-          <div className="mb-4">
-            <label htmlFor="projectName" className="block mb-2">Project Name:</label>
+        <div style={columnStyle}>
+          <h3 style={{...subHeadingStyle, color: '#007bff'}}>UCE Team</h3>
+          <div>
+            <label htmlFor="projectName" style={labelStyle}>Project Name:</label>
             <input
               type="text"
               id="projectName"
               name="projectName"
               value={formData.projectName}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded"
+              style={inputStyle}
               required
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="priority" className="block mb-2">Priority:</label>
+          <div>
+            <label htmlFor="priority" style={labelStyle}>Priority:</label>
             <select
               id="priority"
               name="priority"
               value={formData.priority}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded"
+              style={inputStyle}
               required
             >
               <option value="">Select Priority</option>
@@ -74,20 +130,20 @@ const StatusForm = () => {
               <option value="Normal">Normal</option>
             </select>
           </div>
-          <div className="mb-4">
-            <label htmlFor="jiraLink" className="block mb-2">Jira Link:</label>
+          <div>
+            <label htmlFor="jiraLink" style={labelStyle}>Jira Link:</label>
             <input
               type="url"
               id="jiraLink"
               name="jiraLink"
               value={formData.jiraLink}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded"
+              style={inputStyle}
               required
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="arbApprovalDate" className="block mb-2">ARB Approval Date:</label>
+          <div>
+            <label htmlFor="arbApprovalDate" style={labelStyle}>ARB Approval Date:</label>
             <DatePicker
               id="arbApprovalDate"
               date={formData.arbApprovalDate}
@@ -95,8 +151,8 @@ const StatusForm = () => {
               placeholder="MM/DD/YYYY"
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="firewallAclReqRaisedDate" className="block mb-2">Firewall ACL Req Raised Date:</label>
+          <div>
+            <label htmlFor="firewallAclReqRaisedDate" style={labelStyle}>Firewall ACL Req Raised Date:</label>
             <DatePicker
               id="firewallAclReqRaisedDate"
               date={formData.firewallAclReqRaisedDate}
@@ -104,8 +160,8 @@ const StatusForm = () => {
               placeholder="MM/DD/YYYY"
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="firewallAclReqCompleteDate" className="block mb-2">Firewall ACL Req Complete Date:</label>
+          <div>
+            <label htmlFor="firewallAclReqCompleteDate" style={labelStyle}>Firewall ACL Req Complete Date:</label>
             <DatePicker
               id="firewallAclReqCompleteDate"
               date={formData.firewallAclReqCompleteDate}
@@ -116,10 +172,10 @@ const StatusForm = () => {
         </div>
 
         {/* Platform Engineering Team Section */}
-        <div className="w-full md:w-1/3 px-2 mb-4">
-          <h3 className="text-xl font-semibold mb-4 text-green-600">Platform Engineering Team</h3>
-          <div className="mb-4">
-            <label htmlFor="projectBuildStartDate" className="block mb-2">Project Build Start Date:</label>
+        <div style={columnStyle}>
+          <h3 style={{...subHeadingStyle, color: '#28a745'}}>Platform Engineering Team</h3>
+          <div>
+            <label htmlFor="projectBuildStartDate" style={labelStyle}>Project Build Start Date:</label>
             <DatePicker
               id="projectBuildStartDate"
               date={formData.projectBuildStartDate}
@@ -127,8 +183,8 @@ const StatusForm = () => {
               placeholder="MM/DD/YYYY"
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="aclRaisedDate" className="block mb-2">ACL Raised Date:</label>
+          <div>
+            <label htmlFor="aclRaisedDate" style={labelStyle}>ACL Raised Date:</label>
             <DatePicker
               id="aclRaisedDate"
               date={formData.aclRaisedDate}
@@ -136,8 +192,8 @@ const StatusForm = () => {
               placeholder="MM/DD/YYYY"
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="projectBuildCompleteDate" className="block mb-2">Project Build Complete Date:</label>
+          <div>
+            <label htmlFor="projectBuildCompleteDate" style={labelStyle}>Project Build Complete Date:</label>
             <DatePicker
               id="projectBuildCompleteDate"
               date={formData.projectBuildCompleteDate}
@@ -145,8 +201,8 @@ const StatusForm = () => {
               placeholder="MM/DD/YYYY"
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="projectValidationDate" className="block mb-2">Project Validation Date:</label>
+          <div>
+            <label htmlFor="projectValidationDate" style={labelStyle}>Project Validation Date:</label>
             <DatePicker
               id="projectValidationDate"
               date={formData.projectValidationDate}
@@ -154,8 +210,8 @@ const StatusForm = () => {
               placeholder="MM/DD/YYYY"
             />
           </div>
-          <div className="mb-4">
-            <label htmlFor="projectHandoverDate" className="block mb-2">Project Handover Date:</label>
+          <div>
+            <label htmlFor="projectHandoverDate" style={labelStyle}>Project Handover Date:</label>
             <DatePicker
               id="projectHandoverDate"
               date={formData.projectHandoverDate}
@@ -166,25 +222,24 @@ const StatusForm = () => {
         </div>
 
         {/* Comments Section */}
-        <div className="w-full md:w-1/3 px-2 mb-4">
-          <h3 className="text-xl font-semibold mb-4 text-purple-600">Comments</h3>
-          <div className="mb-4">
-            <label htmlFor="comments" className="block mb-2">Project Comments:</label>
+        <div style={columnStyle}>
+          <h3 style={{...subHeadingStyle, color: '#6f42c1'}}>Comments</h3>
+          <div>
+            <label htmlFor="comments" style={labelStyle}>Project Comments:</label>
             <textarea
               id="comments"
               name="comments"
               value={formData.comments}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded"
-              rows="10"
+              style={{...inputStyle, height: '150px'}}
             ></textarea>
           </div>
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="mt-6 text-right">
-        <button type="submit" className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+      <div style={{textAlign: 'right', marginTop: '20px'}}>
+        <button type="submit" style={buttonStyle}>
           Submit
         </button>
       </div>
