@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DatePicker, ButtonPrimary, Input, Select, SelectOption, Label } from '@americanexpress/dls-react';
+import { DatePicker } from '@americanexpress/dls-react';
 
 const StatusForm = () => {
   const [formData, setFormData] = useState({
@@ -8,189 +8,191 @@ const StatusForm = () => {
     jiraLink: '',
     arbApprovalDate: null,
     projectBuildStartDate: null,
-    projectBuildStartStep1: null,
     aclRaisedDate: null,
-    firewallReqCompleteDate: null,
-    projectBuildDate: null,
+    firewallAclReqRaisedDate: null,
+    firewallAclReqCompleteDate: null,
+    projectBuildCompleteDate: null,
     projectValidationDate: null,
     projectHandoverDate: null,
-    issues: '',
+    comments: ''
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({ ...prevState, [name]: value }));
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   };
 
-  const handleDateChange = (name) => (date) => {
-    setFormData(prevState => ({ ...prevState, [name]: date }));
+  const handleDateChange = (name) => (event, date) => {
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: date
+    }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
     console.log('Form submitted:', formData);
-    alert('Form submitted successfully!');
-  };
-
-  const formatDate = (date) => {
-    if (!date) return '';
-    if (date instanceof Date) {
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-    }
-    return String(date);  // fallback for any unexpected types
-  };
-
-  const renderDatePicker = (label, name) => (
-    <div style={styles.fieldContainer}>
-      <Label htmlFor={name} style={styles.label}>{label}</Label>
-      <DatePicker
-        id={`${name}-default`}
-        name={name}
-        date={formData[name]}
-        onDateChange={handleDateChange(name)}
-        placeholder="MM/DD/YYYY"
-      />
-      <div style={styles.selectedDate}>
-        Selected: {formatDate(formData[name])}
-      </div>
-    </div>
-  );
-
-  const renderField = (label, name, type = "text") => {
-    if (type === "date") {
-      return renderDatePicker(label, name);
-    }
-    return (
-      <div style={styles.fieldContainer}>
-        <Label htmlFor={name} style={styles.label}>{label}</Label>
-        {type === "select" ? (
-          <Select name={name} value={formData[name]} onChange={handleChange} required style={styles.input}>
-            <SelectOption value="">Select Priority</SelectOption>
-            <SelectOption value="p0">P0</SelectOption>
-            <SelectOption value="p1">P1</SelectOption>
-            <SelectOption value="p2">P2</SelectOption>
-            <SelectOption value="p3">P3</SelectOption>
-          </Select>
-        ) : (
-          <Input
-            type={type}
-            id={name}
-            name={name}
-            value={formData[name]}
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
-        )}
-      </div>
-    );
+    // Add your form submission logic here
   };
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      <div style={styles.formContainer}>
-        <div style={styles.teamColumn}>
-          <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
-          <div style={styles.teamFields}>
-            {renderField("Project Name", "projectName")}
-            {renderField("Priority", "priority", "select")}
-            {renderField("Jira Link", "jiraLink")}
-            {renderField("ARB Approval Date", "arbApprovalDate", "date")}
-          </div>
+    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-8 p-6 bg-white rounded shadow-md">
+      <h2 className="text-2xl font-bold mb-6">Status Form</h2>
+
+      {/* UCE Team Section */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-4">UCE Team</h3>
+        <div className="mb-4">
+          <label htmlFor="projectName" className="block mb-2">Project Name:</label>
+          <input
+            type="text"
+            id="projectName"
+            name="projectName"
+            value={formData.projectName}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
         </div>
-        <div style={styles.teamColumn}>
-          <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
-          <div style={styles.teamFields}>
-            {renderField("Project Build Start Date", "projectBuildStartDate", "date")}
-            {renderField("Project Build Start Step 1", "projectBuildStartStep1", "date")}
-          </div>
+        <div className="mb-4">
+          <label htmlFor="priority" className="block mb-2">Priority:</label>
+          <select
+            id="priority"
+            name="priority"
+            value={formData.priority}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border rounded"
+            required
+          >
+            <option value="">Select Priority</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Normal">Normal</option>
+          </select>
         </div>
-        <div style={styles.teamColumn}>
-          <div style={{...styles.teamName, backgroundColor: '#e6f2ff'}}>UCE</div>
-          <div style={styles.teamFields}>
-            {renderField("ACL Raised Date", "aclRaisedDate", "date")}
-            {renderField("Firewall Request Complete Date", "firewallReqCompleteDate", "date")}
-          </div>
+        <div className="mb-4">
+          <label htmlFor="jiraLink" className="block mb-2">Jira Link:</label>
+          <input
+            type="url"
+            id="jiraLink"
+            name="jiraLink"
+            value={formData.jiraLink}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
         </div>
-        <div style={styles.teamColumn}>
-          <div style={{...styles.teamName, backgroundColor: '#e6ffe6'}}>Platform Engineering</div>
-          <div style={styles.teamFields}>
-            {renderField("Project Build Date", "projectBuildDate", "date")}
-            {renderField("Project Validation Date", "projectValidationDate", "date")}
-            {renderField("Project Handover Date", "projectHandoverDate", "date")}
-            {renderField("Issues / Remarks", "issues", "textarea")}
-          </div>
+        <div className="mb-4">
+          <label htmlFor="arbApprovalDate" className="block mb-2">ARB Approval Date:</label>
+          <DatePicker
+            id="arbApprovalDate"
+            date={formData.arbApprovalDate}
+            onDateChange={handleDateChange('arbApprovalDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
       </div>
-      <div style={styles.submitContainer}>
-        <ButtonPrimary type="submit" style={styles.submitButton}>Submit Form</ButtonPrimary>
+
+      {/* Platform Engineering Team Section */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-4">Platform Engineering Team</h3>
+        <div className="mb-4">
+          <label htmlFor="projectBuildStartDate" className="block mb-2">Project Build Start Date:</label>
+          <DatePicker
+            id="projectBuildStartDate"
+            date={formData.projectBuildStartDate}
+            onDateChange={handleDateChange('projectBuildStartDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="aclRaisedDate" className="block mb-2">ACL Raised Date:</label>
+          <DatePicker
+            id="aclRaisedDate"
+            date={formData.aclRaisedDate}
+            onDateChange={handleDateChange('aclRaisedDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
       </div>
+
+      {/* UCE Team (Additional) Section */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-4">UCE Team (Additional)</h3>
+        <div className="mb-4">
+          <label htmlFor="firewallAclReqRaisedDate" className="block mb-2">Firewall ACL Req Raised Date:</label>
+          <DatePicker
+            id="firewallAclReqRaisedDate"
+            date={formData.firewallAclReqRaisedDate}
+            onDateChange={handleDateChange('firewallAclReqRaisedDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="firewallAclReqCompleteDate" className="block mb-2">Firewall ACL Req Complete Date:</label>
+          <DatePicker
+            id="firewallAclReqCompleteDate"
+            date={formData.firewallAclReqCompleteDate}
+            onDateChange={handleDateChange('firewallAclReqCompleteDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
+      </div>
+
+      {/* Platform Engineering Team (Additional) Section */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-4">Platform Engineering Team (Additional)</h3>
+        <div className="mb-4">
+          <label htmlFor="projectBuildCompleteDate" className="block mb-2">Project Build Complete Date:</label>
+          <DatePicker
+            id="projectBuildCompleteDate"
+            date={formData.projectBuildCompleteDate}
+            onDateChange={handleDateChange('projectBuildCompleteDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="projectValidationDate" className="block mb-2">Project Validation Date:</label>
+          <DatePicker
+            id="projectValidationDate"
+            date={formData.projectValidationDate}
+            onDateChange={handleDateChange('projectValidationDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="projectHandoverDate" className="block mb-2">Project Handover Date:</label>
+          <DatePicker
+            id="projectHandoverDate"
+            date={formData.projectHandoverDate}
+            onDateChange={handleDateChange('projectHandoverDate')}
+            placeholder="MM/DD/YYYY"
+          />
+        </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="mb-6">
+        <label htmlFor="comments" className="block mb-2">Comments:</label>
+        <textarea
+          id="comments"
+          name="comments"
+          value={formData.comments}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border rounded"
+          rows="4"
+        ></textarea>
+      </div>
+
+      {/* Submit Button */}
+      <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        Submit
+      </button>
     </form>
   );
-};
-
-const styles = {
-  form: {
-    width: '100%',
-  },
-  formContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: '20px',
-  },
-  teamColumn: {
-    width: '24%',
-    marginRight: '1%',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  teamName: {
-    padding: '8px',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    borderRadius: '5px 5px 0 0',
-    fontSize: '14px',
-  },
-  teamFields: {
-    padding: '8px',
-    backgroundColor: '#ffffff',
-    borderRadius: '0 0 5px 5px',
-    flexGrow: 1,
-  },
-  fieldContainer: {
-    marginBottom: '10px',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '3px',
-    fontWeight: 'bold',
-    fontSize: '12px',
-  },
-  input: {
-    width: '100%',
-    padding: '4px',
-    fontSize: '12px',
-  },
-  submitContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-  },
-  submitButton: {
-    padding: '8px 16px',
-    fontSize: '14px',
-    width: '200px',
-  },
-  selectedDate: {
-    fontSize: '12px',
-    marginTop: '4px',
-    color: '#666',
-  },
 };
 
 export default StatusForm;
