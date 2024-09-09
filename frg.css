@@ -26,10 +26,12 @@ const StatusForm = () => {
   };
 
   const handleDateChange = (name) => (event, date) => {
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: date ? date.toLocaleDateString() : ''
-    }));
+    if (date && date.dateString) {
+      setFormData(prevState => ({
+        ...prevState,
+        [name]: date.dateString
+      }));
+    }
   };
 
   const handleSubmit = (event) => {
@@ -37,6 +39,16 @@ const StatusForm = () => {
     console.log('Form submitted:', formData);
     // Add your form submission logic here
   };
+
+  const renderDatePicker = (id, value) => (
+    <DatePicker
+      id={id}
+      date={value}
+      onDateChange={handleDateChange(id)}
+      placeholder="MM/DD/YYYY"
+      format="MM/DD/YYYY"
+    />
+  );
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-8 p-6 bg-white rounded shadow-md">
@@ -87,12 +99,7 @@ const StatusForm = () => {
         </div>
         <div className="mb-4">
           <label htmlFor="arbApprovalDate" className="block mb-2">ARB Approval Date:</label>
-          <DatePicker
-            id="arbApprovalDate"
-            date={formData.arbApprovalDate ? new Date(formData.arbApprovalDate) : null}
-            onDateChange={handleDateChange('arbApprovalDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('arbApprovalDate', formData.arbApprovalDate)}
         </div>
       </div>
 
@@ -101,21 +108,11 @@ const StatusForm = () => {
         <h3 className="text-xl font-semibold mb-4">Platform Engineering Team</h3>
         <div className="mb-4">
           <label htmlFor="projectBuildStartDate" className="block mb-2">Project Build Start Date:</label>
-          <DatePicker
-            id="projectBuildStartDate"
-            date={formData.projectBuildStartDate ? new Date(formData.projectBuildStartDate) : null}
-            onDateChange={handleDateChange('projectBuildStartDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('projectBuildStartDate', formData.projectBuildStartDate)}
         </div>
         <div className="mb-4">
           <label htmlFor="aclRaisedDate" className="block mb-2">ACL Raised Date:</label>
-          <DatePicker
-            id="aclRaisedDate"
-            date={formData.aclRaisedDate ? new Date(formData.aclRaisedDate) : null}
-            onDateChange={handleDateChange('aclRaisedDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('aclRaisedDate', formData.aclRaisedDate)}
         </div>
       </div>
 
@@ -124,21 +121,11 @@ const StatusForm = () => {
         <h3 className="text-xl font-semibold mb-4">UCE Team (Additional)</h3>
         <div className="mb-4">
           <label htmlFor="firewallAclReqRaisedDate" className="block mb-2">Firewall ACL Req Raised Date:</label>
-          <DatePicker
-            id="firewallAclReqRaisedDate"
-            date={formData.firewallAclReqRaisedDate ? new Date(formData.firewallAclReqRaisedDate) : null}
-            onDateChange={handleDateChange('firewallAclReqRaisedDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('firewallAclReqRaisedDate', formData.firewallAclReqRaisedDate)}
         </div>
         <div className="mb-4">
           <label htmlFor="firewallAclReqCompleteDate" className="block mb-2">Firewall ACL Req Complete Date:</label>
-          <DatePicker
-            id="firewallAclReqCompleteDate"
-            date={formData.firewallAclReqCompleteDate ? new Date(formData.firewallAclReqCompleteDate) : null}
-            onDateChange={handleDateChange('firewallAclReqCompleteDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('firewallAclReqCompleteDate', formData.firewallAclReqCompleteDate)}
         </div>
       </div>
 
@@ -147,30 +134,15 @@ const StatusForm = () => {
         <h3 className="text-xl font-semibold mb-4">Platform Engineering Team (Additional)</h3>
         <div className="mb-4">
           <label htmlFor="projectBuildCompleteDate" className="block mb-2">Project Build Complete Date:</label>
-          <DatePicker
-            id="projectBuildCompleteDate"
-            date={formData.projectBuildCompleteDate ? new Date(formData.projectBuildCompleteDate) : null}
-            onDateChange={handleDateChange('projectBuildCompleteDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('projectBuildCompleteDate', formData.projectBuildCompleteDate)}
         </div>
         <div className="mb-4">
           <label htmlFor="projectValidationDate" className="block mb-2">Project Validation Date:</label>
-          <DatePicker
-            id="projectValidationDate"
-            date={formData.projectValidationDate ? new Date(formData.projectValidationDate) : null}
-            onDateChange={handleDateChange('projectValidationDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('projectValidationDate', formData.projectValidationDate)}
         </div>
         <div className="mb-4">
           <label htmlFor="projectHandoverDate" className="block mb-2">Project Handover Date:</label>
-          <DatePicker
-            id="projectHandoverDate"
-            date={formData.projectHandoverDate ? new Date(formData.projectHandoverDate) : null}
-            onDateChange={handleDateChange('projectHandoverDate')}
-            placeholder="MM/DD/YYYY"
-          />
+          {renderDatePicker('projectHandoverDate', formData.projectHandoverDate)}
         </div>
       </div>
 
