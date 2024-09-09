@@ -6,14 +6,14 @@ const StatusForm = () => {
     projectName: '',
     priority: '',
     jiraLink: '',
-    arbApprovalDate: '',
-    projectBuildStartDate: '',
-    aclRaisedDate: '',
-    firewallAclReqRaisedDate: '',
-    firewallAclReqCompleteDate: '',
-    projectBuildCompleteDate: '',
-    projectValidationDate: '',
-    projectHandoverDate: '',
+    arbApprovalDate: null,
+    projectBuildStartDate: null,
+    aclRaisedDate: null,
+    firewallAclReqRaisedDate: null,
+    firewallAclReqCompleteDate: null,
+    projectBuildCompleteDate: null,
+    projectValidationDate: null,
+    projectHandoverDate: null,
     comments: ''
   });
 
@@ -26,12 +26,10 @@ const StatusForm = () => {
   };
 
   const handleDateChange = (name) => (event, date) => {
-    if (date && date.dateString) {
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: date.dateString
-      }));
-    }
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: date
+    }));
   };
 
   const handleSubmit = (event) => {
@@ -39,16 +37,6 @@ const StatusForm = () => {
     console.log('Form submitted:', formData);
     // Add your form submission logic here
   };
-
-  const renderDatePicker = (id, value) => (
-    <DatePicker
-      id={id}
-      date={value}
-      onDateChange={handleDateChange(id)}
-      placeholder="MM/DD/YYYY"
-      format="MM/DD/YYYY"
-    />
-  );
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-8 p-6 bg-white rounded shadow-md">
@@ -99,7 +87,12 @@ const StatusForm = () => {
         </div>
         <div className="mb-4">
           <label htmlFor="arbApprovalDate" className="block mb-2">ARB Approval Date:</label>
-          {renderDatePicker('arbApprovalDate', formData.arbApprovalDate)}
+          <DatePicker
+            id="arbApprovalDate"
+            date={formData.arbApprovalDate}
+            onDateChange={handleDateChange('arbApprovalDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
       </div>
 
@@ -108,11 +101,21 @@ const StatusForm = () => {
         <h3 className="text-xl font-semibold mb-4">Platform Engineering Team</h3>
         <div className="mb-4">
           <label htmlFor="projectBuildStartDate" className="block mb-2">Project Build Start Date:</label>
-          {renderDatePicker('projectBuildStartDate', formData.projectBuildStartDate)}
+          <DatePicker
+            id="projectBuildStartDate"
+            date={formData.projectBuildStartDate}
+            onDateChange={handleDateChange('projectBuildStartDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
         <div className="mb-4">
           <label htmlFor="aclRaisedDate" className="block mb-2">ACL Raised Date:</label>
-          {renderDatePicker('aclRaisedDate', formData.aclRaisedDate)}
+          <DatePicker
+            id="aclRaisedDate"
+            date={formData.aclRaisedDate}
+            onDateChange={handleDateChange('aclRaisedDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
       </div>
 
@@ -121,11 +124,21 @@ const StatusForm = () => {
         <h3 className="text-xl font-semibold mb-4">UCE Team (Additional)</h3>
         <div className="mb-4">
           <label htmlFor="firewallAclReqRaisedDate" className="block mb-2">Firewall ACL Req Raised Date:</label>
-          {renderDatePicker('firewallAclReqRaisedDate', formData.firewallAclReqRaisedDate)}
+          <DatePicker
+            id="firewallAclReqRaisedDate"
+            date={formData.firewallAclReqRaisedDate}
+            onDateChange={handleDateChange('firewallAclReqRaisedDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
         <div className="mb-4">
           <label htmlFor="firewallAclReqCompleteDate" className="block mb-2">Firewall ACL Req Complete Date:</label>
-          {renderDatePicker('firewallAclReqCompleteDate', formData.firewallAclReqCompleteDate)}
+          <DatePicker
+            id="firewallAclReqCompleteDate"
+            date={formData.firewallAclReqCompleteDate}
+            onDateChange={handleDateChange('firewallAclReqCompleteDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
       </div>
 
@@ -134,15 +147,30 @@ const StatusForm = () => {
         <h3 className="text-xl font-semibold mb-4">Platform Engineering Team (Additional)</h3>
         <div className="mb-4">
           <label htmlFor="projectBuildCompleteDate" className="block mb-2">Project Build Complete Date:</label>
-          {renderDatePicker('projectBuildCompleteDate', formData.projectBuildCompleteDate)}
+          <DatePicker
+            id="projectBuildCompleteDate"
+            date={formData.projectBuildCompleteDate}
+            onDateChange={handleDateChange('projectBuildCompleteDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
         <div className="mb-4">
           <label htmlFor="projectValidationDate" className="block mb-2">Project Validation Date:</label>
-          {renderDatePicker('projectValidationDate', formData.projectValidationDate)}
+          <DatePicker
+            id="projectValidationDate"
+            date={formData.projectValidationDate}
+            onDateChange={handleDateChange('projectValidationDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
         <div className="mb-4">
           <label htmlFor="projectHandoverDate" className="block mb-2">Project Handover Date:</label>
-          {renderDatePicker('projectHandoverDate', formData.projectHandoverDate)}
+          <DatePicker
+            id="projectHandoverDate"
+            date={formData.projectHandoverDate}
+            onDateChange={handleDateChange('projectHandoverDate')}
+            placeholder="MM/DD/YYYY"
+          />
         </div>
       </div>
 
