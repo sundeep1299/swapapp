@@ -47,15 +47,15 @@ const StatusForm = () => {
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
   };
 
-  const flexContainerStyle = {
+  const rowStyle = {
     display: 'flex',
     flexWrap: 'wrap',
-    margin: '0 -10px'
+    marginBottom: '20px'
   };
 
   const columnStyle = {
     flex: '1',
-    minWidth: '300px',
+    minWidth: '200px',
     padding: '0 10px',
     marginBottom: '20px'
   };
@@ -98,8 +98,8 @@ const StatusForm = () => {
     <form onSubmit={handleSubmit} style={formStyle}>
       <h2 style={headingStyle}>Status Form</h2>
 
-      <div style={flexContainerStyle}>
-        {/* UCE Team Section */}
+      <div style={rowStyle}>
+        {/* UCE Team Section 1 */}
         <div style={columnStyle}>
           <h3 style={{...subHeadingStyle, color: '#007bff'}}>UCE Team</h3>
           <div>
@@ -142,6 +142,34 @@ const StatusForm = () => {
               required
             />
           </div>
+        </div>
+
+        {/* Platform Engineering Team Section 1 */}
+        <div style={columnStyle}>
+          <h3 style={{...subHeadingStyle, color: '#28a745'}}>Platform Engineering Team</h3>
+          <div>
+            <label htmlFor="projectBuildStartDate" style={labelStyle}>Project Build Start Date:</label>
+            <DatePicker
+              id="projectBuildStartDate"
+              date={formData.projectBuildStartDate}
+              onDateChange={handleDateChange('projectBuildStartDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div>
+            <label htmlFor="aclRaisedDate" style={labelStyle}>ACL Raised Date:</label>
+            <DatePicker
+              id="aclRaisedDate"
+              date={formData.aclRaisedDate}
+              onDateChange={handleDateChange('aclRaisedDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+        </div>
+
+        {/* UCE Team Section 2 */}
+        <div style={columnStyle}>
+          <h3 style={{...subHeadingStyle, color: '#007bff'}}>UCE Team (Continued)</h3>
           <div>
             <label htmlFor="arbApprovalDate" style={labelStyle}>ARB Approval Date:</label>
             <DatePicker
@@ -171,27 +199,9 @@ const StatusForm = () => {
           </div>
         </div>
 
-        {/* Platform Engineering Team Section */}
+        {/* Platform Engineering Team Section 2 */}
         <div style={columnStyle}>
-          <h3 style={{...subHeadingStyle, color: '#28a745'}}>Platform Engineering Team</h3>
-          <div>
-            <label htmlFor="projectBuildStartDate" style={labelStyle}>Project Build Start Date:</label>
-            <DatePicker
-              id="projectBuildStartDate"
-              date={formData.projectBuildStartDate}
-              onDateChange={handleDateChange('projectBuildStartDate')}
-              placeholder="MM/DD/YYYY"
-            />
-          </div>
-          <div>
-            <label htmlFor="aclRaisedDate" style={labelStyle}>ACL Raised Date:</label>
-            <DatePicker
-              id="aclRaisedDate"
-              date={formData.aclRaisedDate}
-              onDateChange={handleDateChange('aclRaisedDate')}
-              placeholder="MM/DD/YYYY"
-            />
-          </div>
+          <h3 style={{...subHeadingStyle, color: '#28a745'}}>Platform Engineering Team (Continued)</h3>
           <div>
             <label htmlFor="projectBuildCompleteDate" style={labelStyle}>Project Build Complete Date:</label>
             <DatePicker
@@ -220,9 +230,11 @@ const StatusForm = () => {
             />
           </div>
         </div>
+      </div>
 
-        {/* Comments Section */}
-        <div style={columnStyle}>
+      {/* Comments Section */}
+      <div style={rowStyle}>
+        <div style={{...columnStyle, flex: '2'}}>
           <h3 style={{...subHeadingStyle, color: '#6f42c1'}}>Comments</h3>
           <div>
             <label htmlFor="comments" style={labelStyle}>Project Comments:</label>
@@ -231,7 +243,7 @@ const StatusForm = () => {
               name="comments"
               value={formData.comments}
               onChange={handleInputChange}
-              style={{...inputStyle, height: '150px'}}
+              style={{...inputStyle, height: '100px'}}
             ></textarea>
           </div>
         </div>
