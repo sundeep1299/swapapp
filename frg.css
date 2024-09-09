@@ -1,53 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Search as DLSSearch } from '@americanexpress/dls-react';
 
-const Search = ({ onProjectSelect }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Mock project list - replace with actual data source or API call
-  const projectList = useMemo(() => [
-    "Project Alpha", "Project Beta", "Project Gamma", "Project Delta", "Project Epsilon"
-  ], []);
-
-  const filteredProjects = useMemo(() => 
-    projectList.filter(project => 
-      project.toLowerCase().includes(searchTerm.toLowerCase())
-    ),
-    [projectList, searchTerm]
-  );
-
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleProjectSelect = (selectedProject) => {
-    onProjectSelect(selectedProject);
-    setSearchTerm('');
-  };
-
+const Search = ({ onSearchChange, searchTerm }) => {
   return (
     <div style={{ marginBottom: '20px' }}>
       <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#007bff' }}>Search Project</h3>
       <DLSSearch
         id="project-search"
         value={searchTerm}
-        onChange={handleSearchChange}
+        onChange={onSearchChange}
         placeholder="Search for a project..."
         buttonSearch="Search"
-      >
-        {filteredProjects.length > 0 && (
-          <DLSSearch.Results>
-            {filteredProjects.map((project, index) => (
-              <DLSSearch.Result
-                key={index}
-                onClick={() => handleProjectSelect(project)}
-              >
-                {project}
-              </DLSSearch.Result>
-            ))}
-          </DLSSearch.Results>
-        )}
-      </DLSSearch>
+      />
     </div>
   );
 };
