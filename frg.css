@@ -39,158 +39,155 @@ const StatusForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto mt-8 p-6 bg-white rounded shadow-md">
+    <form onSubmit={handleSubmit} className="max-w-full mx-auto mt-8 p-6 bg-white rounded shadow-md">
       <h2 className="text-2xl font-bold mb-6">Status Form</h2>
 
-      {/* UCE Team Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-4">UCE Team</h3>
-        <div className="mb-4">
-          <label htmlFor="projectName" className="block mb-2">Project Name:</label>
-          <input
-            type="text"
-            id="projectName"
-            name="projectName"
-            value={formData.projectName}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
+      <div className="flex flex-wrap -mx-2">
+        {/* UCE Team Section */}
+        <div className="w-full md:w-1/3 px-2 mb-4">
+          <h3 className="text-xl font-semibold mb-4 text-blue-600">UCE Team</h3>
+          <div className="mb-4">
+            <label htmlFor="projectName" className="block mb-2">Project Name:</label>
+            <input
+              type="text"
+              id="projectName"
+              name="projectName"
+              value={formData.projectName}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border rounded"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="priority" className="block mb-2">Priority:</label>
+            <select
+              id="priority"
+              name="priority"
+              value={formData.priority}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border rounded"
+              required
+            >
+              <option value="">Select Priority</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Normal">Normal</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="jiraLink" className="block mb-2">Jira Link:</label>
+            <input
+              type="url"
+              id="jiraLink"
+              name="jiraLink"
+              value={formData.jiraLink}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border rounded"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="arbApprovalDate" className="block mb-2">ARB Approval Date:</label>
+            <DatePicker
+              id="arbApprovalDate"
+              date={formData.arbApprovalDate}
+              onDateChange={handleDateChange('arbApprovalDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="firewallAclReqRaisedDate" className="block mb-2">Firewall ACL Req Raised Date:</label>
+            <DatePicker
+              id="firewallAclReqRaisedDate"
+              date={formData.firewallAclReqRaisedDate}
+              onDateChange={handleDateChange('firewallAclReqRaisedDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="firewallAclReqCompleteDate" className="block mb-2">Firewall ACL Req Complete Date:</label>
+            <DatePicker
+              id="firewallAclReqCompleteDate"
+              date={formData.firewallAclReqCompleteDate}
+              onDateChange={handleDateChange('firewallAclReqCompleteDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="priority" className="block mb-2">Priority:</label>
-          <select
-            id="priority"
-            name="priority"
-            value={formData.priority}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border rounded"
-            required
-          >
-            <option value="">Select Priority</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Normal">Normal</option>
-          </select>
-        </div>
-        <div className="mb-4">
-          <label htmlFor="jiraLink" className="block mb-2">Jira Link:</label>
-          <input
-            type="url"
-            id="jiraLink"
-            name="jiraLink"
-            value={formData.jiraLink}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="arbApprovalDate" className="block mb-2">ARB Approval Date:</label>
-          <DatePicker
-            id="arbApprovalDate"
-            date={formData.arbApprovalDate}
-            onDateChange={handleDateChange('arbApprovalDate')}
-            placeholder="MM/DD/YYYY"
-          />
-        </div>
-      </div>
 
-      {/* Platform Engineering Team Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-4">Platform Engineering Team</h3>
-        <div className="mb-4">
-          <label htmlFor="projectBuildStartDate" className="block mb-2">Project Build Start Date:</label>
-          <DatePicker
-            id="projectBuildStartDate"
-            date={formData.projectBuildStartDate}
-            onDateChange={handleDateChange('projectBuildStartDate')}
-            placeholder="MM/DD/YYYY"
-          />
+        {/* Platform Engineering Team Section */}
+        <div className="w-full md:w-1/3 px-2 mb-4">
+          <h3 className="text-xl font-semibold mb-4 text-green-600">Platform Engineering Team</h3>
+          <div className="mb-4">
+            <label htmlFor="projectBuildStartDate" className="block mb-2">Project Build Start Date:</label>
+            <DatePicker
+              id="projectBuildStartDate"
+              date={formData.projectBuildStartDate}
+              onDateChange={handleDateChange('projectBuildStartDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="aclRaisedDate" className="block mb-2">ACL Raised Date:</label>
+            <DatePicker
+              id="aclRaisedDate"
+              date={formData.aclRaisedDate}
+              onDateChange={handleDateChange('aclRaisedDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="projectBuildCompleteDate" className="block mb-2">Project Build Complete Date:</label>
+            <DatePicker
+              id="projectBuildCompleteDate"
+              date={formData.projectBuildCompleteDate}
+              onDateChange={handleDateChange('projectBuildCompleteDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="projectValidationDate" className="block mb-2">Project Validation Date:</label>
+            <DatePicker
+              id="projectValidationDate"
+              date={formData.projectValidationDate}
+              onDateChange={handleDateChange('projectValidationDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="projectHandoverDate" className="block mb-2">Project Handover Date:</label>
+            <DatePicker
+              id="projectHandoverDate"
+              date={formData.projectHandoverDate}
+              onDateChange={handleDateChange('projectHandoverDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="aclRaisedDate" className="block mb-2">ACL Raised Date:</label>
-          <DatePicker
-            id="aclRaisedDate"
-            date={formData.aclRaisedDate}
-            onDateChange={handleDateChange('aclRaisedDate')}
-            placeholder="MM/DD/YYYY"
-          />
-        </div>
-      </div>
 
-      {/* UCE Team (Additional) Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-4">UCE Team (Additional)</h3>
-        <div className="mb-4">
-          <label htmlFor="firewallAclReqRaisedDate" className="block mb-2">Firewall ACL Req Raised Date:</label>
-          <DatePicker
-            id="firewallAclReqRaisedDate"
-            date={formData.firewallAclReqRaisedDate}
-            onDateChange={handleDateChange('firewallAclReqRaisedDate')}
-            placeholder="MM/DD/YYYY"
-          />
+        {/* Comments Section */}
+        <div className="w-full md:w-1/3 px-2 mb-4">
+          <h3 className="text-xl font-semibold mb-4 text-purple-600">Comments</h3>
+          <div className="mb-4">
+            <label htmlFor="comments" className="block mb-2">Project Comments:</label>
+            <textarea
+              id="comments"
+              name="comments"
+              value={formData.comments}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border rounded"
+              rows="10"
+            ></textarea>
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="firewallAclReqCompleteDate" className="block mb-2">Firewall ACL Req Complete Date:</label>
-          <DatePicker
-            id="firewallAclReqCompleteDate"
-            date={formData.firewallAclReqCompleteDate}
-            onDateChange={handleDateChange('firewallAclReqCompleteDate')}
-            placeholder="MM/DD/YYYY"
-          />
-        </div>
-      </div>
-
-      {/* Platform Engineering Team (Additional) Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-4">Platform Engineering Team (Additional)</h3>
-        <div className="mb-4">
-          <label htmlFor="projectBuildCompleteDate" className="block mb-2">Project Build Complete Date:</label>
-          <DatePicker
-            id="projectBuildCompleteDate"
-            date={formData.projectBuildCompleteDate}
-            onDateChange={handleDateChange('projectBuildCompleteDate')}
-            placeholder="MM/DD/YYYY"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="projectValidationDate" className="block mb-2">Project Validation Date:</label>
-          <DatePicker
-            id="projectValidationDate"
-            date={formData.projectValidationDate}
-            onDateChange={handleDateChange('projectValidationDate')}
-            placeholder="MM/DD/YYYY"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="projectHandoverDate" className="block mb-2">Project Handover Date:</label>
-          <DatePicker
-            id="projectHandoverDate"
-            date={formData.projectHandoverDate}
-            onDateChange={handleDateChange('projectHandoverDate')}
-            placeholder="MM/DD/YYYY"
-          />
-        </div>
-      </div>
-
-      {/* Comments Section */}
-      <div className="mb-6">
-        <label htmlFor="comments" className="block mb-2">Comments:</label>
-        <textarea
-          id="comments"
-          name="comments"
-          value={formData.comments}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border rounded"
-          rows="4"
-        ></textarea>
       </div>
 
       {/* Submit Button */}
-      <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-        Submit
-      </button>
+      <div className="mt-6 text-right">
+        <button type="submit" className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+          Submit
+        </button>
+      </div>
     </form>
   );
 };
