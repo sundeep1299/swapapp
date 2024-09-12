@@ -1,261 +1,279 @@
-import React, { useState } from 'react';
-import { DatePicker } from '@americanexpress/dls-react';
-import Search from './Search'; // Import the simplified Search component
+ Certainly! I'll guide you through creating a request processor using Spring WebFlux and PostgreSQL. This approach will leverage reactive programming for better scalability and performance. We'll use R2DBC (Reactive Relational Database Connectivity) for reactive database operations with PostgreSQL.
 
-const StatusForm = () => {
-  const [formData, setFormData] = useState({
-    projectName: '',
-    priority: '',
-    jiraLink: '',
-    arbApprovalDate: null,
-    projectBuildStartDate: null,
-    aclRaisedDate: null,
-    firewallAclReqRaisedDate: null,
-    firewallAclReqCompleteDate: null,
-    projectBuildCompleteDate: null,
-    projectValidationDate: null,
-    projectHandoverDate: null,
-    comments: ''
-  });
+Let's start from scratch:
 
-  const [searchTerm, setSearchTerm] = useState('');
+1. First, we'll set up a new Spring Boot project using Spring Initializr. You can do this via the web interface at https://start.spring.io/ or using the following curl command:
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
+```
+curl https://start.spring.io/starter.tgz -d dependencies=webflux,postgresql,r2dbc,lombok -d type=maven-project -d bootVersion=2.5.2 -d baseDir=request-processor | tar -xzvf -
+```
 
-  const handleDateChange = (name) => (event, date) => {
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: date
-    }));
-  };
+This will create a new directory `request-processor` with a basic project structure.
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
+2. Navigate to the project directory:
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    console.log('Form submitted:', formData);
-    console.log('Search term:', searchTerm);
-    // Add your form submission logic here
-  };
+```
+cd request-processor
+```
 
-  const formStyle = {
-    maxWidth: '1200px',
-    margin: '20px auto',
-    padding: '20px',
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-  };
+3. Open the `pom.xml` file and ensure it looks similar to this:
 
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    marginBottom: '20px'
-  };
 
-  const cellStyle = {
-    padding: '10px',
-    border: '1px solid #ddd'
-  };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '8px',
-    border: '1px solid #ccc',
-    borderRadius: '4px'
-  };
+<antArtifact identifier="spring-webflux-pom" type="application/vnd.ant.code" language="xml" title="Spring WebFlux Maven POM file">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.5.2</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.example</groupId>
+	<artifactId>request-processor</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>request-processor</name>
+	<description>Request Processor with Spring WebFlux and PostgreSQL</description>
+	<properties>
+		<java.version>11</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-r2dbc</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.r2dbc</groupId>
+			<artifactId>r2dbc-postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
-  const headingStyle = {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '20px'
-  };
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+</antArtifact>
 
-  const subHeadingStyle = {
-    fontSize: '18px',
-    fontWeight: 'bold',
-    marginBottom: '15px'
-  };
+4. Now, let's create our main application class. Open `src/main/java/com/example/requestprocessor/RequestProcessorApplication.java` and replace its contents with:
 
-  const buttonStyle = {
-    backgroundColor: '#007bff',
-    color: 'white',
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
-  };
 
-  return (
-    <form onSubmit={handleSubmit} style={formStyle}>
-      <h2 style={headingStyle}>Status Form</h2>
 
-      <Search onSearchChange={handleSearchChange} searchTerm={searchTerm} />
+<antArtifact identifier="spring-main-class" type="application/vnd.ant.code" language="java" title="Spring Boot Main Application Class">
+package com.example.requestprocessor;
 
-      <table style={tableStyle}>
-        <tbody>
-          <tr>
-            <td style={{...cellStyle, width: '25%', backgroundColor: '#f0f0f0'}}>
-              <h3 style={{...subHeadingStyle, color: '#007bff'}}>UCE Team</h3>
-            </td>
-            <td style={{...cellStyle, width: '25%', backgroundColor: '#f0f0f0'}}>
-              <h3 style={{...subHeadingStyle, color: '#28a745'}}>Platform Engineering Team</h3>
-            </td>
-            <td style={{...cellStyle, width: '25%', backgroundColor: '#f0f0f0'}}>
-              <h3 style={{...subHeadingStyle, color: '#007bff'}}>UCE Team (Continued)</h3>
-            </td>
-            <td style={{...cellStyle, width: '25%', backgroundColor: '#f0f0f0'}}>
-              <h3 style={{...subHeadingStyle, color: '#28a745'}}>Platform Engineering Team (Continued)</h3>
-            </td>
-          </tr>
-          <tr>
-            <td style={cellStyle}>
-              <label htmlFor="projectName">Project Name:</label>
-              <input
-                type="text"
-                id="projectName"
-                name="projectName"
-                value={formData.projectName}
-                onChange={handleInputChange}
-                style={inputStyle}
-                required
-              />
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="projectBuildStartDate">Project Build Start Date:</label>
-              <DatePicker
-                id="projectBuildStartDate"
-                date={formData.projectBuildStartDate}
-                onDateChange={handleDateChange('projectBuildStartDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="arbApprovalDate">ARB Approval Date:</label>
-              <DatePicker
-                id="arbApprovalDate"
-                date={formData.arbApprovalDate}
-                onDateChange={handleDateChange('arbApprovalDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="projectBuildCompleteDate">Project Build Complete Date:</label>
-              <DatePicker
-                id="projectBuildCompleteDate"
-                date={formData.projectBuildCompleteDate}
-                onDateChange={handleDateChange('projectBuildCompleteDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td style={cellStyle}>
-              <label htmlFor="priority">Priority:</label>
-              <select
-                id="priority"
-                name="priority"
-                value={formData.priority}
-                onChange={handleInputChange}
-                style={inputStyle}
-                required
-              >
-                <option value="">Select Priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Normal">Normal</option>
-              </select>
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="aclRaisedDate">ACL Raised Date:</label>
-              <DatePicker
-                id="aclRaisedDate"
-                date={formData.aclRaisedDate}
-                onDateChange={handleDateChange('aclRaisedDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="firewallAclReqRaisedDate">Firewall ACL Req Raised Date:</label>
-              <DatePicker
-                id="firewallAclReqRaisedDate"
-                date={formData.firewallAclReqRaisedDate}
-                onDateChange={handleDateChange('firewallAclReqRaisedDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="projectValidationDate">Project Validation Date:</label>
-              <DatePicker
-                id="projectValidationDate"
-                date={formData.projectValidationDate}
-                onDateChange={handleDateChange('projectValidationDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td style={cellStyle}>
-              <label htmlFor="jiraLink">Jira Link:</label>
-              <input
-                type="url"
-                id="jiraLink"
-                name="jiraLink"
-                value={formData.jiraLink}
-                onChange={handleInputChange}
-                style={inputStyle}
-                required
-              />
-            </td>
-            <td style={cellStyle}></td>
-            <td style={cellStyle}>
-              <label htmlFor="firewallAclReqCompleteDate">Firewall ACL Req Complete Date:</label>
-              <DatePicker
-                id="firewallAclReqCompleteDate"
-                date={formData.firewallAclReqCompleteDate}
-                onDateChange={handleDateChange('firewallAclReqCompleteDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-            <td style={cellStyle}>
-              <label htmlFor="projectHandoverDate">Project Handover Date:</label>
-              <DatePicker
-                id="projectHandoverDate"
-                date={formData.projectHandoverDate}
-                onDateChange={handleDateChange('projectHandoverDate')}
-                placeholder="MM/DD/YYYY"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-      <div style={{marginBottom: '20px'}}>
-        <h3 style={{...subHeadingStyle, color: '#6f42c1'}}>Comments</h3>
-        <textarea
-          id="comments"
-          name="comments"
-          value={formData.comments}
-          onChange={handleInputChange}
-          style={{...inputStyle, height: '100px', width: '100%'}}
-        ></textarea>
-      </div>
+@SpringBootApplication
+public class RequestProcessorApplication {
 
-      <div style={{textAlign: 'right'}}>
-        <button type="submit" style={buttonStyle}>
-          Submit
-        </button>
-      </div>
-    </form>
-  );
-};
+	public static void main(String[] args) {
+		SpringApplication.run(RequestProcessorApplication.class, args);
+	}
 
-export default StatusForm;
+}
+</antArtifact>
+
+5. Next, let's create a model for our requests. Create a new file `src/main/java/com/example/requestprocessor/model/Request.java`:
+
+
+
+<antArtifact identifier="request-model" type="application/vnd.ant.code" language="java" title="Request Model Class">
+package com.example.requestprocessor.model;
+
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
+
+import java.time.Instant;
+
+@Data
+@Table("requests")
+public class Request {
+    @Id
+    private Long id;
+    private String payload;
+    private String userId;
+    private Instant timestamp;
+}
+</antArtifact>
+
+6. Now, let's create a repository interface. Create a new file `src/main/java/com/example/requestprocessor/repository/RequestRepository.java`:
+
+
+
+<antArtifact identifier="request-repository" type="application/vnd.ant.code" language="java" title="Request Repository Interface">
+package com.example.requestprocessor.repository;
+
+import com.example.requestprocessor.model.Request;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+
+public interface RequestRepository extends ReactiveCrudRepository<Request, Long> {
+}
+</antArtifact>
+
+7. Let's create a service to handle business logic. Create a new file `src/main/java/com/example/requestprocessor/service/RequestService.java`:
+
+
+
+<antArtifact identifier="request-service" type="application/vnd.ant.code" language="java" title="Request Service Class">
+package com.example.requestprocessor.service;
+
+import com.example.requestprocessor.model.Request;
+import com.example.requestprocessor.repository.RequestRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+
+@Service
+@RequiredArgsConstructor
+public class RequestService {
+
+    private final RequestRepository requestRepository;
+
+    public Mono<Request> processRequest(String payload, String userId) {
+        Request request = new Request();
+        request.setPayload(payload);
+        request.setUserId(userId);
+        request.setTimestamp(Instant.now());
+        return requestRepository.save(request);
+    }
+}
+</antArtifact>
+
+8. Finally, let's create a controller to handle HTTP requests. Create a new file `src/main/java/com/example/requestprocessor/controller/RequestController.java`:
+
+
+
+<antArtifact identifier="request-controller" type="application/vnd.ant.code" language="java" title="Request Controller Class">
+package com.example.requestprocessor.controller;
+
+import com.example.requestprocessor.model.Request;
+import com.example.requestprocessor.service.RequestService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/requests")
+@RequiredArgsConstructor
+public class RequestController {
+
+    private final RequestService requestService;
+
+    @PostMapping
+    public Mono<Request> createRequest(@RequestBody RequestDTO requestDTO) {
+        return requestService.processRequest(requestDTO.getPayload(), requestDTO.getUserId());
+    }
+
+    // Inner class for the DTO
+    private static class RequestDTO {
+        private String payload;
+        private String userId;
+
+        // getters and setters
+        public String getPayload() { return payload; }
+        public void setPayload(String payload) { this.payload = payload; }
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
+    }
+}
+</antArtifact>
+
+9. Configure the database connection. Open `src/main/resources/application.properties` and add:
+
+```
+spring.r2dbc.url=r2dbc:postgresql://localhost:5432/your_database
+spring.r2dbc.username=your_username
+spring.r2dbc.password=your_password
+```
+
+Replace `your_database`, `your_username`, and `your_password` with your actual PostgreSQL details.
+
+10. Create the database table:
+
+```sql
+CREATE TABLE requests (
+    id SERIAL PRIMARY KEY,
+    payload TEXT,
+    user_id TEXT,
+    timestamp TIMESTAMP
+);
+```
+
+11. Build and run the application:
+
+```
+./mvnw spring-boot:run
+```
+
+Now you have a reactive Spring WebFlux application that can process requests and store them in PostgreSQL using R2DBC. You can send POST requests to `http://localhost:8080/api/requests` with a JSON body like this:
+
+```json
+{
+    "payload": "Your request payload",
+    "userId": "user123"
+}
+```
+
+This setup provides several advantages:
+
+1. It's fully reactive, allowing for better scalability and performance under high load.
+2. It uses Spring WebFlux, which is designed for building reactive web applications.
+3. It uses R2DBC for reactive database operations with PostgreSQL.
+4. The code is organized into layers (controller, service, repository) for better separation of concerns.
+
+To further enhance this application, you could consider:
+
+1. Adding validation for incoming requests.
+2. Implementing error handling and custom exceptions.
+3. Adding more complex querying capabilities in the repository.
+4. Implementing security measures.
+5. Adding metrics and monitoring.
+
+Would you like me to elaborate on any of these points or make any changes to the implementation?
