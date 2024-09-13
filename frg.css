@@ -63,16 +63,29 @@ const StatusForm = () => {
 
   const columnStyle = {
     flex: '1',
-    padding: '0 10px',
-    minWidth: '200px'
+    padding: '15px',
+    minWidth: '250px',
+    marginBottom: '20px',
+    borderRadius: '8px'
+  };
+
+  const uceColumnStyle = {
+    ...columnStyle,
+    backgroundColor: '#e6f2ff' // Light blue background for UCE
+  };
+
+  const platformColumnStyle = {
+    ...columnStyle,
+    backgroundColor: '#e6fff2' // Light green background for Platform Engineering
   };
 
   const inputStyle = {
     width: '100%',
     padding: '8px',
-    marginBottom: '10px',
+    marginBottom: '15px',
     border: '1px solid #ccc',
-    borderRadius: '4px'
+    borderRadius: '4px',
+    backgroundColor: 'white' // Ensure input background is white
   };
 
   const labelStyle = {
@@ -98,7 +111,7 @@ const StatusForm = () => {
 
       <div style={rowStyle}>
         {/* UCE Team Column 1 */}
-        <div style={columnStyle}>
+        <div style={uceColumnStyle}>
           <h3 style={{color: '#007bff', marginBottom: '15px'}}>UCE Team</h3>
           <div>
             <label htmlFor="projectName" style={labelStyle}>Project Name:</label>
@@ -140,10 +153,19 @@ const StatusForm = () => {
               required
             />
           </div>
+          <div>
+            <label htmlFor="arbApprovalDate" style={labelStyle}>ARB Approval Date:</label>
+            <DatePicker
+              id="arbApprovalDate"
+              date={formData.arbApprovalDate}
+              onDateChange={handleDateChange('arbApprovalDate')}
+              placeholder="MM/DD/YYYY"
+            />
+          </div>
         </div>
 
         {/* Platform Engineering Team Column 1 */}
-        <div style={columnStyle}>
+        <div style={platformColumnStyle}>
           <h3 style={{color: '#28a745', marginBottom: '15px'}}>Platform Engineering Team</h3>
           <div>
             <label htmlFor="projectBuildStartDate" style={labelStyle}>Project Build Start Date:</label>
@@ -166,17 +188,8 @@ const StatusForm = () => {
         </div>
 
         {/* UCE Team Column 2 */}
-        <div style={columnStyle}>
+        <div style={uceColumnStyle}>
           <h3 style={{color: '#007bff', marginBottom: '15px'}}>UCE Team (Continued)</h3>
-          <div>
-            <label htmlFor="arbApprovalDate" style={labelStyle}>ARB Approval Date:</label>
-            <DatePicker
-              id="arbApprovalDate"
-              date={formData.arbApprovalDate}
-              onDateChange={handleDateChange('arbApprovalDate')}
-              placeholder="MM/DD/YYYY"
-            />
-          </div>
           <div>
             <label htmlFor="firewallAclReqRaisedDate" style={labelStyle}>Firewall ACL Req Raised Date:</label>
             <DatePicker
@@ -198,7 +211,7 @@ const StatusForm = () => {
         </div>
 
         {/* Platform Engineering Team Column 2 */}
-        <div style={columnStyle}>
+        <div style={platformColumnStyle}>
           <h3 style={{color: '#28a745', marginBottom: '15px'}}>Platform Engineering Team (Continued)</h3>
           <div>
             <label htmlFor="projectBuildCompleteDate" style={labelStyle}>Project Build Complete Date:</label>
