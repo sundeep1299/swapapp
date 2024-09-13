@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DatePicker } from '@americanexpress/dls-react';
-import Search from './Search'; // Import the simplified Search component
+import Search from './Search';
+import './StatusForm.css';
 
 const StatusForm = () => {
   const [formData, setFormData] = useState({
@@ -46,93 +47,34 @@ const StatusForm = () => {
     // Add your form submission logic here
   };
 
-  const formStyle = {
-    maxWidth: '1200px',
-    margin: '20px auto',
-    padding: '20px',
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-  };
-
-  const rowStyle = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    margin: '0 -10px'
-  };
-
-  const columnStyle = {
-    flex: '1',
-    padding: '15px',
-    minWidth: '250px',
-    marginBottom: '20px',
-    borderRadius: '8px'
-  };
-
-  const uceColumnStyle = {
-    ...columnStyle,
-    backgroundColor: '#e6f2ff' // Light blue background for UCE
-  };
-
-  const platformColumnStyle = {
-    ...columnStyle,
-    backgroundColor: '#e6fff2' // Light green background for Platform Engineering
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '8px',
-    marginBottom: '15px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    backgroundColor: 'white' // Ensure input background is white
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '5px',
-    fontWeight: 'bold'
-  };
-
-  const buttonStyle = {
-    backgroundColor: '#007bff',
-    color: 'white',
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
-  };
-
   return (
-    <form onSubmit={handleSubmit} style={formStyle}>
-      <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Status Form</h2>
+    <form onSubmit={handleSubmit} className="status-form">
+      <h2>Status Form</h2>
 
       <Search onSearchChange={handleSearchChange} searchTerm={searchTerm} />
 
-      <div style={rowStyle}>
+      <div className="status-form-row">
         {/* UCE Team Column 1 */}
-        <div style={uceColumnStyle}>
-          <h3 style={{color: '#007bff', marginBottom: '15px'}}>UCE Team</h3>
+        <div className="status-form-column uce-column">
+          <h3>UCE Team</h3>
           <div>
-            <label htmlFor="projectName" style={labelStyle}>Project Name:</label>
+            <label htmlFor="projectName">Project Name:</label>
             <input
               type="text"
               id="projectName"
               name="projectName"
               value={formData.projectName}
               onChange={handleInputChange}
-              style={inputStyle}
               required
             />
           </div>
           <div>
-            <label htmlFor="priority" style={labelStyle}>Priority:</label>
+            <label htmlFor="priority">Priority:</label>
             <select
               id="priority"
               name="priority"
               value={formData.priority}
               onChange={handleInputChange}
-              style={inputStyle}
               required
             >
               <option value="">Select Priority</option>
@@ -142,19 +84,18 @@ const StatusForm = () => {
             </select>
           </div>
           <div>
-            <label htmlFor="jiraLink" style={labelStyle}>Jira Link:</label>
+            <label htmlFor="jiraLink">Jira Link:</label>
             <input
               type="url"
               id="jiraLink"
               name="jiraLink"
               value={formData.jiraLink}
               onChange={handleInputChange}
-              style={inputStyle}
               required
             />
           </div>
           <div>
-            <label htmlFor="arbApprovalDate" style={labelStyle}>ARB Approval Date:</label>
+            <label htmlFor="arbApprovalDate">ARB Approval Date:</label>
             <DatePicker
               id="arbApprovalDate"
               date={formData.arbApprovalDate}
@@ -165,10 +106,10 @@ const StatusForm = () => {
         </div>
 
         {/* Platform Engineering Team Column 1 */}
-        <div style={platformColumnStyle}>
-          <h3 style={{color: '#28a745', marginBottom: '15px'}}>Platform Engineering Team</h3>
+        <div className="status-form-column platform-column">
+          <h3>Platform Engineering Team</h3>
           <div>
-            <label htmlFor="projectBuildStartDate" style={labelStyle}>Project Build Start Date:</label>
+            <label htmlFor="projectBuildStartDate">Project Build Start Date:</label>
             <DatePicker
               id="projectBuildStartDate"
               date={formData.projectBuildStartDate}
@@ -177,7 +118,7 @@ const StatusForm = () => {
             />
           </div>
           <div>
-            <label htmlFor="aclRaisedDate" style={labelStyle}>ACL Raised Date:</label>
+            <label htmlFor="aclRaisedDate">ACL Raised Date:</label>
             <DatePicker
               id="aclRaisedDate"
               date={formData.aclRaisedDate}
@@ -188,10 +129,10 @@ const StatusForm = () => {
         </div>
 
         {/* UCE Team Column 2 */}
-        <div style={uceColumnStyle}>
-          <h3 style={{color: '#007bff', marginBottom: '15px'}}>UCE Team (Continued)</h3>
+        <div className="status-form-column uce-column">
+          <h3>UCE Team (Continued)</h3>
           <div>
-            <label htmlFor="firewallAclReqRaisedDate" style={labelStyle}>Firewall ACL Req Raised Date:</label>
+            <label htmlFor="firewallAclReqRaisedDate">Firewall ACL Req Raised Date:</label>
             <DatePicker
               id="firewallAclReqRaisedDate"
               date={formData.firewallAclReqRaisedDate}
@@ -200,7 +141,7 @@ const StatusForm = () => {
             />
           </div>
           <div>
-            <label htmlFor="firewallAclReqCompleteDate" style={labelStyle}>Firewall ACL Req Complete Date:</label>
+            <label htmlFor="firewallAclReqCompleteDate">Firewall ACL Req Complete Date:</label>
             <DatePicker
               id="firewallAclReqCompleteDate"
               date={formData.firewallAclReqCompleteDate}
@@ -211,10 +152,10 @@ const StatusForm = () => {
         </div>
 
         {/* Platform Engineering Team Column 2 */}
-        <div style={platformColumnStyle}>
-          <h3 style={{color: '#28a745', marginBottom: '15px'}}>Platform Engineering Team (Continued)</h3>
+        <div className="status-form-column platform-column">
+          <h3>Platform Engineering Team (Continued)</h3>
           <div>
-            <label htmlFor="projectBuildCompleteDate" style={labelStyle}>Project Build Complete Date:</label>
+            <label htmlFor="projectBuildCompleteDate">Project Build Complete Date:</label>
             <DatePicker
               id="projectBuildCompleteDate"
               date={formData.projectBuildCompleteDate}
@@ -223,7 +164,7 @@ const StatusForm = () => {
             />
           </div>
           <div>
-            <label htmlFor="projectValidationDate" style={labelStyle}>Project Validation Date:</label>
+            <label htmlFor="projectValidationDate">Project Validation Date:</label>
             <DatePicker
               id="projectValidationDate"
               date={formData.projectValidationDate}
@@ -232,7 +173,7 @@ const StatusForm = () => {
             />
           </div>
           <div>
-            <label htmlFor="projectHandoverDate" style={labelStyle}>Project Handover Date:</label>
+            <label htmlFor="projectHandoverDate">Project Handover Date:</label>
             <DatePicker
               id="projectHandoverDate"
               date={formData.projectHandoverDate}
@@ -243,21 +184,18 @@ const StatusForm = () => {
         </div>
       </div>
 
-      <div style={{marginTop: '20px'}}>
-        <label htmlFor="comments" style={labelStyle}>Project Comments:</label>
+      <div className="comments-section">
+        <label htmlFor="comments">Project Comments:</label>
         <textarea
           id="comments"
           name="comments"
           value={formData.comments}
           onChange={handleInputChange}
-          style={{...inputStyle, height: '100px', width: '100%'}}
         ></textarea>
       </div>
 
-      <div style={{textAlign: 'right', marginTop: '20px'}}>
-        <button type="submit" style={buttonStyle}>
-          Submit
-        </button>
+      <div className="submit-section">
+        <button type="submit">Submit</button>
       </div>
     </form>
   );
