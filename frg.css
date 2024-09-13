@@ -1,171 +1,252 @@
- You're right to ask about this crucial part of the process. The data will be inserted into the PostgreSQL database that you've configured in your `application.properties` file. Let me explain how this works in our Spring WebFlux application:
+import React, { useState } from 'react';
+import { DatePicker } from '@americanexpress/dls-react';
+import Search from './Search'; // Import the simplified Search component
 
-1. Database Configuration:
-   In your `src/main/resources/application.properties` file, you should have something like this:
+const StatusForm = () => {
+  const [formData, setFormData] = useState({
+    projectName: '',
+    priority: '',
+    jiraLink: '',
+    arbApprovalDate: null,
+    projectBuildStartDate: null,
+    aclRaisedDate: null,
+    firewallAclReqRaisedDate: null,
+    firewallAclReqCompleteDate: null,
+    projectBuildCompleteDate: null,
+    projectValidationDate: null,
+    projectHandoverDate: null,
+    comments: ''
+  });
 
-   ```
-   spring.r2dbc.url=r2dbc:postgresql://localhost:5432/your_database
-   spring.r2dbc.username=your_username
-   spring.r2dbc.password=your_password
-   ```
+  const [searchTerm, setSearchTerm] = useState('');
 
-   This configuration tells Spring how to connect to your PostgreSQL database using R2DBC (Reactive Relational Database Connectivity).
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
 
-2. Repository Layer:
-   The `RequestRepository` interface extends `ReactiveCrudRepository`, which provides reactive CRUD operations for the `Request` entity.
+  const handleDateChange = (name) => (event, date) => {
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: date
+    }));
+  };
 
-3. Service Layer:
-   In the `RequestService`, we're using the `requestRepository.save()` method to persist the data:
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
-   ```java
-   public Flux<Request> processRequests(Flux<RequestDTO> requestDTOs) {
-       return requestDTOs
-           .map(this::convertToRequest)
-           .flatMap(requestRepository::save);
-   }
-   ```
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    console.log('Form submitted:', formData);
+    console.log('Search term:', searchTerm);
+    // Add your form submission logic here
+  };
 
-   The `flatMap(requestRepository::save)` part is where each `Request` object is saved to the database.
+  const formStyle = {
+    maxWidth: '1200px',
+    margin: '20px auto',
+    padding: '20px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+  };
 
-4. How it works:
-   - When a POST request comes in, the `RequestController` receives it and passes the data to the `RequestService`.
-   - The `RequestService` converts the DTO to a `Request` entity and calls `requestRepository.save()`.
-   - The `save()` method, provided by Spring Data R2DBC, generates and executes the appropriate SQL INSERT statement.
-   - The data is inserted into the `requests` table in your PostgreSQL database.
+  const tableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginBottom: '20px'
+  };
 
-To make this clearer, let's add some logging to the `RequestService`:
+  const cellStyle = {
+    padding: '10px',
+    border: '1px solid #ccc'
+  };
 
+  const headerCellStyle = {
+    ...cellStyle,
+    backgroundColor: '#f0f0f0',
+    fontWeight: 'bold'
+  };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '8px',
+    border: '1px solid #ccc',
+    borderRadius: '4px'
+  };
 
-<antArtifact identifier="request-service-with-logging" type="application/vnd.ant.code" language="java" title="Request Service with Logging">
-package com.example.requestprocessor.service;
+  const buttonStyle = {
+    backgroundColor: '#007bff',
+    color: 'white',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  };
 
-import com.example.requestprocessor.model.Request;
-import com.example.requestprocessor.repository.RequestRepository;
-import com.example.requestprocessor.controller.RequestController.RequestDTO;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
+  return (
+    <form onSubmit={handleSubmit} style={formStyle}>
+      <h2 style={{fontSize: '24px', fontWeight: 'bold', marginBottom: '20px'}}>Status Form</h2>
 
-import java.time.Instant;
+      <Search onSearchChange={handleSearchChange} searchTerm={searchTerm} />
 
-@Service
-@RequiredArgsConstructor
-public class RequestService {
+      <table style={tableStyle}>
+        <thead>
+          <tr>
+            <th style={headerCellStyle}>UCE Team</th>
+            <th style={headerCellStyle}>Platform Engineering Team</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style={cellStyle}>
+              <div>
+                <label htmlFor="projectName">Project Name:</label>
+                <input
+                  type="text"
+                  id="projectName"
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleInputChange}
+                  style={inputStyle}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="priority">Priority:</label>
+                <select
+                  id="priority"
+                  name="priority"
+                  value={formData.priority}
+                  onChange={handleInputChange}
+                  style={inputStyle}
+                  required
+                >
+                  <option value="">Select Priority</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Normal">Normal</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="jiraLink">Jira Link:</label>
+                <input
+                  type="url"
+                  id="jiraLink"
+                  name="jiraLink"
+                  value={formData.jiraLink}
+                  onChange={handleInputChange}
+                  style={inputStyle}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="arbApprovalDate">ARB Approval Date:</label>
+                <DatePicker
+                  id="arbApprovalDate"
+                  date={formData.arbApprovalDate}
+                  onDateChange={handleDateChange('arbApprovalDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+            </td>
+            <td style={cellStyle}>
+              <div>
+                <label htmlFor="projectBuildStartDate">Project Build Start Date:</label>
+                <DatePicker
+                  id="projectBuildStartDate"
+                  date={formData.projectBuildStartDate}
+                  onDateChange={handleDateChange('projectBuildStartDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+              <div>
+                <label htmlFor="aclRaisedDate">ACL Raised Date:</label>
+                <DatePicker
+                  id="aclRaisedDate"
+                  date={formData.aclRaisedDate}
+                  onDateChange={handleDateChange('aclRaisedDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style={cellStyle}>
+              <div>
+                <label htmlFor="firewallAclReqRaisedDate">Firewall ACL Req Raised Date:</label>
+                <DatePicker
+                  id="firewallAclReqRaisedDate"
+                  date={formData.firewallAclReqRaisedDate}
+                  onDateChange={handleDateChange('firewallAclReqRaisedDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+              <div>
+                <label htmlFor="firewallAclReqCompleteDate">Firewall ACL Req Complete Date:</label>
+                <DatePicker
+                  id="firewallAclReqCompleteDate"
+                  date={formData.firewallAclReqCompleteDate}
+                  onDateChange={handleDateChange('firewallAclReqCompleteDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+            </td>
+            <td style={cellStyle}>
+              <div>
+                <label htmlFor="projectBuildCompleteDate">Project Build Complete Date:</label>
+                <DatePicker
+                  id="projectBuildCompleteDate"
+                  date={formData.projectBuildCompleteDate}
+                  onDateChange={handleDateChange('projectBuildCompleteDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+              <div>
+                <label htmlFor="projectValidationDate">Project Validation Date:</label>
+                <DatePicker
+                  id="projectValidationDate"
+                  date={formData.projectValidationDate}
+                  onDateChange={handleDateChange('projectValidationDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+              <div>
+                <label htmlFor="projectHandoverDate">Project Handover Date:</label>
+                <DatePicker
+                  id="projectHandoverDate"
+                  date={formData.projectHandoverDate}
+                  onDateChange={handleDateChange('projectHandoverDate')}
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-    private static final Logger logger = LoggerFactory.getLogger(RequestService.class);
-    private final RequestRepository requestRepository;
+      <div style={{marginBottom: '20px'}}>
+        <label htmlFor="comments">Project Comments:</label>
+        <textarea
+          id="comments"
+          name="comments"
+          value={formData.comments}
+          onChange={handleInputChange}
+          style={{...inputStyle, height: '100px', width: '100%'}}
+        ></textarea>
+      </div>
 
-    public Flux<Request> processRequests(Flux<RequestDTO> requestDTOs) {
-        return requestDTOs
-            .map(this::convertToRequest)
-            .doOnNext(request -> logger.info("Processing request: {}", request))
-            .flatMap(request -> 
-                requestRepository.save(request)
-                    .doOnSuccess(savedRequest -> 
-                        logger.info("Request saved to database: {}", savedRequest)
-                    )
-            );
-    }
+      <div style={{textAlign: 'right'}}>
+        <button type="submit" style={buttonStyle}>
+          Submit
+        </button>
+      </div>
+    </form>
+  );
+};
 
-    private Request convertToRequest(RequestDTO dto) {
-        Request request = new Request();
-        request.setPayload(String.valueOf(dto.getPayload()));
-        request.setUserId(dto.getUserId());
-        request.setTimestamp(Instant.now());
-        return request;
-    }
-}
-</antArtifact>
-
-With these logs, you'll be able to see each request as it's processed and confirm when it's saved to the database.
-
-To verify that the data is indeed being stored in your database, you can:
-
-1. Use a PostgreSQL client (like pgAdmin or psql) to query the `requests` table:
-
-   ```sql
-   SELECT * FROM requests ORDER BY timestamp DESC LIMIT 10;
-   ```
-
-2. Add a GET endpoint to your `RequestController` to retrieve recent requests:
-
-
-
-<antArtifact identifier="request-controller-with-get" type="application/vnd.ant.code" language="java" title="Request Controller with GET Endpoint">
-package com.example.requestprocessor.controller;
-
-import com.example.requestprocessor.model.Request;
-import com.example.requestprocessor.service.RequestService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-
-@RestController
-@RequestMapping("/api/requests")
-@RequiredArgsConstructor
-public class RequestController {
-
-    private final RequestService requestService;
-
-    @PostMapping("/batch")
-    public Flux<Request> createRequests(@RequestBody Flux<RequestDTO> requestDTOs) {
-        return requestService.processRequests(requestDTOs);
-    }
-
-    @GetMapping("/recent")
-    public Flux<Request> getRecentRequests() {
-        return requestService.getRecentRequests();
-    }
-
-    // RequestDTO inner class remains the same
-}
-</antArtifact>
-
-Then, add the corresponding method to your `RequestService`:
-
-
-
-<antArtifact identifier="request-service-with-recent" type="application/vnd.ant.code" language="java" title="Request Service with Recent Requests Method">
-package com.example.requestprocessor.service;
-
-import com.example.requestprocessor.model.Request;
-import com.example.requestprocessor.repository.RequestRepository;
-import com.example.requestprocessor.controller.RequestController.RequestDTO;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-
-import java.time.Instant;
-
-@Service
-@RequiredArgsConstructor
-public class RequestService {
-
-    private static final Logger logger = LoggerFactory.getLogger(RequestService.class);
-    private final RequestRepository requestRepository;
-
-    // existing processRequests method remains the same
-
-    public Flux<Request> getRecentRequests() {
-        return requestRepository.findAll()
-            .take(10)
-            .doOnNext(request -> logger.info("Retrieved recent request: {}", request));
-    }
-
-    // existing convertToRequest method remains the same
-}
-</antArtifact>
-
-Now you can use Postman to send a GET request to `http://localhost:8080/api/requests/recent` to see the most recently stored requests.
-
-This setup ensures that:
-1. The requests you send are processed by the application.
-2. Each request is saved to the PostgreSQL database configured in your `application.properties`.
-3. You can verify the data storage both through database queries and through the application itself.
-
-Remember, the reactive nature of WebFlux means that the database operations are non-blocking, allowing your application to handle many concurrent requests efficiently.
+export default StatusForm;
