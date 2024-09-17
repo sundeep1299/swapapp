@@ -1,91 +1,49 @@
-.status-form {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+ Creating a patent for an "Enterprise Provisioning Optimizer for Deploying Ephemeral Workloads" is a complex process. Here's a suggested flow to help you write your patent:
 
-.status-form h2 {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
+1. Title and Abstract
+   - Clearly state the title
+   - Provide a brief summary of the invention (150-200 words)
 
-.status-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  margin: 0 -10px;
-}
+2. Background
+   - Describe the current state of technology
+   - Explain the problems or limitations in existing solutions
+   - Highlight the need for your invention
 
-.status-form-column {
-  flex: 1;
-  padding: 15px;
-  min-width: 250px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-}
+3. Summary of the Invention
+   - Briefly describe your solution
+   - Outline the key advantages and improvements over existing technology
 
-.uce-column {
-  background-color: #e6f2ff;
-}
+4. Detailed Description
+   - Provide a comprehensive explanation of your invention
+   - Include:
+     a. System architecture
+     b. Components of the orchestration layer
+     c. Queuing mechanism
+     d. Workload processing flow
+     e. Integration with GCP
+     f. Optimization techniques for ephemeral workloads
 
-.platform-column {
-  background-color: #e6fff2;
-}
+5. Drawings and Diagrams
+   - Include visual representations of your system
+   - Show the flow of data and processes
 
-.status-form-column h3 {
-  margin-bottom: 15px;
-}
+6. Claims
+   - List specific claims about what your invention does and how it's unique
 
-.uce-column h3 {
-  color: #007bff;
-}
+7. Method of Operation
+   - Describe step-by-step how your system works
+   - Include algorithms or pseudocode if applicable
 
-.platform-column h3 {
-  color: #28a745;
-}
+8. Use Cases
+   - Provide examples of how the invention can be applied
 
-.status-form input,
-.status-form select,
-.status-form textarea {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: white;
-}
+9. Advantages and Benefits
+   - Elaborate on the improvements your invention offers
 
-.status-form label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
+10. Alternative Embodiments
+    - Describe potential variations or adaptations of your invention
 
-.status-form textarea {
-  height: 100px;
-}
+11. Conclusion
+    - Summarize the key points and reiterate the invention's significance
 
-.status-form button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.status-form button:hover {
-  background-color: #0056b3;
-}
-
-.comments-section {
-  margin-top: 20px;
-}
-
-.submit-section {
-  text-align: right;
-  margin-top: 20px;
-}
+Would you like me to elaborate on any specific section of this patent writing flow?
