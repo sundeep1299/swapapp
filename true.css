@@ -1,1 +1,22 @@
 
+# Background
+
+In the rapidly evolving landscape of cloud computing and enterprise software deployment, the efficient management of ephemeral resources has become increasingly critical. Traditional deployment processes, which rely heavily on static GitHub repositories and Terraform workspaces, have shown significant limitations in addressing the dynamic nature of modern cloud environments, particularly when dealing with ephemeral workloads.
+
+The current state of technology in cloud resource provisioning is characterized by several key inefficiencies:
+
+1. Static Nature of Repositories: GitHub repositories, widely used for storing infrastructure-as-code and configuration files, are inherently static. This static nature creates a mismatch with the dynamic requirements of ephemeral workloads, leading to delays in deployment and difficulties in rapid scaling.
+
+2. Terraform Workspace Limitations: While Terraform has become a standard tool for infrastructure provisioning, its workspace model is not optimized for the rapid creation and destruction of ephemeral resources. The static nature of Terraform workspaces can lead to resource conflicts and inefficient use of cloud resources.
+
+3. Sequential Processing: Traditional deployment processes often rely on sequential execution of Terraform runs, which can significantly slow down the deployment of multiple workloads, especially in high-demand scenarios.
+
+4. Dependency on External Systems: The reliance on external code repositories like GitHub introduces potential points of failure and can impact the entire deployment workflow if there are connectivity issues or repository downtime.
+
+5. Scalability Challenges: As enterprises increasingly adopt cloud-native and AI/ML workloads, the demand for rapid, large-scale deployments of ephemeral resources has grown. Traditional methods struggle to meet these scalability requirements without compromising on performance or cost-effectiveness.
+
+6. Resource Utilization Inefficiencies: The static nature of traditional deployments often leads to suboptimal resource utilization, with resources being over-provisioned or under-utilized due to the lack of dynamic adjustment capabilities.
+
+These limitations have created a pressing need for a more agile, efficient, and scalable approach to deploying ephemeral resources in enterprise cloud environments. The inability to quickly provision and de-provision resources in response to fluctuating demands results in increased costs, reduced operational efficiency, and limitations on the types of workloads that can be effectively managed in cloud environments.
+
+The invention presented in this patent addresses these critical issues by introducing a "No Code Provisioning" process, designed to overcome the inefficiencies inherent in traditional deployment methods and provide a more dynamic, responsive solution for managing ephemeral resources in modern cloud computing scenarios.
