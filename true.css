@@ -1,50 +1,54 @@
- Based on the code shown in Image 1 and the warning message in Image 2, it appears you're encountering an issue with the image in your footer. Let's analyze the problem and suggest a solution:
+import React, { useState } from 'react';
+import { Search, SearchResults, SearchResult } from '@americanexpress/dls-react';
 
-1. In Image 1, you've added a background image to a div within the footer:
+const SearchComponent = () => {
+  const [searchValue, setSearchValue] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
 
-```jsx
-<div className="hero dls-white-filter" style={{
-backgroundImage: "url(" + "https://www.aexp-static.com/cdaas/one/statics/@americanexpress/static-assets/2.29.1/package/dist/img/brand/flourish.svg" + ")",
-backgroundRepeat: "no-repeat",
-backgroundPosition: "90% -10%"
-}}></div>
-```
+  const handleSearch = (value) => {
+    // This is where you'd typically make an API call to get search results
+    // For this example, we'll just simulate some results
+    const mockResults = [
+      { id: 1, title: 'Result 1', description: 'Description for result 1' },
+      { id: 2, title: 'Result 2', description: 'Description for result 2' },
+      { id: 3, title: 'Result 3', description: 'Description for result 3' },
+    ];
+    setSearchResults(mockResults);
+  };
 
-2. In Image 2, we can see warnings related to string concatenation:
+  const handleChange = (event) => {
+    setSearchValue(event.target.value);
+    handleSearch(event.target.value);
+  };
 
-```
-Unexpected string concatenation of literals
-```
+  const noRefCheck = () => {
+    // This function is empty in the original code, but you can add functionality if needed
+  };
 
-This warning is likely related to the way you're constructing the URL for the background image.
+  return (
+    <div className="col-md-6">
+      <Search
+        autoFocus=""
+        buttonSearch
+        clearButtonLabel="Clear text"
+        id="dls-search"
+        labelText="Questions and answers"
+        onChange={handleChange}
+        placeholder="Search..."
+        searchButtonLabel="Search"
+        value={searchValue}
+      />
+      {searchResults.length > 0 && (
+        <SearchResults>
+          {searchResults.map((result) => (
+            <SearchResult key={result.id} title={result.title}>
+              {result.description}
+            </SearchResult>
+          ))}
+        </SearchResults>
+      )}
+    </div>
+  );
+};
 
-To resolve this issue and potentially make the image visible, try the following:
-
-1. Remove the string concatenation and use a template literal instead:
-
-```jsx
-<div className="hero dls-white-filter" style={{
-  backgroundImage: `url(https://www.aexp-static.com/cdaas/one/statics/@americanexpress/static-assets/2.29.1/package/dist/img/brand/flourish.svg)`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "90% -10%"
-}}></div>
-```
-
-2. Make sure the URL is correct and accessible. If the image is not loading, it could be due to a network issue or the image might not exist at that location.
-
-3. Check if the div has any content or dimensions. If it's empty and has no set height, the background image might not be visible. You could try adding a minimum height:
-
-```jsx
-<div className="hero dls-white-filter" style={{
-  backgroundImage: `url(https://www.aexp-static.com/cdaas/one/statics/@americanexpress/static-assets/2.29.1/package/dist/img/brand/flourish.svg)`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "90% -10%",
-  minHeight: "100px"  // Adjust this value as needed
-}}></div>
-```
-
-4. Ensure that the parent elements, including the footer, have sufficient height and are not hidden by other elements.
-
-5. Check your CSS (not visible in the provided code) to make sure there are no styles overriding or hiding this div.
-
-If you've tried these steps and are still encountering issues, you might want to use browser developer tools to inspect the element and see if there are any CSS conflicts or if the image is actually loading but not displaying for some reason.
+export default SearchComponent;
