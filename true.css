@@ -1,37 +1,93 @@
- To add inline CSS for the `h1` element in your `UserInfo` component, you can modify the JSX to include a `style` prop. Here's how you can do it:
+ To center the SearchComponent in the header of your App.js, we can add some inline styles to both the header and the SearchComponent. Here's how you can modify your App.js to achieve this:
 
 
 
-Update your `UserInfo` component like this:
+1. First, let's modify your App.js:
 
 ```jsx
-const UserInfo = () => {
-  const { user } = useAuthBlueSso();
-  console.log(user);
+function App() {
   return (
-    <h1 style={{
-      fontSize: '24px',
-      color: '#333',
-      fontWeight: 'bold',
-      margin: '10px 0',
-      padding: '5px',
-      borderBottom: '2px solid #006fcf'
+    <AuthBlueSso>
+      <div className="App">
+        <header style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '20px'
+        }}>
+          <img src={Logo} alt="Lumi OneConsole" className="logo" />
+          <h1>OneConsole</h1>
+          <UserInfo />
+          <div style={{
+            width: '100%',
+            maxWidth: '600px',
+            margin: '20px 0'
+          }}>
+            <SearchComponent />
+          </div>
+        </header>
+        <main>
+        </main>
+        <footer>
+          <img src={footerLogo} alt="Lumi OneConsole" className="logo" />
+        </footer>
+      </div>
+    </AuthBlueSso>
+  );
+}
+```
+
+2. Now, let's modify your SearchComponent.js to add some inline styles:
+
+```jsx
+const SearchComponent = () => {
+  // ... existing state and functions ...
+
+  return (
+    <div className="col-md-6" style={{
+      width: '100%',
+      maxWidth: '600px',
+      margin: '0 auto'
     }}>
-      Hi {user?.attributes?.firstName}
-    </h1>
-  )
+      <Search
+        autoFocus=""
+        buttonSearch
+        clearButtonLabel="Clear text"
+        id="dls-search"
+        labelText="Questions and answers"
+        onChange={handleChange}
+        placeholder="Search..."
+        searchButtonLabel="Search"
+        value={searchValue}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      />
+      {searchResults.length > 0 && (
+        <SearchResults style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          marginTop: '10px'
+        }}>
+          {searchResults.map((result) => (
+            <SearchResult key={result.id} title={result.title}>
+              {result.description}
+            </SearchResult>
+          ))}
+        </SearchResults>
+      )}
+    </div>
+  );
 };
 ```
 
-This inline style will:
+These changes will:
 
-1. Set the font size to 24 pixels
-2. Set the text color to a dark gray (#333)
-3. Make the text bold
-4. Add some margin above and below the h1
-5. Add some padding inside the h1
-6. Add a blue bottom border (using the AMEX blue color)
+1. Center the content in the header, including the logo, title, UserInfo, and SearchComponent.
+2. Limit the width of the SearchComponent to 600px maximum, centered within the header.
+3. Ensure the Search input and results take up the full width of their container.
 
-You can adjust these values as needed to match your desired design. Remember that inline styles in React use camelCase for CSS properties (e.g., `fontSize` instead of `font-size`) and the values are strings (except for numbers, which don't need quotes).
+Remember that using inline styles in React requires camelCase property names (e.g., `maxWidth` instead of `max-width`) and values should be strings (except for numbers).
 
-If you find yourself adding more styles or want to reuse these styles, consider moving them to a separate CSS file or creating a styled component instead of using inline styles.
+If you find these inline styles becoming too complex or you need to reuse them, consider moving them to a separate CSS file or using a CSS-in-JS solution like styled-components or Emotion.
