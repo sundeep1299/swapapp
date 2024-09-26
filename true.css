@@ -1,84 +1,37 @@
-/* SearchComponent.css */
+ To add inline CSS for the `h1` element in your `UserInfo` component, you can modify the JSX to include a `style` prop. Here's how you can do it:
 
-.header-search {
-  display: flex;
-  align-items: center;
-  margin: 10px 0;
-}
 
-.header-search .col-md-6 {
-  width: 100%;
-  max-width: 500px;
-}
 
-.header-search .dls-search-container {
-  width: 100%;
-}
+Update your `UserInfo` component like this:
 
-.header-search .dls-search-input {
-  width: 100%;
-  height: 40px;
-  padding: 8px 12px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  transition: border-color 0.3s ease;
-}
+```jsx
+const UserInfo = () => {
+  const { user } = useAuthBlueSso();
+  console.log(user);
+  return (
+    <h1 style={{
+      fontSize: '24px',
+      color: '#333',
+      fontWeight: 'bold',
+      margin: '10px 0',
+      padding: '5px',
+      borderBottom: '2px solid #006fcf'
+    }}>
+      Hi {user?.attributes?.firstName}
+    </h1>
+  )
+};
+```
 
-.header-search .dls-search-input:focus {
-  border-color: #006fcf;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 111, 207, 0.2);
-}
+This inline style will:
 
-.header-search .dls-search-button {
-  height: 40px;
-  padding: 0 16px;
-  font-size: 16px;
-  color: #fff;
-  background-color: #006fcf;
-  border: none;
-  border-radius: 0 4px 4px 0;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
+1. Set the font size to 24 pixels
+2. Set the text color to a dark gray (#333)
+3. Make the text bold
+4. Add some margin above and below the h1
+5. Add some padding inside the h1
+6. Add a blue bottom border (using the AMEX blue color)
 
-.header-search .dls-search-button:hover {
-  background-color: #0056a4;
-}
+You can adjust these values as needed to match your desired design. Remember that inline styles in React use camelCase for CSS properties (e.g., `fontSize` instead of `font-size`) and the values are strings (except for numbers, which don't need quotes).
 
-.header-search .dls-search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  max-height: 300px;
-  overflow-y: auto;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.header-search .dls-search-result {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.header-search .dls-search-result:hover {
-  background-color: #f0f0f0;
-}
-
-.header-search .dls-search-result a {
-  color: #333;
-  text-decoration: none;
-}
-
-.header-search .dls-search-no-results {
-  padding: 12px;
-  color: #666;
-  font-style: italic;
-}
+If you find yourself adding more styles or want to reuse these styles, consider moving them to a separate CSS file or creating a styled component instead of using inline styles.
