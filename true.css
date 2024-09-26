@@ -1,52 +1,61 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Search, SearchResults, SearchResult } from '@americanexpress/dls-react';
 
-const SearchComponent = () => {
-  const [searchValue, setSearchValue] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+const SearchComponent = ({
+  value,
+  placeholder,
+  labelText,
+  buttonSearch,
+  disabled,
+  showLabelText,
+  searchButtonLabel,
+  clearButtonLabel,
+  loading,
+  readOnly
+}) => {
+  const options = ["AMEX 1", "Customer 1", "Question 1", "Question 2", "Question 3"];
+  const [filter, setFilter] = useState("");
 
-  const handleSearch = (value) => {
-    // This is where you'd typically make an API call to get search results
-    // For this example, we'll just simulate some results
-    const mockResults = [
-      { id: 1, title: 'Result 1', description: 'Description for result 1' },
-      { id: 2, title: 'Result 2', description: 'Description for result 2' },
-      { id: 3, title: 'Result 3', description: 'Description for result 3' },
-    ];
-    setSearchResults(mockResults);
-  };
+  const filterData = useMemo(() => 
+    options.filter(option => 
+      option.toLowerCase().includes(filter.toLowerCase()) || filter === ""
+    ), 
+    [filter]
+  );
 
-  const handleChange = (event) => {
-    setSearchValue(event.target.value);
-    handleSearch(event.target.value);
-  };
-
-  const noRefCheck = () => {
-    // This function is empty in the original code, but you can add functionality if needed
-  };
+  const handleChange = (event) => setFilter(event.target.value);
 
   return (
     <div className="col-md-6">
-      <Search
-        autoFocus=""
-        buttonSearch
-        clearButtonLabel="Clear text"
-        id="dls-search"
-        labelText="Questions and answers"
-        onChange={handleChange}
-        placeholder="Search..."
-        searchButtonLabel="Search"
-        value={searchValue}
-      />
-      {searchResults.length > 0 && (
-        <SearchResults>
-          {searchResults.map((result) => (
-            <SearchResult key={result.id} title={result.title}>
-              {result.description}
-            </SearchResult>
-          ))}
-        </SearchResults>
-      )}
+      <Search 
+        id="df-search" 
+        disabled={disabled} 
+        value={filter || ""} 
+        onChange={handleChange} 
+        buttonSearch={buttonSearch}
+        placeholder={placeholder}
+        searchButtonLabel={searchButtonLabel} 
+        clearButtonLabel={clearButtonLabel} 
+        labelText={labelText} 
+        readOnly={readOnly} 
+        autoFocus={filter}
+      >
+        {filter.length > 0 && (
+          <SearchResults>
+            {filterData.length > 0 ? (
+              filterData.map((option, index) => (
+                <SearchResult key={option} id={`df-search-result-${index}`}>
+                  <a tabIndex="-1" className="pad-1-lr display-block link-underlined">{option}</a>
+                </SearchResult>
+              ))
+            ) : (
+              <li className="pad-1" role="option" aria-selected="false">
+                No results for "{filter}"
+              </li>
+            )}
+          </SearchResults>
+        )}
+      </Search>
     </div>
   );
 };
