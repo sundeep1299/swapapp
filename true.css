@@ -1,13 +1,34 @@
+ To use your logo image file "lumiclear.png" in the header, you need to modify the import statement and the Logo component usage. Here's how you can do that:
+
+1. Update the import statement:
+Replace this line:
+```javascript
+import { Logo } from './assets/lumiclear.png';
+```
+with:
+```javascript
+import Logo from './assets/lumiclear.png';
+```
+
+2. Use the Logo in the header:
+Replace the existing Logo component with an img tag:
+```jsx
+<img src={Logo} alt="Lumi OneConcole" className="logo" />
+```
+
+Here's the modified code:
+
+```jsx
 import React from 'react';
 import './App.css';
-import { Logo } from '@americanexpress/dls-react';
+import Logo from './assets/lumiclear.png';
 import UserInfo from './components/UserInfo';
 
 function App() {
   return (
     <div className="App">
       <header>
-        <Logo alt="American Express" size="LARGE" styleType="line" />
+        <img src={Logo} alt="Lumi OneConcole" className="logo" />
         <h1>Lumi OneConsole</h1>
         <UserInfo />
       </header>
@@ -19,3 +40,8 @@ function App() {
 }
 
 export default App;
+```
+
+This change imports the image file directly and uses it as the source for an img tag. You may want to add some CSS to style the logo appropriately, such as setting its size or adding margins.
+
+Would you like me to explain any part of these changes in more detail?
