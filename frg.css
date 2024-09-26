@@ -2,20 +2,29 @@ import React, { useState, useEffect } from 'react';
 
 const UserInfo = () => {
   const [userData, setUserData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('https://lumicommonsvc.aexp.com/user');
+        const response = await fetch('/user');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setUserData(data);
       } catch (error) {
         console.error('Error fetching user data:', error);
+        setError(error.message);
       }
     };
 
     fetchUserData();
   }, []);
+
+  if (error) {
+    return <div className="user-info error">Error: {error}</div>;
+  }
 
   return (
     <div className="user-info">
