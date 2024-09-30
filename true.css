@@ -1,5 +1,49 @@
-The invention incorporates an advanced automated failover and recovery system for critical workloads, seamlessly integrated with the existing orchestration layer. This system continuously monitors the health and performance of designated critical workloads across the enterprise cloud environment. Upon detecting any signs of failure or performance degradation, the system instantly initiates a predefined failover protocol. This protocol automatically redirects traffic to pre-provisioned standby resources, which are maintained in a state of readiness through regular synchronization and updates. The failover process is executed with minimal latency, leveraging the invention's intelligent scheduling and resource allocation capabilities to ensure optimal performance even during crisis scenarios. 
+ To securely use the username and password in your POST request, you should:
 
-For each critical workload, the system maintains a detailed recovery plan, which includes specific steps for data restoration, application redeployment, and service resumption. These plans are automatically executed as part of the failover process, with the orchestration layer managing the complex sequence of events required for a full recovery. The system also provides real-time status updates to relevant stakeholders throughout the failover and recovery process, utilizing the existing alert mechanisms. 
+1. Store these credentials securely, preferably in environment variables.
+2. Use them in the body of your POST request.
 
-Moreover, the automated failover system is designed to work in concert with the budget control features, ensuring that even in emergency situations, resource allocation remains within predefined fiscal constraints. This approach not only minimizes downtime and data loss for critical business operations but also maintains the cost-effectiveness and resource optimization principles core to the invention. Following each failover event, the system conducts an automated post-mortem analysis, feeding insights back into the orchestration layer to continually refine and improve the failover and recovery processes, thereby enhancing the overall resilience of the enterprise cloud environment.
+Here's how you can modify your `fetchProjects` function to use these credentials:
+
+```javascript
+const fetchProjects = async () => {
+  setLoading(true);
+  try {
+    // Step 1: Get the token
+    const tokenResponse = await fetch('https://aesp-dev.oktapreview.com/oauth2/aus1kh0p6uhkgDIV0h8/v1/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'password',
+        username: process.env.REACT_APP_AUTH_USERNAME,
+        password: process.env.REACT_APP_AUTH_PASSWORD,
+        scope: 'openid'
+      })
+    });
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    // Rest of your code to fetch projects...
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+To use environment variables in a React app:
+
+1. Create a `.env` file in your project root:
+   ```
+   REACT_APP_AUTH_USERNAME=your_username_here
+   REACT_APP_AUTH_PASSWORD=your_password_here
+   ```
+
+2. Access these in your code using `process.env.REACT_APP_AUTH_USERNAME` and `process.env.REACT_APP_AUTH_PASSWORD`.
+
+3. Make sure to add `.env` to your `.gitignore` file to prevent committing sensitive information.
+
+This approach keeps your credentials secure and out of your source code. Remember to set up these environment variables in your deployment environment as well.
