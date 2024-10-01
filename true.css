@@ -1,49 +1,79 @@
- To securely use the username and password in your POST request, you should:
-
-1. Store these credentials securely, preferably in environment variables.
-2. Use them in the body of your POST request.
-
-Here's how you can modify your `fetchProjects` function to use these credentials:
+ Based on the new information from the image, I'll update the ProjectSelection.js code to fetch GCP cluster resources using the GET method shown. Here's how you can modify your code:
 
 ```javascript
-const fetchProjects = async () => {
-  setLoading(true);
-  try {
-    // Step 1: Get the token
-    const tokenResponse = await fetch('https://aesp-dev.oktapreview.com/oauth2/aus1kh0p6uhkgDIV0h8/v1/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'password',
-        username: process.env.REACT_APP_AUTH_USERNAME,
-        password: process.env.REACT_APP_AUTH_PASSWORD,
-        scope: 'openid'
-      })
-    });
-    const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
+import React, { useState, useEffect } from 'react';
+import { useAuthBlueSso } from '../components/AuthBlue/AuthBlueSSO.jsx'; // Adjust the path as needed
 
-    // Rest of your code to fetch projects...
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-  } finally {
-    setLoading(false);
-  }
+const ProjectSelection = () => {
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { user } = useAuthBlueSso();
+
+  const fetchResources = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const userId = user?.attributes?.adsid || 'vsing379'; // Use the actual user ID from AuthBlue if available
+      const response = await fetch(`https://lumiqcpauto.aexp.com/terraform/automate/data_proc/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          // Add any other necessary headers, like Authorization if required
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setResources(data);
+    } catch (e) {
+      console.error('Error fetching resources:', e);
+      setError('Failed to fetch resources. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, []); // Fetch resources when component mounts
+
+  return (
+    <div>
+      <h2>GCP Cluster Resources</h2>
+      {loading && <p>Loading...</p>}
+      {error && <p style={{color: 'red'}}>{error}</p>}
+      {!loading && !error && (
+        <ul>
+          {resources.map((resource, index) => (
+            <li key={index}>
+              Name: {resource.name}, Type: {resource.type}, Created By: {resource.createdBy}
+            </li>
+          ))}
+        </ul>
+      )}
+      <button onClick={fetchResources} disabled={loading}>
+        Refresh Resources
+      </button>
+    </div>
+  );
 };
+
+export default ProjectSelection;
 ```
 
-To use environment variables in a React app:
+Key points about this updated code:
 
-1. Create a `.env` file in your project root:
-   ```
-   REACT_APP_AUTH_USERNAME=your_username_here
-   REACT_APP_AUTH_PASSWORD=your_password_here
-   ```
+1. It uses the GET endpoint shown in the image: `/terraform/automate/data_proc/{userId}`.
+2. The user ID is taken from the AuthBlue SSO context if available, otherwise defaulting to 'vsing379'.
+3. It sets the 'Accept' header to 'application/json' as shown in the curl command.
+4. The component fetches resources when it mounts and provides a button to refresh the data.
+5. It displays a list of resources with their name, type, and creator.
+6. Basic error handling and loading states are included.
 
-2. Access these in your code using `process.env.REACT_APP_AUTH_USERNAME` and `process.env.REACT_APP_AUTH_PASSWORD`.
+Remember to adjust the import path for useAuthBlueSso based on your project structure. Also, you may need to add additional headers (like Authorization) if required by your API.
 
-3. Make sure to add `.env` to your `.gitignore` file to prevent committing sensitive information.
-
-This approach keeps your credentials secure and out of your source code. Remember to set up these environment variables in your deployment environment as well.
+This component now focuses on fetching and displaying GCP cluster resources rather than projects. You might want to rename it to something like GCPResourcesList to better reflect its new purpose.
