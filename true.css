@@ -1,13 +1,72 @@
- The error you're encountering is due to a Cross-Origin Resource Sharing (CORS) issue. Your React application, running on localhost:8080, is trying to make a request to https://lumiqcpauto-dev.aexp.com, which is not allowed due to the browser's same-origin policy.
+ Certainly! Here's the complete code for the ProjectSelection component, incorporating all the changes we've discussed:
 
-To resolve this, you need to either:
+```javascript
+import React, { useState, useEffect } from 'react';
+import { useAuthBlueSso } from '../components/AuthBlue/AuthBlueSSO.jsx'; // Adjust this import path as needed
 
-1. Configure the server to allow CORS requests from your local development environment, or
-2. Use a proxy in your development environment to bypass the CORS restriction.
+const ProjectSelection = () => {
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { user } = useAuthBlueSso();
 
-Since you likely don't have control over the server configuration, let's use a proxy approach. Here's how to modify your code:
+  const fetchResources = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const userId = user?.attributes?.adsid || 'vsing379'; // Use actual user ID if available
+      const response = await fetch(`/terraform/automate/data_proc/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          // Add any other necessary headers, e.g., Authorization
+        },
+        credentials: 'include' // Include credentials if needed
+      });
 
-1. First, update your `package.json` to include a proxy configuration:
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setResources(data);
+    } catch (e) {
+      console.error('Error fetching resources:', e);
+      setError('Failed to fetch resources. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, []); // Fetch resources when component mounts
+
+  return (
+    <div>
+      <h2>GCP Cluster Resources</h2>
+      {loading && <p>Loading...</p>}
+      {error && <p style={{color: 'red'}}>{error}</p>}
+      {!loading && !error && (
+        <ul>
+          {resources.map((resource, index) => (
+            <li key={index}>
+              Name: {resource.name}, Type: {resource.type}, Created By: {resource.createdBy}
+            </li>
+          ))}
+        </ul>
+      )}
+      <button onClick={fetchResources} disabled={loading}>
+        Refresh Resources
+      </button>
+    </div>
+  );
+};
+
+export default ProjectSelection;
+```
+
+Remember to also update your `package.json` to include the proxy configuration:
 
 ```json
 {
@@ -16,50 +75,15 @@ Since you likely don't have control over the server configuration, let's use a p
 }
 ```
 
-2. Then, update your `fetchResources` function in `ProjectSelection.js`:
+This code does the following:
 
-```javascript
-const fetchResources = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const userId = user?.attributes?.adsid || 'vsing379';
-    const response = await fetch(`/terraform/automate/data_proc/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        // Add any other necessary headers, like Authorization if required
-      },
-      credentials: 'include' // This might be necessary depending on your auth setup
-    });
+1. Imports necessary hooks and the AuthBlue SSO hook.
+2. Sets up state for resources, loading, and error handling.
+3. Implements a `fetchResources` function that makes a GET request to the API.
+4. Uses `useEffect` to fetch resources when the component mounts.
+5. Renders a list of resources, showing loading and error states as appropriate.
+6. Provides a button to manually refresh the resources.
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+Make sure to adjust the import path for `useAuthBlueSso` based on your project structure. Also, you may need to add additional headers or adjust the fetch options based on your specific API requirements.
 
-    const data = await response.json();
-    setResources(data);
-  } catch (e) {
-    console.error('Error fetching resources:', e);
-    setError('Failed to fetch resources. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-Key changes:
-1. The fetch URL now uses a relative path (`/terraform/automate/data_proc/${userId}`) instead of the full URL.
-2. Added `credentials: 'include'` to the fetch options, which might be necessary if the API requires cookies for authentication.
-
-3. Make sure your development server is running with this new proxy configuration. You might need to restart your development server for the changes to take effect.
-
-4. If you're using Create React App, you might need to run your development server with HTTPS:
-
-```
-HTTPS=true npm start
-```
-
-These changes should allow your local development environment to make requests to the API without CORS issues. The proxy will forward requests from your local server to the actual API server.
-
-If you're still encountering issues, it might be due to authentication requirements or other server-side configurations. In that case, you may need to consult with your backend team to ensure that the API is correctly set up to accept requests from your development environment.
+If you're still encountering issues after implementing this, it may be due to server-side configurations or authentication requirements. In that case, you might need to consult with your backend team or check the API documentation for any specific requirements.
