@@ -1,0 +1,123 @@
+ Based on the config details visible in the image, we can extract more information to enrich our table. Here are additional details we can consider:
+
+1. dataprocName: The name of the Dataproc cluster
+2. zone: The specific zone within the region
+3. source: The source of the Dataproc image
+4. image_id: The ID of the image used
+5. initialization_script: The script used for initialization
+6. master_num_instances: Number of master instances
+7. master_boot_disk_size: Size of the master boot disk
+8. master_machine_type: Type of machine used for master nodes
+9. MLClusterId: The ID of the ML cluster
+
+Let's update our `parseConfig` function to extract these details:
+
+```javascript
+const parseConfig = (config) => {
+  const extract = (regex) => {
+    const match = config.match(regex);
+    return match ? match[1] : 'N/A';
+  };
+
+  return {
+    projectId: extract(/project_id\s*=\s*"([^"]+)"/),
+    env: extract(/env\s*=\s*"([^"]+)"/),
+    region: extract(/region\s*=\s*"([^"]+)"/),
+    dataprocName: extract(/dataproc_name\s*=\s*"([^"]+)"/),
+    zone: extract(/zone\s*=\s*"([^"]+)"/),
+    source: extract(/source\s*=\s*"([^"]+)"/),
+    imageId: extract(/image_id\s*=\s*"([^"]+)"/),
+    initScript: extract(/initialization_script\s*=\s*"([^"]+)"/),
+    masterNumInstances: extract(/master_num_instances\s*=\s*"([^"]+)"/),
+    masterBootDiskSize: extract(/master_boot_disk_size\s*=\s*"([^"]+)"/),
+    masterMachineType: extract(/master_machine_type\s*=\s*"([^"]+)"/),
+    mlClusterId: extract(/MLClusterId\s*=\s*"([^"]+)"/)
+  };
+};
+```
+
+Now, let's update our table to include these new details:
+
+```jsx
+<table className="resources-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Created By</th>
+      <th>Status</th>
+      <th>Project ID</th>
+      <th>Environment</th>
+      <th>Region</th>
+      <th>Zone</th>
+      <th>Dataproc Name</th>
+      <th>Image Source</th>
+      <th>Image ID</th>
+      <th>Init Script</th>
+      <th>Master Instances</th>
+      <th>Master Disk Size</th>
+      <th>Master Machine Type</th>
+      <th>ML Cluster ID</th>
+      <th>Created At</th>
+      <th>Updated At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {resources.map((resource, index) => {
+      const configInfo = parseConfig(resource.config);
+      return (
+        <tr key={index}>
+          <td>{resource.name}</td>
+          <td>{resource.type}</td>
+          <td>{resource.createdBy}</td>
+          <td>{resource.status}</td>
+          <td>{configInfo.projectId}</td>
+          <td>{configInfo.env}</td>
+          <td>{configInfo.region}</td>
+          <td>{configInfo.zone}</td>
+          <td>{configInfo.dataprocName}</td>
+          <td>{configInfo.source}</td>
+          <td>{configInfo.imageId}</td>
+          <td>{configInfo.initScript}</td>
+          <td>{configInfo.masterNumInstances}</td>
+          <td>{configInfo.masterBootDiskSize}</td>
+          <td>{configInfo.masterMachineType}</td>
+          <td>{configInfo.mlClusterId}</td>
+          <td>{new Date(resource.createdat).toLocaleString()}</td>
+          <td>{new Date(resource.updatedat).toLocaleString()}</td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+```
+
+Given the large number of columns, you might want to consider:
+
+1. Implementing a horizontal scroll for the table.
+2. Adding a feature to show/hide certain columns.
+3. Creating a detailed view modal that opens when a row is clicked, showing all information for a specific resource.
+
+Also, update your CSS to handle the wider table:
+
+```css
+.table-container {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.resources-table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.resources-table th,
+.resources-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+```
+
+This setup will provide a comprehensive view of your GCP resources with all the detailed information from the config. Remember to adjust the column selection based on what's most important for your users to see at a glance.
