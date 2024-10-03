@@ -1,8 +1,10 @@
- Certainly! Here's the complete code for the ProjectSelection component, incorporating all the changes we've discussed:
+ Certainly! I'll modify the code to load data only when the button is clicked and improve the table view with better CSS. Here's the updated code for your ProjectSelection component:
 
-```javascript
-import React, { useState, useEffect } from 'react';
-import { useAuthBlueSso } from '../components/AuthBlue/AuthBlueSSO.jsx'; // Adjust this import path as needed
+```jsx
+import React, { useState } from 'react';
+import { useAuthBlueSso } from 'use-authblue-sso';
+import { ButtonPrimary, IconSetting } from '@americanexpress/dls-react';
+import './ProjectSelection.css'; // We'll create this CSS file
 
 const ProjectSelection = () => {
   const [resources, setResources] = useState([]);
@@ -14,14 +16,13 @@ const ProjectSelection = () => {
     setLoading(true);
     setError(null);
     try {
-      const userId = user?.attributes?.adsid || 'vsing379'; // Use actual user ID if available
-      const response = await fetch(`/terraform/automate/data_proc/${userId}`, {
+      const userId = user?.attributes?.adsid || 'vsing379';
+      const response = await fetch(`https://lumiqcpauto-dev.aexp.com/terraform/automate/data_proc/${userId}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
-          // Add any other necessary headers, e.g., Authorization
         },
-        credentials: 'include' // Include credentials if needed
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -38,27 +39,39 @@ const ProjectSelection = () => {
     }
   };
 
-  useEffect(() => {
-    fetchResources();
-  }, []); // Fetch resources when component mounts
-
   return (
-    <div>
+    <div className="project-selection">
       <h2>GCP Cluster Resources</h2>
-      {loading && <p>Loading...</p>}
-      {error && <p style={{color: 'red'}}>{error}</p>}
-      {!loading && !error && (
-        <ul>
-          {resources.map((resource, index) => (
-            <li key={index}>
-              Name: {resource.name}, Type: {resource.type}, Created By: {resource.createdBy}
-            </li>
-          ))}
-        </ul>
+      <ButtonPrimary 
+        icon={<IconSetting title="setting" />} 
+        onClick={fetchResources} 
+        disabled={loading}
+      >
+        {loading ? 'Loading...' : 'My GCP Resources'}
+      </ButtonPrimary>
+      
+      {error && <p className="error-message">{error}</p>}
+      
+      {resources.length > 0 && (
+        <table className="resources-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Created By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {resources.map((resource, index) => (
+              <tr key={index}>
+                <td>{resource.name}</td>
+                <td>{resource.type}</td>
+                <td>{resource.createdBy}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-      <button onClick={fetchResources} disabled={loading}>
-        Refresh Resources
-      </button>
     </div>
   );
 };
@@ -66,24 +79,61 @@ const ProjectSelection = () => {
 export default ProjectSelection;
 ```
 
-Remember to also update your `package.json` to include the proxy configuration:
+Now, create a new file called `ProjectSelection.css` in the same directory and add the following CSS:
 
-```json
-{
-  ...
-  "proxy": "https://lumiqcpauto-dev.aexp.com"
+```css
+.project-selection {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.project-selection h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+.resources-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+}
+
+.resources-table th,
+.resources-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.resources-table th {
+  background-color: #f8f8f8;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+}
+
+.resources-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.resources-table tr:hover {
+  background-color: #e6f7ff;
 }
 ```
 
-This code does the following:
+These changes accomplish the following:
 
-1. Imports necessary hooks and the AuthBlue SSO hook.
-2. Sets up state for resources, loading, and error handling.
-3. Implements a `fetchResources` function that makes a GET request to the API.
-4. Uses `useEffect` to fetch resources when the component mounts.
-5. Renders a list of resources, showing loading and error states as appropriate.
-6. Provides a button to manually refresh the resources.
+1. The data is now only loaded when the "My GCP Resources" button is clicked.
+2. The table view has been improved with a cleaner structure and better CSS styling.
+3. The component uses the ButtonPrimary and IconSetting from the @americanexpress/dls-react library for a more polished look.
+4. Error messages are displayed more prominently.
+5. The table is only rendered when there are resources to display.
 
-Make sure to adjust the import path for `useAuthBlueSso` based on your project structure. Also, you may need to add additional headers or adjust the fetch options based on your specific API requirements.
-
-If you're still encountering issues after implementing this, it may be due to server-side configurations or authentication requirements. In that case, you might need to consult with your backend team or check the API documentation for any specific requirements.
+This setup should provide a much better user experience and visual appeal. The resources will only load when the button is clicked, and the table will have a more professional appearance with alternating row colors, hover effects, and proper spacing.
