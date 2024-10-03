@@ -1,68 +1,87 @@
- I understand you want to create a ProjectSelection component that fetches and displays a list of projects when a user clicks a "Select Project" button. Here's how you can implement this in your ProjectSelection.js file:
-
-1. First, let's create the basic structure of the component:
+ Certainly! I see that the JSON response includes a `config` field with HCL (HashiCorp Configuration Language) content. We'll need to parse this and include relevant information in our table. Let's update the component to include these additional details. Here's a revised version of the `ProjectSelection` component:
 
 ```jsx
 import React, { useState } from 'react';
-import { useAuthBlueSso } from './components/AuthBlue/AuthBlueSSO.jsx';
+import { useAuthBlueSso } from 'use-authblue-sso';
+import { ButtonPrimary, IconSetting } from '@americanexpress/dls-react';
+import './ProjectSelection.css';
+import gcpLogo from './gcp-logo.png'; // Ensure this image is in your project
 
 const ProjectSelection = () => {
-  const [projects, setProjects] = useState([]);
+  const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { user } = useAuthBlueSso();
 
-  const fetchProjects = async () => {
-    setLoading(true);
-    try {
-      // Step 1: Get the token
-      const tokenResponse = await fetch('https://aesp-dev.oktapreview.com/oauth2/aus1kh0p6uhkgDIV0h8/v1/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'grant_type=client_credentials&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET'
-      });
-      const tokenData = await tokenResponse.json();
-      const accessToken = tokenData.access_token;
+  const fetchResources = async () => {
+    // ... (fetchResources implementation remains the same)
+  };
 
-      // Step 2: Fetch projects
-      const projectsResponse = await fetch('https://lumiqcpauto-dev.axp.com/uni/project/entitlements', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'x-ads-id': user?.attributes?.adsid || '',
-        }
-      });
-      const projectsData = await projectsResponse.json();
-      setProjects(projectsData.data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Helper function to extract relevant info from config
+  const parseConfig = (config) => {
+    const projectIdMatch = config.match(/project_id\s*=\s*"([^"]+)"/);
+    const envMatch = config.match(/env\s*=\s*"([^"]+)"/);
+    const regionMatch = config.match(/region\s*=\s*"([^"]+)"/);
+    return {
+      projectId: projectIdMatch ? projectIdMatch[1] : 'N/A',
+      env: envMatch ? envMatch[1] : 'N/A',
+      region: regionMatch ? regionMatch[1] : 'N/A'
+    };
   };
 
   return (
-    <div>
-      <button onClick={fetchProjects} disabled={loading}>
-        {loading ? 'Loading...' : 'Select Project'}
-      </button>
-      {projects.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Entitlement</th>
-              <th>Project ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map((project, index) => (
-              <tr key={index}>
-                <td>{project.entitlement}</td>
-                <td>{project.projectIds.join(', ')}</td>
+    <div className="project-selection">
+      <h2>GCP Cluster Resources</h2>
+      <ButtonPrimary 
+        icon={<IconSetting title="setting" />} 
+        onClick={fetchResources} 
+        disabled={loading}
+      >
+        {loading ? 'Loading...' : 'My GCP Resources'}
+      </ButtonPrimary>
+      
+      {error && <p className="error-message">{error}</p>}
+      
+      {resources.length > 0 && (
+        <div className="table-container">
+          <div className="table-header">
+            <img src={gcpLogo} alt="GCP Logo" className="gcp-logo" />
+            <h3 className="table-title">GCP Resource List</h3>
+          </div>
+          <table className="resources-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Created By</th>
+                <th>Status</th>
+                <th>Project ID</th>
+                <th>Environment</th>
+                <th>Region</th>
+                <th>Created At</th>
+                <th>Updated At</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {resources.map((resource, index) => {
+                const configInfo = parseConfig(resource.config);
+                return (
+                  <tr key={index}>
+                    <td>{resource.name}</td>
+                    <td>{resource.type}</td>
+                    <td>{resource.createdBy}</td>
+                    <td>{resource.status}</td>
+                    <td>{configInfo.projectId}</td>
+                    <td>{configInfo.env}</td>
+                    <td>{configInfo.region}</td>
+                    <td>{new Date(resource.createdat).toLocaleString()}</td>
+                    <td>{new Date(resource.updatedat).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -71,45 +90,49 @@ const ProjectSelection = () => {
 export default ProjectSelection;
 ```
 
-2. Make sure to replace 'YOUR_CLIENT_ID' and 'YOUR_CLIENT_SECRET' with your actual client credentials for the token API.
-
-3. You'll need to import and use this component in your main App.js or wherever you want to display the project selection:
-
-```jsx
-import ProjectSelection from './ProjectSelection';
-
-// In your render method:
-<ProjectSelection />
-```
-
-4. You might want to add some CSS to style the table. You can do this in your App.css or create a new CSS file for ProjectSelection:
+Now, let's update the CSS to accommodate the wider table:
 
 ```css
-table {
+/* ... (previous CSS remains the same) */
+
+.resources-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  font-size: 0.9em; /* Reduced font size to fit more columns */
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
+.resources-table th,
+.resources-table td {
+  padding: 8px 10px; /* Reduced padding */
   text-align: left;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap; /* Prevents wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds ... for overflowing text */
 }
 
-th {
-  background-color: #f2f2f2;
+.resources-table th {
+  background-color: #f8f8f8;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+  font-size: 0.8em; /* Even smaller font for headers */
 }
 
-tr:nth-child(even) {
-  background-color: #f9f9f9;
+/* Add horizontal scrolling for the table container */
+.table-container {
+  overflow-x: auto;
 }
+
+/* ... (rest of the CSS remains the same) */
 ```
 
-This implementation will:
-1. Use the AuthBlueSSO hook to get the user's adsid.
-2. Fetch an access token when the "Select Project" button is clicked.
-3. Use that token to fetch the projects associated with the user's adsid.
-4. Display the fetched projects in a table.
+These changes include:
 
-Remember to handle errors appropriately and potentially add more user feedback for different states (loading, error, no projects found, etc.).
+1. A new `parseConfig` function to extract relevant information from the HCL-like config string.
+2. Additional columns in the table for Project ID, Environment, Region, Status, Created At, and Updated At.
+3. Updated CSS to handle the wider table, including horizontal scrolling and text overflow handling.
+
+This setup provides a more comprehensive view of your GCP resources, including the information parsed from the config field. The table is now scrollable horizontally to accommodate all the new columns.
+
+Remember to adjust the parsing logic in the `parseConfig` function if you need to extract different or additional information from the config string.
