@@ -1,34 +1,77 @@
-@PostMapping("/admin/tfe/appoint-leader/{job-name}")
-public Mono<String> updateLockAdsId(@RequestHeader @ApiParam(hidden = true) String requestHeader,
-                                    @PathVariable("job-name") String jobName) throws InvalidParamException, ApiException {
-    return Mono.fromCallable(() -> {
-        // Validate input
-        if (jobName == null || jobName.isEmpty()) {
-            throw new InvalidParamException("Invalid job name");
+ Certainly! I'll modify the code to hardcode the ADS ID as "asalee" for now. Here's the updated `Home.js` component:
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import { ButtonPrimary } from '@americanexpress/dls-react';
+import './Home.css';
+
+const Home = () => {
+  const [hasEntitlement, setHasEntitlement] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchEntitlements = async () => {
+      try {
+        const response = await fetch('https://lumienterprise-dev.aexp.com/un/entitlements', {
+          method: 'POST',
+          headers: {
+            'X-ADS-ID': 'asalee',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ adsId: 'asalee' }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Get the hostname of the pod
-        String hostname = System.getenv("HOSTNAME");
-        if (hostname == null || hostname.isEmpty()) {
-            throw new ApiException("Unable to retrieve pod hostname");
-        }
+        const data = await response.json();
+        const entitlement = 'PRC-AXP-AA-E1-AppAdmin-NGBD-PlatformAdmin';
+        setHasEntitlement(data.entitlements.includes(entitlement));
+      } catch (e) {
+        console.error('Error fetching entitlements:', e);
+        setError('Failed to fetch entitlements. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        // Perform database operation
-        return jobConfigRepository.findByJobNmAndModlNm(jobName, "tfe-automation")
-            .flatMap(jobConfig -> {
-                jobConfig.setLockAdsUserId(hostname);
-                return jobConfigRepository.save(jobConfig);
-            })
-            .switchIfEmpty(Mono.defer(() -> {
-                JobConfig newJobConfig = new JobConfig();
-                newJobConfig.setJobNm(jobName);
-                newJobConfig.setModlNm("tfe-automation");
-                newJobConfig.setLockAdsUserId(hostname);
-                return jobConfigRepository.save(newJobConfig);
-            }))
-            .thenReturn("Successfully upserted the hostname of pod");
-    })
-    .onErrorResume(InvalidParamException.class, e -> Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage())))
-    .onErrorResume(ApiException.class, e -> Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage())))
-    .onErrorResume(Exception.class, e -> Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Fatal internal server error")));
-}
+    fetchEntitlements();
+  }, []);
+
+  return (
+    <div className="home-container">
+      <h1>Welcome to the GCP Resource Dashboard</h1>
+      <p>Manage and monitor your Google Cloud Platform resources</p>
+
+      {loading && <p>Loading entitlements...</p>}
+      {error && <p className="error-message">{error}</p>}
+      
+      {hasEntitlement && (
+        <ButtonPrimary onClick={() => console.log('Button clicked')}>
+          Special Action
+        </ButtonPrimary>
+      )}
+
+      {/* Rest of your Home component content */}
+    </div>
+  );
+};
+
+export default Home;
+```
+
+Key changes:
+
+1. Removed the `useAuthBlueSso` import and usage since we're hardcoding the ADS ID.
+2. Changed the `X-ADS-ID` header and the `adsId` in the request body to use the hardcoded value 'asalee'.
+3. Removed the `user` dependency from the `useEffect` hook since we're not using dynamic user data anymore.
+
+This version will always use 'asalee' as the ADS ID when making the API request. The rest of the functionality remains the same:
+
+- It will fetch the entitlements when the component mounts.
+- If the 'PRC-AXP-AA-E1-AppAdmin-NGBD-PlatformAdmin' entitlement is found in the response, it will display the "Special Action" button.
+- It handles loading and error states.
+
+Remember that hardcoding credentials or IDs is generally not recommended for production environments. This should only be used for development or testing purposes. When you're ready to make this dynamic again, you can reintroduce the `useAuthBlueSso` hook and use the actual user's ADS ID.
