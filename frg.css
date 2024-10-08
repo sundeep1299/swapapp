@@ -1,117 +1,102 @@
- Certainly! Here's a simple Home component that you can use as a starting point. This component will include a welcome message and some basic information about the GCP Resources dashboard.
+ Certainly! To implement an active selection for your navigation bar, we'll need to modify both your NavBar component and add some CSS. Here's how you can do it:
 
-Create a new file called `Home.js` in your components directory:
+1. First, let's update your NavBar.js component:
 
 ```jsx
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ButtonPrimary } from '@americanexpress/dls-react';
-import './Home.css'; // We'll create this CSS file next
+import { Link, useLocation } from 'react-router-dom';
+import './NavBar.css';
 
-const Home = () => {
+const NavBar = () => {
+  const location = useLocation();
+
   return (
-    <div className="home-container">
-      <h1>Welcome to GCP Resource Dashboard</h1>
-      <p>Manage and monitor your Google Cloud Platform resources efficiently.</p>
-      
-      <div className="dashboard-summary">
-        <h2>Quick Overview</h2>
-        <ul>
-          <li>View and manage Data Proc clusters</li>
-          <li>Monitor Managed Notebooks</li>
-          <li>Track Workbench Instances</li>
-        </ul>
-      </div>
-      
-      <div className="action-buttons">
-        <Link to="/gcp-resources">
-          <ButtonPrimary>Go to GCP Resources</ButtonPrimary>
-        </Link>
-      </div>
-    </div>
+    <nav className="navbar">
+      <ul className="navbar-links">
+        <li className={location.pathname === '/' ? 'active' : ''}>
+          <Link to="/">Home</Link>
+        </li>
+        <li className={location.pathname === '/gcp-resources' ? 'active' : ''}>
+          <Link to="/gcp-resources">GCP Resources</Link>
+        </li>
+        {/* Add more navigation items as needed */}
+      </ul>
+    </nav>
   );
 };
 
-export default Home;
+export default NavBar;
 ```
 
-Now, let's create a corresponding CSS file called `Home.css` in the same directory:
+2. Now, let's create or update your NavBar.css file:
 
 ```css
-.home-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.navbar {
+  background-color: #f8f9fa;
+  padding: 10px 0;
 }
 
-h1 {
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-p {
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.dashboard-summary {
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.dashboard-summary h2 {
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-.dashboard-summary ul {
+.navbar-links {
   list-style-type: none;
   padding: 0;
-}
-
-.dashboard-summary li {
-  margin-bottom: 0.5rem;
-  color: #444;
-}
-
-.action-buttons {
+  margin: 0;
   display: flex;
   justify-content: center;
 }
+
+.navbar-links li {
+  margin: 0 10px;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  color: #333;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-links li.active a {
+  background-color: #007bff;
+  color: white;
+}
+
+.navbar-links a:hover {
+  background-color: #e9ecef;
+}
+
+.navbar-links li.active a:hover {
+  background-color: #0056b3;
+}
 ```
 
-This Home component provides:
-
-1. A welcome message
-2. A brief description of the dashboard's purpose
-3. A summary of what users can do with the GCP Resources section
-4. A button that links to the GCP Resources page
-
-To use this Home component:
-
-1. Make sure you have the necessary imports in your `App.js` file:
+3. Make sure your App.js is correctly importing and using the NavBar component:
 
 ```jsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import NavBar from './NavBar';
-import Home from './Home';
-import ProjectSelection from './ProjectSelection';
+import NavBar from './components/NavBar';
+import Home from './components/Home';
+import ProjectSelection from './components/ProjectSelection';
 import './App.css';
 
 function App() {
   return (
     <Router>
       <div className="App">
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/gcp-resources" element={<ProjectSelection />} />
-        </Routes>
+        <header>
+          {/* Your other header content */}
+          <div className="mainNavBar">
+            <NavBar />
+          </div>
+        </header>
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/gcp-resources" element={<ProjectSelection />} />
+          </Routes>
+        </main>
+        <footer>{/* Your footer content */}</footer>
       </div>
     </Router>
   );
@@ -120,10 +105,19 @@ function App() {
 export default App;
 ```
 
-2. Ensure that your NavBar component includes a link to the home page:
+This setup does the following:
+
+1. Uses the `useLocation` hook from react-router-dom to determine the current path.
+2. Applies an 'active' class to the list item that corresponds to the current path.
+3. Styles the active link differently (with a blue background and white text in this example).
+4. Provides hover effects for both active and inactive links.
+
+With these changes, the navigation item corresponding to the current page will be visually distinct, making it clear which page the user is on. You can adjust the colors and styles in the CSS to match your design preferences.
+
+Remember to import the NavBar.css file in your NavBar.js component if you haven't already:
 
 ```jsx
-<li><Link to="/">Home</Link></li>
+import './NavBar.css';
 ```
 
-This setup provides a simple and clean home page that introduces users to your GCP Resource Dashboard and gives them quick access to the main functionality. You can further customize this component based on your specific needs and design preferences.
+This will give you a clear visual indication of which page is currently active in your navigation bar.
