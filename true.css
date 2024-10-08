@@ -1,88 +1,48 @@
+ Based on the App.js code shown in the image, there are a few issues that need to be addressed:
 
- Certainly! I'll provide you with a basic navigation bar component and show you how to integrate your ProjectSelection component into it. Here's how you can create a navigation bar and link the ProjectSelection component:
+1. The Router component is missing. You need to wrap your entire app with BrowserRouter.
 
-1. First, let's create a new component called `NavBar.js`:
+2. The Routes component is missing. You should wrap your Route components with Routes.
 
-```jsx
-import React from 'react';
-import { Link } from 'react-router-dom';
-import './NavBar.css';
+3. The AuthBlueSso component is not properly closed.
 
-const NavBar = () => {
-  return (
-    <nav className="navbar">
-      <div className="navbar-logo">
-        <img src="/path-to-your-logo.png" alt="Logo" />
-      </div>
-      <ul className="navbar-links">
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/gcp-resources">GCP Resources</Link></li>
-        {/* Add more navigation items as needed */}
-      </ul>
-    </nav>
-  );
-};
-
-export default NavBar;
-```
-
-2. Create a corresponding `NavBar.css` file:
-
-```css
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.navbar-logo img {
-  height: 40px;
-}
-
-.navbar-links {
-  display: flex;
-  list-style-type: none;
-}
-
-.navbar-links li {
-  margin-left: 2rem;
-}
-
-.navbar-links a {
-  text-decoration: none;
-  color: #333;
-  font-weight: bold;
-  transition: color 0.3s ease;
-}
-
-.navbar-links a:hover {
-  color: #007bff;
-}
-```
-
-3. Update your `App.js` to include the NavBar and set up routing:
+Here's how you should modify your App.js:
 
 ```jsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import NavBar from './NavBar';
-import ProjectSelection from './ProjectSelection';
-import Home from './Home'; // You'll need to create this component
 import './App.css';
+import Logo from './assets/lumiclear.png';
+import FooterLogo from './assets/lumilogo.png';
+import { AuthBlueSso } from './components/AuthBlue/AuthBlueSso';
+import UserInfo from './components/UserInfo';
+import NavBar from './components/NavBar';
+import Home from './components/Home';
+import ProjectSelection from './components/ProjectSelection';
 
 function App() {
   return (
     <Router>
-      <div className="App">
-        <NavBar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/gcp-resources" element={<ProjectSelection />} />
-        </Routes>
-      </div>
+      <AuthBlueSso>
+        <div className="App">
+          <header>
+            <div className="leftheader"><img src={Logo} alt="Lumi OneConsole" className="logo" />OneConsole</div>
+            <div className="middleheader"></div>
+            <div className="rightheader"><UserInfo /></div>
+            <NavBar />
+          </header>
+          <main>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/gcp-resources" element={<ProjectSelection />} />
+            </Routes>
+          </main>
+          <footer>
+            <img src={FooterLogo} alt="Lumi OneConsole" className="footerlogo" />
+            <p>Anything you want to add </p>
+          </footer>
+        </div>
+      </AuthBlueSso>
     </Router>
   );
 }
@@ -90,63 +50,12 @@ function App() {
 export default App;
 ```
 
-4. Create a simple `Home.js` component:
+Key changes:
 
-```jsx
-import React from 'react';
+1. Wrapped the entire app with `<Router>` component.
+2. Wrapped the `<Route>` components with `<Routes>`.
+3. Properly closed the `<AuthBlueSso>` component.
+4. Moved `<NavBar />` inside the header, as it seems to be part of your header layout.
+5. Removed `<h1>GCP Resources</h1>` and `<ProjectSelection />` from the main content, as they will be rendered by the router when needed.
 
-const Home = () => {
-  return (
-    <div className="home">
-      <h1>Welcome to the Dashboard</h1>
-      <p>Navigate using the menu above.</p>
-    </div>
-  );
-};
-
-export default Home;
-```
-
-5. Ensure you have `react-router-dom` installed. If not, install it:
-
-```
-npm install react-router-dom
-```
-
-6. Adjust your `ProjectSelection.js` component to fit within the new layout:
-
-```jsx
-import React from 'react';
-// ... other imports
-
-const ProjectSelection = () => {
-  // ... existing code
-
-  return (
-    <div className="project-selection-container">
-      <h2>GCP Resources</h2>
-      {/* Rest of your ProjectSelection component */}
-    </div>
-  );
-};
-
-export default ProjectSelection;
-```
-
-7. Update `ProjectSelection.css` to ensure it fits well within the new layout:
-
-```css
-.project-selection-container {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* ... rest of your existing CSS */
-```
-
-This setup will create a navigation bar at the top of your application with a link to the GCP Resources page (which is your ProjectSelection component). The ProjectSelection component will now be accessible by clicking on the "GCP Resources" link in the navigation bar.
-
-Remember to adjust the paths and component names as necessary to fit your project structure. Also, make sure to have a logo image for the navbar or remove the logo section if you don't need it.
-
-This structure provides a good foundation for expanding your application with additional pages and features in the future.
+These changes should resolve the routing errors you were experiencing. Make sure to save the file and restart your development server if necessary. If you're still encountering issues, please check your package.json to ensure you have the correct version of react-router-dom installed (it should be version 6.x for this setup to work correctly).
