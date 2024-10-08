@@ -1,35 +1,129 @@
- Based on the information provided in the image, I'll create a method outline and explain how to write it:
+ Certainly! Here's a simple Home component that you can use as a starting point. This component will include a welcome message and some basic information about the GCP Resources dashboard.
 
-```java
-@PostMapping("/admin/tfe/appoint-leader/{job-name}")
-public Mono<String> updateLockAdsId(@RequestHeader @ApiParam(hidden = true) String requestHeader,
-                                    @PathVariable("job-name") String jobName) throws InvalidParamException, ApiException {
-    // Method implementation
+Create a new file called `Home.js` in your components directory:
+
+```jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ButtonPrimary } from '@americanexpress/dls-react';
+import './Home.css'; // We'll create this CSS file next
+
+const Home = () => {
+  return (
+    <div className="home-container">
+      <h1>Welcome to GCP Resource Dashboard</h1>
+      <p>Manage and monitor your Google Cloud Platform resources efficiently.</p>
+      
+      <div className="dashboard-summary">
+        <h2>Quick Overview</h2>
+        <ul>
+          <li>View and manage Data Proc clusters</li>
+          <li>Monitor Managed Notebooks</li>
+          <li>Track Workbench Instances</li>
+        </ul>
+      </div>
+      
+      <div className="action-buttons">
+        <Link to="/gcp-resources">
+          <ButtonPrimary>Go to GCP Resources</ButtonPrimary>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default Home;
+```
+
+Now, let's create a corresponding CSS file called `Home.css` in the same directory:
+
+```css
+.home-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+p {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.dashboard-summary {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.dashboard-summary h2 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.dashboard-summary ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.dashboard-summary li {
+  margin-bottom: 0.5rem;
+  color: #444;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
 }
 ```
 
-Here's how to write this method:
+This Home component provides:
 
-1. Method signature:
-   - Use `@PostMapping` annotation with the path "/admin/tfe/appoint-leader/{job-name}" as specified in the image.
-   - Return type is `Mono<String>` as indicated in the image.
-   - Method name is `updateLockAdsId` (from the image).
-   - Parameters:
-     - `requestHeader`: Annotated with `@RequestHeader` and `@ApiParam(hidden = true)`.
-     - `jobName`: Annotated with `@PathVariable("job-name")` to capture the job name from the URL.
-   - Throws `InvalidParamException` and `ApiException` as mentioned in the image.
+1. A welcome message
+2. A brief description of the dashboard's purpose
+3. A summary of what users can do with the GCP Resources section
+4. A button that links to the GCP Resources page
 
-2. Method implementation:
-   - Check if the input `jobName` exists in the job_config table.
-   - Determine whether to update or insert based on existing data.
-   - Update the lock_ads_user_id column in the job_config table with the HOSTNAME of the pod.
-   - Use a where clause with job_nm and modl_nm (job_nm from input, modl_nm is fixed as "tfe-automation").
+To use this Home component:
 
-3. Error handling:
-   - Implement proper error handling for the mentioned response codes (200, 400, 500).
-   - Return appropriate responses based on the operation's success or failure.
+1. Make sure you have the necessary imports in your `App.js` file:
 
-4. Return value:
-   - Return a `Mono<String>` containing the response message (e.g., "successfully upserted the hostname of pod").
+```jsx
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import NavBar from './NavBar';
+import Home from './Home';
+import ProjectSelection from './ProjectSelection';
+import './App.css';
 
-Remember to add necessary imports and ensure that your implementation adheres to the project's coding standards and best practices for reactive programming with Spring WebFlux (as implied by the use of Mono).
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <NavBar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/gcp-resources" element={<ProjectSelection />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+2. Ensure that your NavBar component includes a link to the home page:
+
+```jsx
+<li><Link to="/">Home</Link></li>
+```
+
+This setup provides a simple and clean home page that introduces users to your GCP Resource Dashboard and gives them quick access to the main functionality. You can further customize this component based on your specific needs and design preferences.
