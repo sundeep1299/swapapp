@@ -1,25 +1,42 @@
- I apologize for the confusion. Now that I can see the exact structure of the data, let's modify the code to correctly handle this response:
+ Certainly! To use AuthBlue for authentication in your fetch API call, you'll need to modify your code to use the AuthBlue context or hook to get the user's information and access token. Here's how you can modify your `Home.js` component to use AuthBlue:
+
+1. First, make sure you have imported the AuthBlue hook:
+
+```jsx
+import { useAuthBlueSso } from '../components/AuthBlue/AuthBlueSso'; // Adjust the import path as needed
+```
+
+2. Then, modify your `Home` component like this:
 
 ```jsx
 import React, { useState, useEffect } from 'react';
 import { ButtonPrimary } from '@americanexpress/dls-react';
+import { useAuthBlueSso } from '../components/AuthBlue/AuthBlueSso';
 import './Home.css';
 
 const Home = () => {
   const [hasEntitlement, setHasEntitlement] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user, getAccessToken } = useAuthBlueSso(); // Use AuthBlue hook
 
   useEffect(() => {
     const fetchEntitlements = async () => {
+      if (!user) {
+        setError('User not authenticated');
+        setLoading(false);
+        return;
+      }
+
       try {
+        const accessToken = await getAccessToken(); // Get the access token
         const response = await fetch('https://lumienterprise-dev.aexp.com/un/entitlements', {
           method: 'POST',
           headers: {
-            'X-ADS-ID': 'asalee',
+            'Authorization': `Bearer ${accessToken}`, // Use the access token
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ adsId: 'asalee' }),
+          body: JSON.stringify({ adsId: user.attributes?.adsid || '' }),
         });
 
         if (!response.ok) {
@@ -46,7 +63,11 @@ const Home = () => {
     };
 
     fetchEntitlements();
-  }, []);
+  }, [user, getAccessToken]); // Add dependencies
+
+  if (!user) {
+    return <p>Please log in to access this page.</p>;
+  }
 
   return (
     <div className="home-container">
@@ -70,24 +91,15 @@ const Home = () => {
 export default Home;
 ```
 
-This code should now correctly handle the response structure you're receiving. Here are the key points:
+Key changes:
 
-1. We're checking if `data` is an array and has at least one element.
-2. We're then checking if `data[0].entitlements` is an array.
-3. We're using `some()` to check if any of the entitlements include our target string.
+1. We're using the `useAuthBlueSso` hook to get the user information and the `getAccessToken` function.
+2. We check if the user is authenticated before making the API call.
+3. We use `getAccessToken()` to get the access token and include it in the `Authorization` header.
+4. We use the user's `adsid` from the AuthBlue user object instead of hardcoding it.
+5. We've added error handling for when the user is not authenticated.
+6. We've added `user` and `getAccessToken` to the `useEffect` dependencies array to ensure the effect runs when these values change.
 
-If you're still encountering issues, it might be because the entitlement you're looking for ('PRC-AXP-AA-E1-AppAdmin-NGBD-PlatformAdmin') doesn't exactly match what's in the response. Based on the image, it seems the entitlements might be in a different format.
+This setup assumes that your AuthBlue integration is already set up correctly in your app. If you encounter any issues or need to adjust how you're getting the access token or user information, you may need to refer to your specific AuthBlue implementation or documentation.
 
-To debug further, you could log the specific entitlements:
-
-```javascript
-if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].entitlements)) {
-  console.log('Entitlements:', data[0].entitlements);
-  setHasEntitlement(data[0].entitlements.some(e => e.includes(entitlement)));
-} else {
-  console.error('Unexpected response structure:', data);
-  setError('Unexpected response structure from the server.');
-}
-```
-
-This will help you see exactly what entitlements are being returned and adjust your check accordingly. If the entitlement you're looking for is in a different format or under a different name, you'll need to update the `entitlement` variable to match what's actually in the response.
+Remember to handle cases where the token might be expired or the user is not authenticated. You might want to add logic to refresh the token or redirect to a login page if necessary.
