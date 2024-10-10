@@ -1,61 +1,48 @@
- Based on the App.js code shown in the image, there are a few issues that need to be addressed:
-
-1. The Router component is missing. You need to wrap your entire app with BrowserRouter.
-
-2. The Routes component is missing. You should wrap your Route components with Routes.
-
-3. The AuthBlueSso component is not properly closed.
-
-Here's how you should modify your App.js:
-
-```jsx
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import './App.css';
-import Logo from './assets/lumiclear.png';
-import FooterLogo from './assets/lumilogo.png';
-import { AuthBlueSso } from './components/AuthBlue/AuthBlueSso';
-import UserInfo from './components/UserInfo';
-import NavBar from './components/NavBar';
-import Home from './components/Home';
-import ProjectSelection from './components/ProjectSelection';
-
-function App() {
-  return (
-    <Router>
-      <AuthBlueSso>
-        <div className="App">
-          <header>
-            <div className="leftheader"><img src={Logo} alt="Lumi OneConsole" className="logo" />OneConsole</div>
-            <div className="middleheader"></div>
-            <div className="rightheader"><UserInfo /></div>
-            <NavBar />
-          </header>
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/gcp-resources" element={<ProjectSelection />} />
-            </Routes>
-          </main>
-          <footer>
-            <img src={FooterLogo} alt="Lumi OneConsole" className="footerlogo" />
-            <p>Anything you want to add </p>
-          </footer>
-        </div>
-      </AuthBlueSso>
-    </Router>
-  );
-}
-
-export default App;
-```
-
-Key changes:
-
-1. Wrapped the entire app with `<Router>` component.
-2. Wrapped the `<Route>` components with `<Routes>`.
-3. Properly closed the `<AuthBlueSso>` component.
-4. Moved `<NavBar />` inside the header, as it seems to be part of your header layout.
-5. Removed `<h1>GCP Resources</h1>` and `<ProjectSelection />` from the main content, as they will be rendered by the router when needed.
-
-These changes should resolve the routing errors you were experiencing. Make sure to save the file and restart your development server if necessary. If you're still encountering issues, please check your package.json to ensure you have the correct version of react-router-dom installed (it should be version 6.x for this setup to work correctly).
+graph TD
+    A[Start] --> B[1. User Authentication and Request Submission]
+    
+    subgraph "User Interactions"
+        B
+        N[Notify User]
+        O[Options for Budget Increase]
+        M[Modify Resources]
+    end
+    
+    subgraph "System Processes"
+        C[2. Initial Request Processing]
+        D{Budget Check}
+        E[3. Queue Processing]
+        F[4. Intelligent Scheduling]
+        G[5. Resource Provisioning]
+        Q[Deallocate and Log]
+    end
+    
+    subgraph "Continuous Processes"
+        H[6. Lifecycle Management]
+        I[7. Long-running Workload Monitoring]
+        J[8. User Management of Resources]
+        K[9. Automated Resource Cleanup]
+    end
+    
+    B --> C
+    C --> D
+    D -->|Pass| E
+    D -->|Fail| N
+    N --> O
+    O --> B
+    E --> F
+    F --> G
+    G --> H
+    
+    H --> I
+    H --> J
+    H --> K
+    
+    I --> |Alert if threshold exceeded| L[Alert Responsible Person]
+    J --> M
+    M --> |Delete Option| Q
+    K --> |Identify and Deallocate Idle Resources| Q
+    
+    style User Interactions fill:#bbf,stroke:#333,stroke-width:2px
+    style System Processes fill:#bfb,stroke:#333,stroke-width:2px
+    style Continuous Processes fill:#f9f,stroke:#333,stroke-width:2px
