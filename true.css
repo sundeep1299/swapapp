@@ -1,35 +1,124 @@
- The error message at the bottom of the image indicates:
+ Certainly! To make the pagination look bigger and more prominent, we can adjust the CSS and potentially modify the Pagination component slightly. Here's how you can enhance the pagination:
 
-"ERROR in [eslint] src\components\pages\Services.js Line 164:13: Parsing error: Unexpected token (164:13)"
-
-This suggests there's a syntax error on line 164, column 13 of your Services.js file. The ESLint parser encountered an unexpected token, which usually means there's a typo or a misplaced character in your code.
-
-Looking at the code in the image, I can see a potential issue:
+1. First, let's update the Pagination component in your `Services.js` file:
 
 ```jsx
-{currentItems.map((service) => {
-  const config = parseConfig(service.config || '');
+const Pagination = ({ itemsPerPage, totalItems, paginate, currentPage }) => {
+  const pageNumbers = [];
+
+  for (let i = 1; i <= Math.ceil(totalItems / itemsPerPage); i++) {
+    pageNumbers.push(i);
+  }
+
   return (
-    <tr key={service.id}>
-      <td>{service.id || 'N/A'}</td>
-      <td>{service.name || 'N/A'}</td>
-      <td>{service.type || 'N/A'}</td>
-      <td>{service.createdBy || 'N/A'}</td>
-      <td>{service.status || 'N/A'}</td>
-      <td>{service.createdAt ? new Date(service.createdAt).toLocaleString() : 'N/A'}</td>
-      <td>{service.updatedAt ? new Date(service.updatedAt).toLocaleString() : 'N/A'}</td>
-      <td>{config.project_id || 'N/A'}</td>
-      <td>{config.region || 'N/A'}</td>
-      <td>{config.zone || 'N/A'}</td>
-    </tr>
+    <nav className="pagination-container">
+      <ul className="pagination">
+        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+          <button onClick={() => paginate(currentPage - 1)} className="page-link" disabled={currentPage === 1}>
+            Previous
+          </button>
+        </li>
+        {pageNumbers.map(number => (
+          <li key={number} className={`page-item ${currentPage === number ? 'active' : ''}`}>
+            <button onClick={() => paginate(number)} className="page-link">
+              {number}
+            </button>
+          </li>
+        ))}
+        <li className={`page-item ${currentPage === Math.ceil(totalItems / itemsPerPage) ? 'disabled' : ''}`}>
+          <button 
+            onClick={() => paginate(currentPage + 1)} 
+            className="page-link" 
+            disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
+          >
+            Next
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
-})}
+};
 ```
 
-The closing parenthesis and curly brace at the end of this map function seem to be on separate lines. They should be together, like this:
+2. Now, let's update the CSS to make the pagination bigger and more prominent. Add or update the following in your `Services.css` file:
+
+```css
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.pagination {
+  display: flex;
+  list-style-type: none;
+  padding: 0;
+}
+
+.page-item {
+  margin: 0 5px;
+}
+
+.page-link {
+  color: #007bff;
+  background-color: #fff;
+  border: 2px solid #007bff;
+  padding: 10px 15px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.page-link:hover {
+  color: #fff;
+  background-color: #007bff;
+}
+
+.page-item.active .page-link {
+  color: #fff;
+  background-color: #007bff;
+}
+
+.page-item.disabled .page-link {
+  color: #6c757d;
+  pointer-events: none;
+  cursor: not-allowed;
+  background-color: #fff;
+  border-color: #6c757d;
+}
+
+/* For smaller screens */
+@media (max-width: 768px) {
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .page-item {
+    margin: 5px;
+  }
+
+  .page-link {
+    padding: 8px 12px;
+    font-size: 16px;
+  }
+}
+```
+
+These changes will:
+
+1. Make the pagination buttons larger and more prominent.
+2. Add a hover effect to the buttons.
+3. Clearly indicate the active page and disabled buttons.
+4. Make the pagination responsive for smaller screens.
+5. Add "Previous" and "Next" buttons for easier navigation.
+
+You can further adjust the sizes, colors, and spacing to match your application's design. The `font-size`, `padding`, and `margin` properties can be tweaked to make the pagination even larger if needed.
+
+Remember to import this CSS file in your `Services.js` component if you haven't already:
 
 ```jsx
-})}
+import './Services.css';
 ```
 
-Make sure this closing part is on a single line, and check for any other misplaced brackets or parentheses in your code. If this doesn't resolve the issue, the error might be on a different line than what's visible in the image. In that case, you'd need to check line 164 of your Services.js file for any syntax errors.
+This should give you a much larger and more prominent pagination that's also more user-friendly.
