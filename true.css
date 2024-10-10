@@ -1,20 +1,10 @@
- The error messages indicate that the code is trying to read properties of null objects, specifically trying to call 'toLowerCase()' on null values. This typically happens when you're trying to access properties or methods on variables that are undefined or null.
+ The error message at the bottom of the image indicates:
 
-To fix this, we need to add null checks in our filter function. Here's how you can modify your Services component to handle potential null values:
+"ERROR in [eslint] src\components\pages\Services.js Line 164:13: Parsing error: Unexpected token (164:13)"
 
-```jsx
-const filteredServices = services.filter(service => {
-  return (
-    (filters.id === '' || (service.id && service.id.toString().includes(filters.id))) &&
-    (filters.name === '' || (service.name && service.name.toLowerCase().includes(filters.name.toLowerCase()))) &&
-    (filters.type === '' || (service.type && service.type.toLowerCase().includes(filters.type.toLowerCase()))) &&
-    (filters.createdBy === '' || (service.createdBy && service.createdBy.toLowerCase().includes(filters.createdBy.toLowerCase()))) &&
-    (filters.status === '' || (service.status && service.status.toLowerCase().includes(filters.status.toLowerCase())))
-  );
-});
-```
+This suggests there's a syntax error on line 164, column 13 of your Services.js file. The ESLint parser encountered an unexpected token, which usually means there's a typo or a misplaced character in your code.
 
-Also, make sure to add null checks when rendering the table rows:
+Looking at the code in the image, I can see a potential issue:
 
 ```jsx
 {currentItems.map((service) => {
@@ -36,4 +26,10 @@ Also, make sure to add null checks when rendering the table rows:
 })}
 ```
 
-These changes will prevent the code from trying to call methods on null values, which should resolve the errors you're seeing. If you're still encountering issues, it might be helpful to log the `services` array to the console right after you fetch it, to see exactly what data you're working with.
+The closing parenthesis and curly brace at the end of this map function seem to be on separate lines. They should be together, like this:
+
+```jsx
+})}
+```
+
+Make sure this closing part is on a single line, and check for any other misplaced brackets or parentheses in your code. If this doesn't resolve the issue, the error might be on a different line than what's visible in the image. In that case, you'd need to check line 164 of your Services.js file for any syntax errors.
