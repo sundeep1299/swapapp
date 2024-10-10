@@ -1,123 +1,191 @@
- I see the issue. The pagination numbers are extending beyond the visible area of the web view. To fix this, we can implement a more compact pagination system that shows only a limited number of page numbers and includes "Previous" and "Next" buttons. Here's an updated version of the Pagination component:
+ Certainly! Implementing filters is a great way to help users find specific information quickly. Let's add filters for the main columns in your table. We'll create filter inputs for ID, Name, Type, Created By, and Status. Here's how you can modify your Services component to include these filters:
 
 ```jsx
-const Pagination = ({ itemsPerPage, totalItems, paginate, currentPage }) => {
-  const pageNumbers = [];
-  for (let i = 1; i <= Math.ceil(totalItems / itemsPerPage); i++) {
-    pageNumbers.push(i);
-  }
+import React, { useState, useEffect } from 'react';
+import './Services.css';
 
-  const maxPageNumbersToShow = 5; // Adjust this number as needed
-  let startPage, endPage;
+const ITEMS_PER_PAGE = 10;
 
-  if (pageNumbers.length <= maxPageNumbersToShow) {
-    startPage = 1;
-    endPage = pageNumbers.length;
-  } else {
-    const maxPagesBeforeCurrentPage = Math.floor(maxPageNumbersToShow / 2);
-    const maxPagesAfterCurrentPage = Math.ceil(maxPageNumbersToShow / 2) - 1;
+const Services = () => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState({
+    id: '',
+    name: '',
+    type: '',
+    createdBy: '',
+    status: ''
+  });
 
-    if (currentPage <= maxPagesBeforeCurrentPage) {
-      startPage = 1;
-      endPage = maxPageNumbersToShow;
-    } else if (currentPage + maxPagesAfterCurrentPage >= pageNumbers.length) {
-      startPage = pageNumbers.length - maxPageNumbersToShow + 1;
-      endPage = pageNumbers.length;
-    } else {
-      startPage = currentPage - maxPagesBeforeCurrentPage;
-      endPage = currentPage + maxPagesAfterCurrentPage;
-    }
-  }
+  useEffect(() => {
+    // ... (fetchServices function remains the same)
+  }, []);
 
-  const handlePrevious = () => {
-    if (currentPage > 1) paginate(currentPage - 1);
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [name]: value
+    }));
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
-  const handleNext = () => {
-    if (currentPage < pageNumbers.length) paginate(currentPage + 1);
-  };
+  const filteredServices = services.filter(service => {
+    return (
+      service.id.toString().includes(filters.id) &&
+      service.name.toLowerCase().includes(filters.name.toLowerCase()) &&
+      service.type.toLowerCase().includes(filters.type.toLowerCase()) &&
+      service.createdBy.toLowerCase().includes(filters.createdBy.toLowerCase()) &&
+      service.status.toLowerCase().includes(filters.status.toLowerCase())
+    );
+  });
+
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentItems = filteredServices.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <nav>
-      <ul className="pagination">
-        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-          <button onClick={handlePrevious} className="page-link">Previous</button>
-        </li>
-        {startPage > 1 && (
-          <>
-            <li className="page-item"><button onClick={() => paginate(1)} className="page-link">1</button></li>
-            {startPage > 2 && <li className="page-ellipsis">...</li>}
-          </>
-        )}
-        {pageNumbers.slice(startPage - 1, endPage).map(number => (
-          <li key={number} className={`page-item ${currentPage === number ? 'active' : ''}`}>
-            <button onClick={() => paginate(number)} className="page-link">
-              {number}
-            </button>
-          </li>
-        ))}
-        {endPage < pageNumbers.length && (
-          <>
-            {endPage < pageNumbers.length - 1 && <li className="page-ellipsis">...</li>}
-            <li className="page-item"><button onClick={() => paginate(pageNumbers.length)} className="page-link">{pageNumbers.length}</button></li>
-          </>
-        )}
-        <li className={`page-item ${currentPage === pageNumbers.length ? 'disabled' : ''}`}>
-          <button onClick={handleNext} className="page-link">Next</button>
-        </li>
-      </ul>
-    </nav>
+    <div className="services-container">
+      <h1>All Services</h1>
+      {loading && <p>Loading services...</p>}
+      {error && <p className="error-message">{error}</p>}
+      {services.length > 0 && (
+        <>
+          <div className="filters">
+            <input
+              type="text"
+              placeholder="Filter by ID"
+              name="id"
+              value={filters.id}
+              onChange={handleFilterChange}
+            />
+            <input
+              type="text"
+              placeholder="Filter by Name"
+              name="name"
+              value={filters.name}
+              onChange={handleFilterChange}
+            />
+            <input
+              type="text"
+              placeholder="Filter by Type"
+              name="type"
+              value={filters.type}
+              onChange={handleFilterChange}
+            />
+            <input
+              type="text"
+              placeholder="Filter by Created By"
+              name="createdBy"
+              value={filters.createdBy}
+              onChange={handleFilterChange}
+            />
+            <input
+              type="text"
+              placeholder="Filter by Status"
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+            />
+          </div>
+          <table className="services-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Created By</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Updated At</th>
+                <th>Project ID</th>
+                <th>Region</th>
+                <th>Zone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.map((service) => {
+                const config = parseConfig(service.config);
+                return (
+                  <tr key={service.id}>
+                    <td>{service.id}</td>
+                    <td>{service.name}</td>
+                    <td>{service.type}</td>
+                    <td>{service.createdBy}</td>
+                    <td>{service.status}</td>
+                    <td>{new Date(service.createdAt).toLocaleString()}</td>
+                    <td>{new Date(service.updatedAt).toLocaleString()}</td>
+                    <td>{config.project_id || 'N/A'}</td>
+                    <td>{config.region || 'N/A'}</td>
+                    <td>{config.zone || 'N/A'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <Pagination
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalItems={filteredServices.length}
+            paginate={paginate}
+            currentPage={currentPage}
+          />
+        </>
+      )}
+    </div>
   );
 };
+
+// ... (Pagination component remains the same)
+
+export default Services;
 ```
 
-Then, update your CSS to accommodate these changes:
+Add the following CSS for the filters:
 
 ```css
-.pagination {
+.filters {
   display: flex;
-  list-style: none;
-  padding: 0;
-  justify-content: center;
-  margin-top: 20px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
-.page-item {
-  margin: 2px;
-}
-
-.page-link {
-  padding: 5px 10px;
+.filters input {
+  padding: 8px;
   border: 1px solid #ddd;
-  background-color: #f8f9fa;
-  color: #007bff;
-  cursor: pointer;
+  border-radius: 4px;
+  width: 18%;
 }
 
-.page-item.active .page-link {
-  background-color: #007bff;
-  color: white;
-}
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+  }
 
-.page-item.disabled .page-link {
-  color: #6c757d;
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-.page-ellipsis {
-  padding: 5px;
+  .filters input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
 }
 ```
 
-This updated pagination system will:
+This implementation adds the following features:
 
-1. Show a limited number of page numbers (adjustable via `maxPageNumbersToShow`).
-2. Always show the first and last page numbers.
-3. Use ellipsis (...) to indicate skipped page numbers.
-4. Include "Previous" and "Next" buttons for easier navigation.
-5. Disable "Previous" on the first page and "Next" on the last page.
-6. Use flex-wrap to ensure the pagination fits within the container.
+1. Filter inputs for ID, Name, Type, Created By, and Status.
+2. Real-time filtering as the user types into the filter inputs.
+3. The filters are case-insensitive for better user experience.
+4. Pagination is updated to work with the filtered results.
+5. The current page is reset to 1 whenever a filter is changed.
+6. Responsive design for the filter inputs.
 
-These changes should make the pagination more compact and responsive, preventing it from overflowing the web view. Adjust the `maxPageNumbersToShow` value as needed to fit your design.
+You can further enhance this by:
+
+1. Adding debounce to the filter function if you have a large dataset to improve performance.
+2. Implementing dropdown selects for fields like Type and Status if they have a fixed set of values.
+3. Adding a "Clear Filters" button to reset all filters at once.
+4. Considering server-side filtering if your dataset is very large, to reduce the load on the client-side.
+
+Remember to adjust the styling to match your application's design and to ensure the filter inputs are visually consistent with your other UI elements.
