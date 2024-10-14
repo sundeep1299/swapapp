@@ -1,36 +1,106 @@
- Certainly! To make the pagination look bigger and more prominent, we can adjust the CSS and potentially modify the Pagination component slightly. Here's how you can enhance the pagination:
+ I apologize for the pagination appearance. Let's improve the CSS for the pagination to make it look more polished and aligned with the design in your image. Here's an updated CSS for the pagination:
 
-1. First, let's update the Pagination component in your `Services.js` file:
+```css
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.pagination li {
+  list-style-type: none;
+  margin: 0 2px;
+}
+
+.pagination button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  font-size: 14px;
+  line-height: 30px;
+  text-align: center;
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pagination button:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.pagination .active button {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: #ffffff;
+}
+
+.pagination .active button:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.pagination .disabled button {
+  color: rgba(0, 0, 0, 0.25);
+  border-color: #d9d9d9;
+  cursor: not-allowed;
+}
+```
+
+Also, let's update the Pagination component in your React code to include "Previous" and "Next" buttons, and limit the number of page buttons shown:
 
 ```jsx
 const Pagination = ({ itemsPerPage, totalItems, paginate, currentPage }) => {
   const pageNumbers = [];
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  for (let i = 1; i <= Math.ceil(totalItems / itemsPerPage); i++) {
+  // Logic to show limited page numbers
+  let startPage, endPage;
+  if (totalPages <= 7) {
+    startPage = 1;
+    endPage = totalPages;
+  } else {
+    if (currentPage <= 4) {
+      startPage = 1;
+      endPage = 7;
+    } else if (currentPage + 3 >= totalPages) {
+      startPage = totalPages - 6;
+      endPage = totalPages;
+    } else {
+      startPage = currentPage - 3;
+      endPage = currentPage + 3;
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
     pageNumbers.push(i);
   }
 
   return (
-    <nav className="pagination-container">
-      <ul className="pagination">
-        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-          <button onClick={() => paginate(currentPage - 1)} className="page-link" disabled={currentPage === 1}>
+    <nav>
+      <ul className='pagination'>
+        <li className={currentPage === 1 ? 'disabled' : ''}>
+          <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
             Previous
           </button>
         </li>
+        {startPage > 1 && <li><button onClick={() => paginate(1)}>1</button></li>}
+        {startPage > 2 && <li className="ellipsis">...</li>}
         {pageNumbers.map(number => (
-          <li key={number} className={`page-item ${currentPage === number ? 'active' : ''}`}>
-            <button onClick={() => paginate(number)} className="page-link">
+          <li key={number} className={currentPage === number ? 'active' : ''}>
+            <button onClick={() => paginate(number)}>
               {number}
             </button>
           </li>
         ))}
-        <li className={`page-item ${currentPage === Math.ceil(totalItems / itemsPerPage) ? 'disabled' : ''}`}>
-          <button 
-            onClick={() => paginate(currentPage + 1)} 
-            className="page-link" 
-            disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
-          >
+        {endPage < totalPages - 1 && <li className="ellipsis">...</li>}
+        {endPage < totalPages && <li><button onClick={() => paginate(totalPages)}>{totalPages}</button></li>}
+        <li className={currentPage === totalPages ? 'disabled' : ''}>
+          <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages}>
             Next
           </button>
         </li>
@@ -40,85 +110,13 @@ const Pagination = ({ itemsPerPage, totalItems, paginate, currentPage }) => {
 };
 ```
 
-2. Now, let's update the CSS to make the pagination bigger and more prominent. Add or update the following in your `Services.css` file:
+This updated pagination component and CSS will:
 
-```css
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
-}
+1. Align the pagination buttons properly
+2. Add "Previous" and "Next" buttons
+3. Limit the number of visible page buttons to prevent overcrowding
+4. Add ellipsis (...) when there are many pages
+5. Highlight the current page
+6. Disable "Previous" on the first page and "Next" on the last page
 
-.pagination {
-  display: flex;
-  list-style-type: none;
-  padding: 0;
-}
-
-.page-item {
-  margin: 0 5px;
-}
-
-.page-link {
-  color: #007bff;
-  background-color: #fff;
-  border: 2px solid #007bff;
-  padding: 10px 15px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.page-link:hover {
-  color: #fff;
-  background-color: #007bff;
-}
-
-.page-item.active .page-link {
-  color: #fff;
-  background-color: #007bff;
-}
-
-.page-item.disabled .page-link {
-  color: #6c757d;
-  pointer-events: none;
-  cursor: not-allowed;
-  background-color: #fff;
-  border-color: #6c757d;
-}
-
-/* For smaller screens */
-@media (max-width: 768px) {
-  .pagination {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .page-item {
-    margin: 5px;
-  }
-
-  .page-link {
-    padding: 8px 12px;
-    font-size: 16px;
-  }
-}
-```
-
-These changes will:
-
-1. Make the pagination buttons larger and more prominent.
-2. Add a hover effect to the buttons.
-3. Clearly indicate the active page and disabled buttons.
-4. Make the pagination responsive for smaller screens.
-5. Add "Previous" and "Next" buttons for easier navigation.
-
-You can further adjust the sizes, colors, and spacing to match your application's design. The `font-size`, `padding`, and `margin` properties can be tweaked to make the pagination even larger if needed.
-
-Remember to import this CSS file in your `Services.js` component if you haven't already:
-
-```jsx
-import './Services.css';
-```
-
-This should give you a much larger and more prominent pagination that's also more user-friendly.
+These changes should make your pagination look much more like the one in your image, with a cleaner and more professional appearance.
