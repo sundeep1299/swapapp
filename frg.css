@@ -1,121 +1,91 @@
-To add the select dropdown in your home.js component based on the admin entitlement, you can follow these steps. I will incorporate the existing import from American Express's DLS-React package and place the select dropdown only when the user has the admin entitlement.
+/* Home.css */
 
-Here is the updated version of your home.js with the select dropdown:
+.home-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
 
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuthBlueSSO } from 'use-authblue-sso';
-import { ButtonPrimary } from '@americanexpress/dls-react';
-import { Select, SelectOption } from '@americanexpress/dls-react';  // Importing Select and SelectOption
-import './Home.css';
+.homehead {
+    font-size: 28px;
+    color: #00448a;
+    text-align: center;
+}
 
-const Home = () => {
-    const [hasEntitlement, setHasEntitlement] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const user = useAuthBlueSSO();
-    const [userType, setUserType] = useState('regular'); // state to manage selected option
+.homePara {
+    font-size: 18px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 30px;
+}
 
-    useEffect(() => {
-        const fetchEntitlements = async () => {
-            try {
-                const response = await fetch('https://lumienterprise-dev.aexp.com/un/entitlements', {
-                    method: 'POST',
-                    headers: {
-                        'X-ADS-ID': 'kvali6',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ adsId: 'kvali6' }),
-                });
+.dashboardSummary {
+    margin: 20px 0;
+}
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+.dashboardSummary h2 {
+    font-size: 22px;
+    color: #00448a;
+}
 
-                const data = await response.json();
-                console.log('Response data:', data);
-                const entitlement = 'PRC-AXP-AA-F1-AppAdmin-MGBD-PlatformAdmin';
+.dashboardSummary ul {
+    list-style-type: none;
+    padding: 0;
+}
 
-                if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].entitlements)) {
-                    setHasEntitlement(data[0].entitlements.some(e => e.includes(entitlement)));
-                } else {
-                    console.error('Unexpected response structure:', data);
-                    setError('Unexpected response structure from the server.');
-                }
-            } catch (e) {
-                console.error('Error fetching entitlements:', e);
-                setError('Failed to fetch entitlements. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        };
+.dashboardSummary ul li {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
 
-        fetchEntitlements();
-    }, []);
+/* Styling for error messages */
+.error-message {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
 
-    const handleUserTypeChange = (value) => {
-        setUserType(value); // Update state when user changes selection
-    };
+/* Styling for select dropdown */
+.select-dropdown {
+    margin-top: 20px;
+    text-align: center;
+}
 
-    return (
-        <div className="home-container">
-            <h2 className="homehead">Welcome to Lumi OneConsole!</h2>
-            <p className="homePara">Manage and monitor your public cloud resources efficiently.</p>
+.select-dropdown label {
+    font-size: 16px;
+    color: #00448a;
+    display: block;
+    margin-bottom: 8px;
+}
 
-            {loading && <p>Loading entitlements...</p>}
-            {error && <p className="error-message">{error}</p>}
+.select-dropdown select {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+    margin-bottom: 15px;
+}
 
-            <div className="dashboardSummary">
-                <h2>Quick Overview</h2>
-                <ul>
-                    <li>View and manage Data Proc Clusters</li>
-                    <li>Monitor Managed Notebooks</li>
-                    <li>Track Workbench Instances</li>
-                </ul>
-            </div>
+.select-dropdown p {
+    font-size: 14px;
+    color: #333;
+}
 
-            {hasEntitlement && (
-                <>
-                    <Link to="/services">
-                        <ButtonPrimary>View All Services</ButtonPrimary>
-                    </Link>
-                    
-                    {/* Select dropdown for user type */}
-                    <div className="select-dropdown">
-                        <label htmlFor="user-type-select">Select User Type</label>
-                        <Select
-                            id="user-type-select"
-                            value={userType}
-                            onChange={(e) => handleUserTypeChange(e.target.value)}
-                            aria-labelledby="user-type-select"
-                        >
-                            <SelectOption value="admin">Admin</SelectOption>
-                            <SelectOption value="regular">Regular User</SelectOption>
-                        </Select>
-                        <p>Selected User Type: {userType}</p>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-};
+/* Button styling */
+button {
+    display: block;
+    margin: 20px auto;
+    background-color: #00448a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
 
-export default Home;
-
-Key Changes:
-
-1. Select Dropdown: Added the Select component with SelectOption as per your provided imports. The dropdown appears only if the user has the admin entitlement.
-
-
-2. State Management: Used the userType state to store the currently selected user type (Admin or Regular User).
-
-
-3. Conditional Rendering: The select dropdown is rendered only when the hasEntitlement state is true, meaning the user has the admin entitlement.
-
-
-4. User Type Handling: The selected value of the dropdown is stored in the userType state, and I added a paragraph to display the currently selected user type.
-
-
-
-Now, the select dropdown with the options "Admin" and "Regular User" will be shown to users who have admin entitlement, as requested.
-
+button:hover {
+    background-color: #003368;
+}
