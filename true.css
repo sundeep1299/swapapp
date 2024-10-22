@@ -1,0 +1,64 @@
+import requests
+import json
+import openpyxl
+import warnings
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+warnings.simplefilter('ignore', InsecureRequestWarning)
+
+def get_auth_token():
+    url = "https://aexp.oktapreview.com/oauth2/aus1kh0oh8jY8jwqJ0h8/v1/token"
+    payload = 'username=svc.aj.aida-lumi-api&password=A!daLum1&scope=openid&grant_type=password'
+    headers = {
+        'Authorization': 'Basic MG9hMWtoMGw2eHdBWHQ2cWswaDg=',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': 'JSESSIONID=629322A413F1640648ECAE4A6990A0EB; JSESSIONID=6D6EDD58E277FC49B9E8F56990EF858D'
+    }
+    response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+    return json.loads(response.text)['access_token']
+
+def read_log_excel(filename="workbench_instances_log.xlsx"):
+    wb = openpyxl.load_workbook(filename)
+    sheet = wb.active
+    data = []
+    headers = [cell.value for cell in sheet[1]]
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        row_data = dict(zip(headers, row))
+        if row_data['Resource Name'] != 'N/A':  # Skip rows where resource creation failed
+            data.append(row_data)
+    return data
+
+def delete_workbench_instance(auth_token, resource_name):
+    url = f"https://lumigcpauto-qa.aexp.com/un/terraform/automate/workbench-{resource_name}"
+    headers = {
+        'Authorization': f'Bearer {auth_token}',
+        'Content-Type': 'application/json',
+        'x-ads-id': 'kva116'  # You might need to adjust this based on your requirements
+    }
+    payload = {}
+    response = requests.request("DELETE", url, headers=headers, data=payload, verify=False)
+    return response
+
+def main():
+    auth_token = get_auth_token()
+    print("Auth Token obtained successfully.")
+    
+    log_data = read_log_excel()
+    
+    for row in log_data:
+        resource_name = row['Resource Name']
+        print(f"Deleting workbench instance: {resource_name}")
+        
+        response = delete_workbench_instance(auth_token, resource_name)
+        
+        if response.status_code == 200:
+            print(f"Successfully deleted workbench instance: {resource_name}")
+        else:
+            print(f"Failed to delete workbench instance: {resource_name}")
+            print(f"Status Code: {response.status_code}")
+            print(f"Response: {response.text}")
+        
+        print("--------------------")
+
+if __name__ == "__main__":
+    main()
