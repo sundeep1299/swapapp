@@ -20,9 +20,38 @@ def get_auth_token():
     response = requests.request("POST", url, headers=headers, data=payload, verify=False)
     return json.loads(response.text)['access_token']
 
+def read_prc_groups(filename="prc_groups_log.xlsx"):
+    """Read PRC groups from Excel file"""
+    try:
+        wb = openpyxl.load_workbook(filename)
+        ws = wb.active
+        
+        # Find the PRC Groups column
+        headers = [cell.value for cell in ws[1]]
+        if 'PRC Groups' not in headers:
+            raise ValueError("'PRC Groups' column not found in Excel file")
+        
+        prc_col = headers.index('PRC Groups') + 1
+        
+        # Read PRC groups (skip header)
+        prc_groups = []
+        for row in range(2, ws.max_row + 1):
+            prc_group = ws.cell(row=row, column=prc_col).value
+            if prc_group and prc_group != 'No PRC groups found':
+                prc_groups.append({
+                    'row': row,
+                    'group': prc_group.strip()
+                })
+        
+        return prc_groups, wb, ws
+    except Exception as e:
+        print(f"Error reading Excel file: {str(e)}")
+        return None, None, None
+
 def get_group_members(auth_token, prc_group):
     """Get members for a PRC group"""
     url = f"https://lumigcpauto.aexp.com/gcp/admin/groups/{prc_group}/members"
+    
     headers = {
         'Authorization': f'Bearer {auth_token}',
         'Accept': '*/*'
@@ -44,61 +73,61 @@ def extract_member_emails(members_data):
                 emails.append(member['email'])
     return '; '.join(emails) if emails else 'No active members found'
 
-def update_excel_with_members(filename="prc_groups_log.xlsx"):
-    """Update Excel file with member information"""
-    try:
-        wb = openpyxl.load_workbook(filename)
-        ws = wb.active
-        
-        # Add Members column if it doesn't exist
-        headers = [cell.value for cell in ws[1]]
-        if 'Members' not in headers:
-            next_col = ws.max_column + 1
-            ws.cell(row=1, column=next_col, value='Members')
-            members_col = next_col
-        else:
-            members_col = headers.index('Members') + 1
-        
-        # Get auth token
-        auth_token = get_auth_token()
-        print("Auth Token obtained successfully.")
-        
-        # Find PRC Groups column
-        prc_col = headers.index('PRC Groups') + 1
-        
-        # Process each row (skip header)
-        for row in range(2, ws.max_row + 1):
-            prc_group = ws.cell(row=row, column=prc_col).value
-            
-            # Only process if there's a valid PRC group
-            if prc_group and prc_group != 'No PRC groups found':
-                print(f"\nProcessing PRC group: {prc_group}")
-                try:
-                    members_data = get_group_members(auth_token, prc_group)
-                    if members_data:
-                        member_emails = extract_member_emails(members_data)
-                        ws.cell(row=row, column=members_col, value=member_emails)
-                        print(f"Found members: {member_emails}")
-                    else:
-                        ws.cell(row=row, column=members_col, value="Error fetching members")
-                except Exception as e:
-                    error_msg = f"Error: {str(e)}"
-                    print(error_msg)
-                    ws.cell(row=row, column=members_col, value=error_msg)
-            else:
-                ws.cell(row=row, column=members_col, value="No PRC group to process")
-        
-        # Save the workbook
-        wb.save(filename)
-        print(f"\nSuccessfully updated {filename} with member information")
-        
-    except Exception as e:
-        print(f"Error processing Excel file: {str(e)}")
+def update_excel_with_members(wb, ws, prc_data, members):
+    """Update Excel with member information"""
+    # Add Members column if it doesn't exist
+    headers = [cell.value for cell in ws[1]]
+    if 'Members' not in headers:
+        next_col = ws.max_column + 1
+        ws.cell(row=1, column=next_col, value='Members')
+        members_col = next_col
+    else:
+        members_col = headers.index('Members') + 1
+    
+    # Update member information
+    ws.cell(row=prc_data['row'], column=members_col, value=members)
+    
+    return wb, ws
 
 def main():
     print("Starting PRC group member fetch process...")
-    update_excel_with_members()
-    print("Process completed!")
+    
+    # Read PRC groups from Excel
+    prc_groups, wb, ws = read_prc_groups()
+    if not prc_groups:
+        print("No PRC groups found to process")
+        return
+    
+    # Get authentication token
+    auth_token = get_auth_token()
+    print("Auth Token obtained successfully.")
+    
+    # Process each PRC group
+    for prc_data in prc_groups:
+        print(f"\nProcessing PRC group: {prc_data['group']}")
+        
+        try:
+            # Get members
+            members_data = get_group_members(auth_token, prc_data['group'])
+            if members_data:
+                member_emails = extract_member_emails(members_data)
+                print(f"Found members: {member_emails}")
+                
+                # Update Excel
+                wb, ws = update_excel_with_members(wb, ws, prc_data, member_emails)
+            else:
+                print("Failed to get members data")
+                wb, ws = update_excel_with_members(wb, ws, prc_data, "Error fetching members")
+        except Exception as e:
+            print(f"Error processing group: {str(e)}")
+            wb, ws = update_excel_with_members(wb, ws, prc_data, f"Error: {str(e)}")
+    
+    # Save the updated Excel file
+    try:
+        wb.save("prc_groups_log.xlsx")
+        print("\nSuccessfully updated Excel file with member information")
+    except Exception as e:
+        print(f"Error saving Excel file: {str(e)}")
 
 if __name__ == "__main__":
     main()
