@@ -1,0 +1,104 @@
+import requests
+import json
+import openpyxl
+from datetime import datetime
+import os
+import warnings
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+warnings.simplefilter('ignore', InsecureRequestWarning)
+
+def get_auth_token():
+    # ... (keep existing get_auth_token function)
+
+def read_project_ids(filename="wicreate.xlsx"):
+    # ... (keep existing read_project_ids function)
+
+def extract_prc_groups(response_data):
+    """Extract PRC groups from the API response"""
+    prc_groups = set()  # Using set to avoid duplicates
+    
+    try:
+        policy = response_data.get('policy', {})
+        bindings = policy.get('bindings', [])
+        
+        for binding in bindings:
+            members = binding.get('members', [])
+            for member in members:
+                if member.startswith('group:prc-'):
+                    prc_groups.add(member.replace('group:', ''))
+    except Exception as e:
+        print(f"Error extracting PRC groups: {str(e)}")
+    
+    return list(prc_groups)
+
+def get_prc_groups(auth_token, project_id):
+    """Get PRC groups for a project"""
+    url = "https://lumigcpauto.aexp.com/un/gcp/iam"
+    
+    payload = json.dumps({
+        "scope": "projects/prj-p-au-us-ict-anlyt",
+        "query": f"resource:projects/{project_id}"
+    })
+    
+    headers = {
+        'Authorization': f'Bearer {auth_token}',
+        'Content-Type': 'application/json'
+    }
+    
+    response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+    return response.json()
+
+def log_prc_groups(project_id, prc_groups):
+    """Log PRC groups to Excel file"""
+    filename = "prc_groups_log.xlsx"
+    
+    if os.path.exists(filename):
+        wb = openpyxl.load_workbook(filename)
+        ws = wb.active
+    else:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(["Timestamp", "Project ID", "PRC Groups"])
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    prc_groups_str = "; ".join(prc_groups) if prc_groups else "No PRC groups found"
+    
+    ws.append([timestamp, project_id, prc_groups_str])
+    wb.save(filename)
+    print(f"Logged PRC groups for project {project_id}")
+
+def main():
+    # Get authentication token
+    auth_token = get_auth_token()
+    print("Auth Token obtained successfully.")
+    
+    # Read project IDs from Excel
+    project_ids = read_project_ids()
+    print(f"Found {len(project_ids)} unique project IDs")
+    
+    # Process each project ID
+    for project_id in project_ids:
+        print(f"\nProcessing project: {project_id}")
+        
+        try:
+            # Get IAM data
+            response_data = get_prc_groups(auth_token, project_id)
+            
+            # Extract PRC groups
+            prc_groups = extract_prc_groups(response_data)
+            print(f"Found {len(prc_groups)} PRC groups for {project_id}")
+            for group in prc_groups:
+                print(f"  - {group}")
+            
+            # Log results
+            log_prc_groups(project_id, prc_groups)
+            
+        except Exception as e:
+            print(f"Error processing project {project_id}: {str(e)}")
+            log_prc_groups(project_id, ["Error: " + str(e)])
+        
+        print("------------------------")
+
+if __name__ == "__main__":
+    main()
