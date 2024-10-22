@@ -1,0 +1,49 @@
+ Ah, I see. The response structure is different from what we assumed. Let's update the `extract_prc_groups` function to handle this nested structure:
+
+```python
+def extract_prc_groups(response_data):
+    """Extract PRC groups from the API response"""
+    prc_groups = set()  # Using set to avoid duplicates
+    
+    try:
+        # Navigate through the nested structure
+        results = response_data.get('results', {})
+        for result in results:
+            policy = result.get('policy', {})
+            bindings = policy.get('bindings', [])
+            
+            for binding in bindings:
+                members = binding.get('members', [])
+                for member in members:
+                    if member.lower().startswith(('group:prc-', 'GROUP:prc-')):
+                        group_name = member.split(':', 1)[1] if ':' in member else member
+                        prc_groups.add(group_name)
+                        print(f"Found PRC group: {group_name}")  # Debug print
+    except Exception as e:
+        print(f"Error extracting PRC groups: {str(e)}")
+        print(f"Response data: {json.dumps(response_data, indent=2)}")  # Debug print
+    
+    return list(prc_groups)
+```
+
+The key change is that we're now expecting the structure:
+```
+{
+    "results": [
+        {
+            "resource": "...",
+            "project": "...",
+            "policy": {
+                "bindings": [
+                    {
+                        "role": "...",
+                        "members": ["group:prc-..."]
+                    }
+                ]
+            }
+        }
+    ]
+}
+```
+
+This should now correctly parse the PRC groups from your API response. Let me know if you need any adjustments!
