@@ -1,0 +1,41 @@
+ Ah, I understand. The PRC group is appearing multiple times in different roles, but you want to capture it just once. Let's modify the `extract_prc_groups` function to only capture unique PRC groups:
+
+```python
+def extract_prc_groups(response_data):
+    """Extract PRC groups from the API response"""
+    prc_groups = set()  # Using set to avoid duplicates
+    
+    try:
+        # Navigate through the nested structure
+        results = response_data.get('results', {})
+        for result in results:
+            policy = result.get('policy', {})
+            bindings = policy.get('bindings', [])
+            
+            # Flag to break once we find a PRC group
+            prc_found = False
+            
+            for binding in bindings:
+                members = binding.get('members', [])
+                for member in members:
+                    if member.lower().startswith(('group:prc-', 'GROUP:prc-')):
+                        group_name = member.split(':', 1)[1] if ':' in member else member
+                        prc_groups.add(group_name)
+                        prc_found = True
+                        break  # Break after finding first PRC group in members
+                
+                if prc_found:
+                    break  # Break after finding first PRC group in bindings
+    except Exception as e:
+        print(f"Error extracting PRC groups: {str(e)}")
+    
+    # Convert set to list and take only the first one if multiple exist
+    prc_list = list(prc_groups)
+    return [prc_list[0]] if prc_list else []
+```
+
+Key changes:
+1. Added flags to break out of the loops once we find the first PRC group
+2. Return only the first PRC group found by taking `prc_list[0]`
+
+This will now return only the first unique PRC group found in the response, even if it appears multiple times in different roles. Let me know if this better matches what you need!
