@@ -1,0 +1,76 @@
+ I see the issue. Looking at the API response in your image, it's clear that the PRC group exists in the response but isn't being detected correctly. The issue is in how we're parsing the members. Let's fix the `extract_prc_groups` function:
+
+```python
+def extract_prc_groups(response_data):
+    """Extract PRC groups from the API response"""
+    prc_groups = set()  # Using set to avoid duplicates
+    
+    try:
+        policy = response_data.get('policy', {})
+        bindings = policy.get('bindings', [])
+        
+        for binding in bindings:
+            members = binding.get('members', [])
+            for member in members:
+                # Modified condition to handle both 'group:' and 'GROUP:' prefixes
+                if member.lower().startswith(('group:prc-', 'GROUP:prc-')):
+                    # Remove the 'group:' or 'GROUP:' prefix and add to set
+                    group_name = member.split(':', 1)[1] if ':' in member else member
+                    prc_groups.add(group_name)
+                    print(f"Found PRC group: {group_name}")  # Debug print
+    except Exception as e:
+        print(f"Error extracting PRC groups: {str(e)}")
+    
+    return list(prc_groups)
+```
+
+Key changes:
+1. Added case-insensitive checking using `lower()`
+2. Added debug print to see what groups are being found
+3. Improved the prefix removal logic
+
+Also, let's add some debug printing in the main function:
+
+```python
+def main():
+    auth_token = get_auth_token()
+    print("Auth Token obtained successfully.")
+    
+    project_ids = read_project_ids()
+    print(f"Found {len(project_ids)} unique project IDs")
+    
+    for project_id in project_ids:
+        print(f"\nProcessing project: {project_id}")
+        
+        try:
+            response_data = get_prc_groups(auth_token, project_id)
+            print("Raw API response:")
+            print(json.dumps(response_data, indent=2))  # Debug print
+            
+            prc_groups = extract_prc_groups(response_data)
+            print(f"Found {len(prc_groups)} PRC groups for {project_id}")
+            
+            if prc_groups:
+                print("PRC Groups found:")
+                for group in prc_groups:
+                    print(f"  - {group}")
+            else:
+                print("No PRC groups found")
+            
+            log_prc_groups(project_id, prc_groups)
+            
+        except Exception as e:
+            print(f"Error processing project {project_id}: {str(e)}")
+            log_prc_groups(project_id, ["Error: " + str(e)])
+        
+        print("------------------------")
+```
+
+This should now correctly identify and extract the PRC groups from the response. From your screenshot, I can see that the PRC group "prc-axp-ba-e3-appuser-ngbd-usictanlyt@aexp.com" should be detected.
+
+Also, make sure that:
+1. The API response is being received correctly
+2. The project ID being used matches the one in the response
+3. The response structure matches what we're expecting (policy -> bindings -> members)
+
+Can you try this updated version and let me know if it's now detecting the PRC groups correctly? If not, we can add more debug output to pinpoint exactly where the parsing is failing.
