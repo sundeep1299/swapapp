@@ -1,36 +1,41 @@
- Ah, now I understand! Let's modify the `update_log_excel` function to skip updating when the Resource Name is 'N/A':
+ Ah, I see the issue now! You're absolutely right. When the Resource Name is 'N/A', we shouldn't even make the API call or try to update that row. Also, the URLs are being incorrectly duplicated. Let's fix this in the main function:
 
 ```python
-def update_log_excel(wb, sheet, row_index, proxy_uri, status):
-    """Update Excel with URL and status, skipping N/A rows"""
-    # First check if Resource Name is N/A for this row
-    resource_name = sheet.cell(row=row_index, column=1).value  # Assuming Resource Name is in first column
+def main():
+    auth_token = get_auth_token()
+    print("Auth Token obtained successfully.")
     
-    # Skip update if Resource Name is N/A
-    if resource_name == 'N/A':
-        return
+    log_data, wb, sheet = read_log_excel()
+    
+    for index, row in enumerate(log_data, start=2):
+        resource_name = sheet.cell(row=index, column=1).value  # Get Resource Name
         
-    # Add columns if they don't exist
-    headers = [cell.value for cell in sheet[1]]
-    if 'Proxy URI' not in headers:
-        sheet.cell(row=1, column=sheet.max_column + 1, value='Proxy URI')
-    if 'Updated Status' not in headers:
-        sheet.cell(row=1, column=sheet.max_column + 1, value='Updated Status')
+        # Skip if Resource Name is N/A - don't even make the API call
+        if resource_name == 'N/A':
+            print(f"Skipping row {index} - Resource Name is N/A")
+            continue
+            
+        print(f"Checking status for resource: {resource_name}")
+        
+        # Only make API call and update for non-N/A resources
+        status_response = check_instance_status(auth_token, resource_name)
+        current_status = status_response.get('status', 'UNKNOWN')
+        proxy_uri = status_response.get('gcp', {}).get('proxyUri', 'N/A')
+        
+        print(f"Current status: {current_status}")
+        print(f"Proxy URI: {'https://' + proxy_uri if proxy_uri != 'N/A' else 'N/A'}")
+        
+        # Update Excel only for valid resources
+        update_log_excel(wb, sheet, index, proxy_uri, current_status)
+        print(f"Updated log for resource: {resource_name}\n")
     
-    proxy_uri_col = headers.index('Proxy URI') + 1
-    status_col = headers.index('Updated Status') + 1
-    
-    # Add https:// to proxy_uri if it's not N/A
-    complete_uri = f"https://{proxy_uri}" if proxy_uri != 'N/A' else 'N/A'
-    
-    # Update cells
-    sheet.cell(row=row_index, column=proxy_uri_col, value=complete_uri)
-    sheet.cell(row=row_index, column=status_col, value=status)
+    wb.save("workbench_instances_log.xlsx")
 ```
 
 This change will:
-1. Check if Resource Name is 'N/A' before attempting any updates
-2. Skip the update completely if it is 'N/A'
-3. Proceed with normal updates for all other rows
+1. First check if Resource Name is 'N/A'
+2. Skip the entire process (API call and update) for 'N/A' rows
+3. Only make API calls and updates for valid resource names
+4. Each row will get its own proper URL (no duplication)
 
-The rest of your code can remain the same. Much simpler solution! Let me know if you need any adjustments!
+The URLs won't be duplicated anymore because we're only processing and updating rows with valid resource names. Let me know if this better matches what you need!
