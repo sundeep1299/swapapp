@@ -1,0 +1,81 @@
+ I see the issue. The row indexing is not being maintained correctly when we skip the CREATION_FAILED rows. Let's fix this by keeping track of the actual Excel row numbers and using them in the update:
+
+```python
+def read_log_excel(filename="workbench_instances_log.xlsx"):
+    """Read workbench data from Excel, preserving original row numbers"""
+    wb = openpyxl.load_workbook(filename)
+    sheet = wb.active
+    
+    data = []
+    headers = [cell.value for cell in sheet[1]]
+    
+    # Iterate through actual row numbers
+    for row_num in range(2, sheet.max_row + 1):
+        row_data = {header: sheet.cell(row=row_num, column=idx+1).value 
+                   for idx, header in enumerate(headers)}
+        row_data['excel_row'] = row_num  # Store the actual Excel row number
+        
+        # Only include non-failed rows
+        if row_data.get('Status') != 'CREATION_FAILED':
+            data.append(row_data)
+    
+    return data, wb, sheet
+
+def update_log_excel(wb, sheet, excel_row, proxy_uri, status):
+    """Update Excel with both URL and status using actual row numbers"""
+    # Add columns if they don't exist
+    if 'Proxy URI' not in [cell.value for cell in sheet[1]]:
+        sheet.cell(row=1, column=sheet.max_column + 1, value='Proxy URI')
+    if 'Updated Status' not in [cell.value for cell in sheet[1]]:
+        sheet.cell(row=1, column=sheet.max_column + 1, value='Updated Status')
+    
+    proxy_uri_col = [cell.value for cell in sheet[1]].index('Proxy URI') + 1
+    status_col = [cell.value for cell in sheet[1]].index('Updated Status') + 1
+    
+    # Add https:// to proxy_uri if it's not 'N/A'
+    complete_uri = f"https://{proxy_uri}" if proxy_uri != 'N/A' else 'N/A'
+    
+    # Update using actual Excel row number
+    sheet.cell(row=excel_row, column=proxy_uri_col, value=complete_uri)
+    sheet.cell(row=excel_row, column=status_col, value=status)
+
+def main():
+    auth_token = get_auth_token()
+    print("Auth Token obtained successfully.")
+    
+    log_data, wb, sheet = read_log_excel()
+    
+    for row_data in log_data:
+        resource_name = row_data['Resource Name']
+        excel_row = row_data['excel_row']  # Use the stored Excel row number
+        
+        print(f"Checking status for resource: {resource_name}")
+        
+        status_response = check_instance_status(auth_token, resource_name)
+        current_status = status_response.get('status', 'UNKNOWN')
+        proxy_uri = status_response.get('gcp', {}).get('proxyUri', 'N/A')
+        
+        print(f"Current status: {current_status}")
+        print(f"Proxy URI: {'https://' + proxy_uri if proxy_uri != 'N/A' else 'N/A'}")
+        
+        # Use actual Excel row number for updating
+        update_log_excel(wb, sheet, excel_row, proxy_uri, current_status)
+        
+        print(f"Updated log for resource: {resource_name}\n")
+    
+    wb.save("workbench_instances_log.xlsx")
+```
+
+Key changes:
+1. Store the actual Excel row number in the `read_log_excel` function
+2. Use this actual row number when updating the Excel file
+3. Skip CREATION_FAILED rows but maintain correct row numbers for updates
+
+This should now:
+1. Correctly skip rows with CREATION_FAILED status
+2. Update the correct rows in the Excel file
+3. Maintain proper row alignment throughout the process
+
+The script will now preserve the exact row positions when updating, ensuring that failed creation rows are properly skipped and successful rows are updated in their correct positions.
+
+Let me know if you need any adjustments!
