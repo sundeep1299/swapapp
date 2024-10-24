@@ -1,0 +1,127 @@
+ I'll help you create a `getMeta.py` script that will:
+1. Read resource names from Excel
+2. Make API calls to get metadata
+3. Extract the metadata fields
+4. Log them back to the same Excel sheet
+
+Here's the script:
+
+```python
+import requests
+import json
+import openpyxl
+import warnings
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+warnings.simplefilter('ignore', InsecureRequestWarning)
+
+def read_excel_data(filename="workbench_instances_log.xlsx"):
+    """Read resource names from Excel"""
+    wb = openpyxl.load_workbook(filename)
+    sheet = wb.active
+    
+    data = []
+    headers = [cell.value for cell in sheet[1]]
+    resource_col = headers.index('Resource Name') + 1
+    
+    for row in range(2, sheet.max_row + 1):
+        resource_name = sheet.cell(row=row, column=resource_col).value
+        if resource_name and resource_name != 'N/A':
+            data.append({
+                'row': row,
+                'resource_name': resource_name
+            })
+    
+    return data, wb, sheet
+
+def get_metadata(resource_name):
+    """Get metadata for a resource"""
+    url = f"https://lumigcpauto.aexp.com/admin/tfe/resource-status/{resource_name}"
+    
+    headers = {
+        'accept': '*/*',
+        'Content-Type': 'application/json',
+        'Cookie': 'bluetoken=YOUR_TOKEN_HERE'  # Replace with actual token
+    }
+    
+    response = requests.request("GET", url, headers=headers, verify=False)
+    return response.json()
+
+def update_excel_with_metadata(wb, sheet, row, metadata):
+    """Update Excel with metadata"""
+    metadata_fields = [
+        'serial-port-logging-enable',
+        'proxy-user-mail',
+        'notebooks-api-version',
+        'proxy-registration-url',
+        'idle-timeout-seconds',
+        'proxy-url',
+        'post-startup-script-behavior',
+        'shutdown-script',
+        'disable-mixer',
+        'restriction',
+        'version',
+        'disable-swap-binaries',
+        'enable-guest-attributes',
+        'post-startup-script',
+        'MLPClusterId',
+        'notebook-disable-downloads'
+    ]
+    
+    # Add metadata columns if they don't exist
+    current_headers = [cell.value for cell in sheet[1]]
+    for field in metadata_fields:
+        if field not in current_headers:
+            sheet.cell(row=1, column=len(current_headers) + 1, value=field)
+            current_headers.append(field)
+    
+    # Update metadata values
+    gce_setup = metadata.get('gceSetup', {})
+    metadata_dict = gce_setup.get('metadata', {})
+    
+    for field in metadata_fields:
+        col = current_headers.index(field) + 1
+        value = metadata_dict.get(field, 'N/A')
+        sheet.cell(row=row, column=col, value=str(value))
+
+def main():
+    print("Starting metadata fetch process...")
+    
+    # Read Excel data
+    data, wb, sheet = read_excel_data()
+    
+    for item in data:
+        print(f"\nProcessing resource: {item['resource_name']}")
+        
+        try:
+            # Get metadata
+            metadata = get_metadata(item['resource_name'])
+            
+            # Update Excel
+            update_excel_with_metadata(wb, sheet, item['row'], metadata)
+            print(f"Updated metadata for resource: {item['resource_name']}")
+            
+        except Exception as e:
+            print(f"Error processing {item['resource_name']}: {str(e)}")
+    
+    # Save the workbook
+    wb.save("workbench_instances_log.xlsx")
+    print("\nCompleted metadata update process!")
+
+if __name__ == "__main__":
+    main()
+```
+
+Key features:
+1. Skips rows where Resource Name is 'N/A'
+2. Extracts all metadata fields shown in your example
+3. Creates new columns for each metadata field
+4. Updates each row with corresponding metadata
+5. Preserves existing data in the Excel file
+
+Before running:
+1. Replace 'YOUR_TOKEN_HERE' with the actual bluetoken value
+2. Ensure the Excel file is in the same directory
+3. Make sure you have all required libraries installed
+
+Let me know if you need any modifications or have questions!
