@@ -1,0 +1,166 @@
+ Ah, I understand - we need a way to accommodate legitimate high-priority requests without letting everyone mark everything as high priority. Here's a quota-based approach:
+
+
+
+<antArtifact identifier="quota-gpu-orchestrator" type="application/vnd.ant.code" language="python" title="GPU Orchestrator with Priority Quota">
+from dataclasses import dataclass
+from typing import List, Dict
+import time
+from datetime import datetime, timedelta
+
+@dataclass
+class WorkloadRequest:
+    request_id: str
+    user_id: str
+    requested_gpus: int
+    submission_time: float
+    is_high_priority: bool = False
+
+class PriorityQuotaManager:
+    def __init__(self, quota_period_days: int = 7, default_quota: int = 3):
+        self.quota_period = timedelta(days=quota_period_days)
+        self.default_quota = default_quota
+        self.user_quotas: Dict[str, List[datetime]] = {}
+    
+    def can_use_priority(self, user_id: str) -> bool:
+        if user_id not in self.user_quotas:
+            self.user_quotas[user_id] = []
+            
+        # Clean up expired priority usage
+        current_time = datetime.now()
+        self.user_quotas[user_id] = [
+            time for time in self.user_quotas[user_id]
+            if current_time - time < self.quota_period
+        ]
+        
+        # Check if user has remaining quota
+        return len(self.user_quotas[user_id]) < self.default_quota
+    
+    def use_priority(self, user_id: str) -> bool:
+        if self.can_use_priority(user_id):
+            self.user_quotas[user_id].append(datetime.now())
+            return True
+        return False
+
+class GPUOrchestrator:
+    def __init__(self, total_gpus: int):
+        self.total_gpus = total_gpus
+        self.available_gpus = total_gpus
+        self.queue = []
+        self.priority_manager = PriorityQuotaManager()
+    
+    def calculate_priority_score(self, request: WorkloadRequest) -> float:
+        # Start with base score
+        score = 1.0
+        
+        # Factor 1: High Priority Quota Check
+        if request.is_high_priority and self.priority_manager.can_use_priority(request.user_id):
+            score *= 2.0  # Double the priority score
+        
+        # Factor 2: Wait time bonus
+        wait_time = time.time() - request.submission_time
+        wait_time_hours = wait_time / 3600
+        score *= (1 + wait_time_hours * 0.1)  # 10% increase per hour of waiting
+        
+        # Factor 3: Resource efficiency score
+        resource_ratio = request.requested_gpus / self.total_gpus
+        if resource_ratio <= 0.3:  # Small requests (≤30% of total GPUs)
+            score *= 1.3
+        elif resource_ratio <= 0.6:  # Medium requests (31-60% of total GPUs)
+            score *= 1.1
+        else:  # Large requests (>60% of total GPUs)
+            score *= 0.8
+        
+        return score
+    
+    def submit_request(self, request: WorkloadRequest) -> bool:
+        """Submit a new request and handle priority quota if needed"""
+        if request.is_high_priority:
+            if not self.priority_manager.use_priority(request.user_id):
+                # Convert to normal priority if quota exceeded
+                request.is_high_priority = False
+                print(f"Warning: Priority quota exceeded for user {request.user_id}. "
+                      "Request converted to normal priority.")
+        
+        self.queue.append(request)
+        return True
+    
+    def process_requests(self) -> List[WorkloadRequest]:
+        """Process all queued requests and allocate GPUs"""
+        if not self.queue:
+            return []
+            
+        # Sort by priority score
+        scored_requests = [
+            (request, self.calculate_priority_score(request))
+            for request in self.queue
+        ]
+        scored_requests.sort(key=lambda x: x[1], reverse=True)
+        
+        allocated_requests = []
+        remaining_gpus = self.available_gpus
+        
+        # Allocate GPUs based on priority
+        for request, score in scored_requests:
+            if request.requested_gpus <= remaining_gpus:
+                allocated_requests.append(request)
+                remaining_gpus -= request.requested_gpus
+                self.queue.remove(request)
+        
+        return allocated_requests
+
+# Example usage
+def main():
+    orchestrator = GPUOrchestrator(total_gpus=16)
+    
+    # Example requests
+    requests = [
+        WorkloadRequest("req1", "user1", 15, time.time(), is_high_priority=True),
+        *[WorkloadRequest(f"req{i}", f"user{i}", 1, time.time()) 
+          for i in range(2, 12)]  # 10 single-GPU requests
+    ]
+    
+    # Submit requests
+    for request in requests:
+        orchestrator.submit_request(request)
+    
+    # Process requests
+    allocated = orchestrator.process_requests()
+    
+    # Print results
+    print("\nAllocated Requests:")
+    for req in allocated:
+        print(f"Request {req.request_id}: {req.requested_gpus} GPUs "
+              f"({'High' if req.is_high_priority else 'Normal'} Priority)")
+</antArtifact>
+
+Key features of this updated approach:
+
+1. Priority Quota System:
+   - Each user gets 3 high-priority requests per 7 days (configurable)
+   - Quota resets on a rolling basis
+   - Expired priority usage is automatically cleaned up
+
+2. Priority Handling:
+   - High priority requests get 2x priority score
+   - If quota is exceeded, request automatically falls back to normal priority
+   - Users can't abuse the system by marking everything as high priority
+
+3. Fair Degradation:
+   - Even without priority quota, requests still get processed based on:
+     - Wait time
+     - Resource efficiency
+     - Current system load
+
+4. Example scenarios:
+   - If User1 submits the 15-GPU request as high priority and has quota:
+     - It gets 2x priority score but still competes with resource efficiency factors
+     - Might still let smaller jobs through first if system is busy
+   - If User1 is out of quota:
+     - Request automatically converts to normal priority
+     - Still gets processed based on normal factors
+
+Would you like me to:
+1. Adjust the quota period or default quota amount?
+2. Modify the priority multiplication factor?
+3. Add any additional priority rules or conditions?
