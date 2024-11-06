@@ -1,0 +1,86 @@
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+import pandas as pd
+import os
+
+def init_cloud_sql_connection(
+    instance_project_id,
+    instance_region,
+    instance_name,
+    database_name,
+    user,
+    password
+):
+    """
+    Initialize connection to Cloud SQL instance
+    """
+    # Initialize the connector
+    connector = Connector()
+    
+    # Function to create the connection
+    def getconn():
+        conn = connector.connect(
+            instance_connection_string=f"{instance_project_id}:{instance_region}:{instance_name}",
+            driver="pg8000",
+            db=database_name,
+            user=user,
+            password=password,
+        )
+        return conn
+
+    # Create SQLAlchemy engine
+    pool = sqlalchemy.create_engine(
+        "postgresql+pg8000://",
+        creator=getconn,
+    )
+    return pool
+
+# Example usage
+def create_sample_table(engine):
+    """
+    Create a sample table using the connection
+    """
+    # Example table creation SQL
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS sample_table (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100),
+        value INTEGER
+    );
+    """
+    
+    with engine.connect() as connection:
+        connection.execute(create_table_sql)
+        connection.commit()
+
+# Main execution
+def main():
+    # Configure your Cloud SQL instance details
+    INSTANCE_PROJECT_ID = "your-cloudsql-project-id"
+    INSTANCE_REGION = "us-central1"
+    INSTANCE_NAME = "your-instance-name"
+    DATABASE_NAME = "your-database-name"
+    DB_USER = "your-db-user"
+    DB_PASS = "your-db-password"
+
+    # Create the connection pool
+    try:
+        engine = init_cloud_sql_connection(
+            INSTANCE_PROJECT_ID,
+            INSTANCE_REGION,
+            INSTANCE_NAME,
+            DATABASE_NAME,
+            DB_USER,
+            DB_PASS
+        )
+        print("Successfully connected to Cloud SQL!")
+        
+        # Create the table
+        create_sample_table(engine)
+        print("Successfully created table!")
+        
+    except Exception as e:
+        print(f"Error occurred: {e}")
+    
+if __name__ == "__main__":
+    main()
