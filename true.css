@@ -1,161 +1,264 @@
-// Message.js
-import React from 'react';
-import './styles/Message.css';
+/* ChatBot.css - Main container and toggle button styles */
+.chatbot {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
 
-const Message = ({ message }) => {
-  // Add safety check for message object
-  if (!message || typeof message !== 'object') {
-    return null;
+.chatbot__toggle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+  outline: none;
+}
+
+.chatbot__toggle:hover {
+  background-color: #1d4ed8;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.chatbot__toggle:active {
+  transform: scale(0.95);
+}
+
+.chatbot__toggle-icon {
+  color: white;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.chatbot__toggle:hover .chatbot__toggle-icon {
+  transform: scale(1.1);
+}
+
+/* ChatWindow.css - Chat window container and layout */
+.chat-window {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 360px;
+  height: 600px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+.chat-window__header {
+  background-color: #2563eb;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-window__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.chat-window__close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+}
+
+.chat-window__close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-window__input-container {
+  padding: 16px;
+  background-color: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.chat-window__input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: #f9fafb;
+}
+
+.chat-window__input:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.chat-window__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.chat-window__send:hover {
+  background-color: #1d4ed8;
+  transform: scale(1.05);
+}
+
+.chat-window__send:active {
+  transform: scale(0.95);
+}
+
+/* MessageList.css - Message container and scrolling */
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: #f9fafb;
+}
+
+.message-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.message-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Message.css - Individual message styling */
+.message {
+  display: flex;
+  margin-bottom: 4px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.message--user {
+  justify-content: flex-end;
+}
+
+.message--bot {
+  justify-content: flex-start;
+}
+
+.message__content {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.message--user .message__content {
+  background-color: #2563eb;
+  color: white;
+  border-bottom-right-radius: 4px;
+  margin-left: 48px;
+}
+
+.message--bot .message__content {
+  background-color: #ffffff;
+  color: #1f2937;
+  border-bottom-left-radius: 4px;
+  margin-right: 48px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 640px) {
+  .chat-window {
+    width: 100%;
+    height: 100%;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
   }
 
-  const messageClass = `message message--${message.sender || 'user'}`;
-  
-  return (
-    <div className={messageClass}>
-      <div className="message__content">
-        {message.text || ''}
-      </div>
-    </div>
-  );
-};
+  .chatbot__toggle {
+    bottom: 16px;
+    right: 16px;
+  }
+}
 
-export default Message;
+@media (max-width: 480px) {
+  .chat-window__input-container {
+    padding: 12px;
+  }
 
-// MessageList.js
-import React from 'react';
-import Message from './Message';
-import './styles/MessageList.css';
-
-const MessageList = ({ messages = [] }) => {  // Add default value
-  return (
-    <div className="message-list">
-      {Array.isArray(messages) && messages.map((message, index) => (
-        <Message 
-          key={`msg-${index}`} 
-          message={message} 
-        />
-      ))}
-    </div>
-  );
-};
-
-export default MessageList;
-
-// ChatBot.js
-import React, { useState } from 'react';
-import { MessageCircle } from 'lucide-react';
-import ChatWindow from './ChatWindow';
-import './styles/ChatBot.css';
-
-const ChatBot = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
-
-    // Create message object with required properties
-    const userMessage = {
-      text: inputMessage.trim(),
-      sender: 'user',
-      timestamp: new Date().toISOString()
-    };
-
-    // Add user message
-    const newMessages = [...messages, userMessage];
-    
-    // Handle bot response
-    if (inputMessage.toLowerCase().includes('hi')) {
-      const botMessage = {
-        text: 'Hello welcome to lumi gpt, how can I help you',
-        sender: 'bot',
-        timestamp: new Date().toISOString()
-      };
-      newMessages.push(botMessage);
-    }
-
-    setMessages(newMessages);
-    setInputMessage('');
-  };
-
-  return (
-    <div className="chatbot">
-      {!isOpen && (
-        <button 
-          className="chatbot__toggle"
-          onClick={() => setIsOpen(true)}
-        >
-          <MessageCircle className="chatbot__toggle-icon" />
-        </button>
-      )}
-      
-      {isOpen && (
-        <ChatWindow
-          messages={messages}
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          handleSendMessage={handleSendMessage}
-          onClose={() => setIsOpen(false)}
-        />
-      )}
-    </div>
-  );
-};
-
-export default ChatBot;
-
-// ChatWindow.js
-import React from 'react';
-import { X, Send } from 'lucide-react';
-import MessageList from './MessageList';
-import './styles/ChatWindow.css';
-
-const ChatWindow = ({
-  messages = [], // Add default value
-  inputMessage = '',
-  setInputMessage,
-  handleSendMessage,
-  onClose
-}) => {
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }
-  };
-
-  return (
-    <div className="chat-window">
-      <div className="chat-window__header">
-        <h3 className="chat-window__title">Chat Support</h3>
-        <button 
-          className="chat-window__close"
-          onClick={onClose}
-        >
-          <X />
-        </button>
-      </div>
-
-      <MessageList messages={messages} />
-
-      <div className="chat-window__input-container">
-        <input
-          type="text"
-          className="chat-window__input"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
-        />
-        <button
-          className="chat-window__send"
-          onClick={handleSendMessage}
-        >
-          <Send />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default ChatWindow;
+  .message__content {
+    max-width: 90%;
+  }
+}
