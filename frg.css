@@ -1,0 +1,51 @@
+from google.cloud.sql.connector import Connector
+import sqlalchemy
+import os
+
+def init_psc_cloud_sql_connection():
+    """
+    Initialize connection to PSC-enabled Cloud SQL instance
+    """
+    # Connection details
+    instance_connection_name = "prj-d-netsec:us-central1:cloudsql-with-psc"
+    database_name = "psc_test"
+    user = "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam"
+    
+    # Initialize connector with PSC settings
+    connector = Connector()
+    
+    def getconn():
+        conn = connector.connect(
+            instance_connection_name=instance_connection_name,
+            driver="pg8000",
+            db=database_name,
+            user=user,
+            enable_iam_auth=True,
+            ip_type="PSC"  # Specify PSC for Private Service Connect
+        )
+        return conn
+
+    # Create SQLAlchemy engine
+    pool = sqlalchemy.create_engine(
+        "postgresql+pg8000://",
+        creator=getconn,
+    )
+    return pool
+
+def test_connection():
+    """
+    Test the database connection
+    """
+    try:
+        engine = init_psc_cloud_sql_connection()
+        with engine.connect() as conn:
+            # Test query
+            result = conn.execute(sqlalchemy.text("SELECT 1"))
+            print("Successfully connected to Cloud SQL through PSC!")
+            return True
+    except Exception as e:
+        print(f"Connection error: {e}")
+        return False
+
+if __name__ == "__main__":
+    test_connection()
