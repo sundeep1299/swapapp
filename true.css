@@ -1,0 +1,79 @@
+ Ah, I understand - you want to modify the `get_db_connection` implementation to use the simpler psycopg2 approach shown in the image. Here's the updated code:
+
+```python
+import google.auth.transport.requests
+import psycopg2
+import time
+
+def get_cf_default_access_token():
+    print("Start: generating access token")
+    try:
+        creds, project = google.auth.default()
+        auth_req = creds.refresh(google.auth.transport.requests.Request())
+    except Exception as e:
+        print("Error: generating access token")
+        print(e)
+        return None
+    print("End: generating access token")
+    return creds.token
+
+def get_db_connection(connection_str, user, password):
+    print(f'Start: getting db connection for {user}')
+    try:
+        connection = psycopg2.connect(
+            database="dbname",  # replace with your database name
+            user=user,
+            password=password,
+            host="hostname",    # replace with your host
+            port=5432
+        )
+        cursor = connection.cursor()
+        print(f'End: getting db connection for {user}')
+        return connection
+        
+    except Exception as e:
+        print(f'Error: getting db connection for {user}')
+        print(e)
+        return None
+
+def main():
+    # Get access token
+    password = get_cf_default_access_token()
+    if not password:
+        print("Failed to get access token")
+        return
+
+    # Print token for verification
+    print(get_cf_default_access_token())
+
+    # Connection parameters
+    connection_str = "prj-d-netsec:us-central1:cloudsql-with-psc"
+    user = "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam"
+
+    # Get database connection
+    connect = get_db_connection(connection_str, user, password)
+
+    if connect:
+        try:
+            cursor = connect.cursor()
+            # Your database operations here
+        finally:
+            connect.close()
+            print("Connection closed")
+
+if __name__ == "__main__":
+    main()
+```
+
+This version:
+1. Uses the simple psycopg2.connect() approach from the image
+2. Keeps basic error handling and connection status messages
+3. Returns a direct psycopg2 connection object
+4. Removes the Google Cloud SQL Connector and pg8000 dependencies
+
+Remember to replace:
+- "dbname" with your actual database name
+- "hostname" with your actual host
+- Port number if different from 5432
+
+Would you like me to modify any part of this implementation?
