@@ -1,264 +1,343 @@
-/* ChatBot.css - Main container and toggle button styles */
+# ChatBot Component Documentation
+
+## Table of Contents
+1. [Overview](#overview)
+2. [Component Architecture](#component-architecture)
+3. [File Structure](#file-structure)
+4. [Component Details](#component-details)
+5. [State Management](#state-management)
+6. [Styling System](#styling-system)
+7. [Props Interface](#props-interface)
+8. [Usage Guide](#usage-guide)
+9. [Customization](#customization)
+10. [Troubleshooting](#troubleshooting)
+
+## Overview
+
+The ChatBot is a floating chat interface component built with React. It provides a modern, responsive chat experience with a toggle button that expands into a full chat window.
+
+### Key Features
+- Floating action button
+- Expandable chat window
+- Message history
+- Real-time message sending
+- Responsive design
+- Customizable styling
+- Error handling
+
+## Component Architecture
+
+```
+ChatBot (Main Container)
+├── ChatButton (Toggle Button)
+└── ChatWindow (Chat Interface)
+    ├── Header
+    ├── MessageList
+    │   └── Message (Individual Messages)
+    └── Input Area
+```
+
+## File Structure
+
+```
+src/
+  components/
+    ChatBot/
+      ChatBot.js          # Main component
+      ChatWindow.js       # Chat window component
+      MessageList.js      # Message list component
+      Message.js          # Individual message component
+      styles/
+        ChatBot.css       # Main styles
+        ChatWindow.css    # Window styles
+        MessageList.css   # List styles
+        Message.css       # Message styles
+```
+
+## Component Details
+
+### ChatBot.js
+```javascript
+const ChatBot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  // ...
+}
+```
+- Main container component
+- Manages global chat state
+- Handles window toggle
+- Controls message flow
+
+### ChatWindow.js
+```javascript
+const ChatWindow = ({
+  messages,
+  inputMessage,
+  setInputMessage,
+  handleSendMessage,
+  onClose
+}) => {
+  // ...
+}
+```
+- Displays chat interface
+- Manages input and send functionality
+- Handles window close action
+
+### MessageList.js
+```javascript
+const MessageList = ({ messages = [] }) => {
+  return (
+    <div className="message-list">
+      {Array.isArray(messages) && messages.map((message, index) => (
+        <Message key={`msg-${index}`} message={message} />
+      ))}
+    </div>
+  );
+}
+```
+- Renders message history
+- Handles message list scrolling
+- Manages message ordering
+
+### Message.js
+```javascript
+const Message = ({ message }) => {
+  if (!message || typeof message !== 'object') {
+    return null;
+  }
+  // ...
+}
+```
+- Renders individual messages
+- Handles message styling
+- Includes error handling
+
+## State Management
+
+### Main State Objects
+```javascript
+// Chat window state
+const [isOpen, setIsOpen] = useState(false);
+
+// Messages state
+const [messages, setMessages] = useState([]);
+
+// Input state
+const [inputMessage, setInputMessage] = useState('');
+```
+
+### Message Object Structure
+```javascript
+{
+  text: string,       // Message content
+  sender: string,     // 'user' or 'bot'
+  timestamp: string   // ISO string timestamp
+}
+```
+
+## Styling System
+
+### CSS Organization
+- BEM methodology
+- Component-scoped classes
+- Responsive design patterns
+
+### Class Naming Convention
+```css
+.chatbot               /* Component root */
+.chatbot__toggle      /* Component element */
+.message--user        /* Component modifier */
+```
+
+### Key Style Features
+1. Position Fixed Layout
+```css
 .chatbot {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 9999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
+```
 
-.chatbot__toggle {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background-color: #2563eb;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
-  position: relative;
-  outline: none;
-}
-
-.chatbot__toggle:hover {
-  background-color: #1d4ed8;
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.chatbot__toggle:active {
-  transform: scale(0.95);
-}
-
-.chatbot__toggle-icon {
-  color: white;
-  width: 24px;
-  height: 24px;
-  transition: transform 0.3s ease;
-}
-
-.chatbot__toggle:hover .chatbot__toggle-icon {
-  transform: scale(1.1);
-}
-
-/* ChatWindow.css - Chat window container and layout */
-.chat-window {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 360px;
-  height: 600px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: slideUp 0.3s ease-out;
-}
-
-.chat-window__header {
-  background-color: #2563eb;
-  color: white;
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.chat-window__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.chat-window__close {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  width: 32px;
-  height: 32px;
-}
-
-.chat-window__close:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.chat-window__input-container {
-  padding: 16px;
-  background-color: #ffffff;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.chat-window__input {
-  flex: 1;
-  padding: 12px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 24px;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.2s ease;
-  background-color: #f9fafb;
-}
-
-.chat-window__input:focus {
-  border-color: #2563eb;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-}
-
-.chat-window__send {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #2563eb;
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.chat-window__send:hover {
-  background-color: #1d4ed8;
-  transform: scale(1.05);
-}
-
-.chat-window__send:active {
-  transform: scale(0.95);
-}
-
-/* MessageList.css - Message container and scrolling */
-.message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background-color: #f9fafb;
-}
-
-.message-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.message-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.message-list::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-
-.message-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-/* Message.css - Individual message styling */
-.message {
-  display: flex;
-  margin-bottom: 4px;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.message--user {
-  justify-content: flex-end;
-}
-
-.message--bot {
-  justify-content: flex-start;
-}
-
-.message__content {
-  max-width: 80%;
-  padding: 12px 16px;
-  border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  position: relative;
-}
-
-.message--user .message__content {
-  background-color: #2563eb;
-  color: white;
-  border-bottom-right-radius: 4px;
-  margin-left: 48px;
-}
-
-.message--bot .message__content {
-  background-color: #ffffff;
-  color: #1f2937;
-  border-bottom-left-radius: 4px;
-  margin-right: 48px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-/* Animations */
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Media Queries for Responsiveness */
+2. Responsive Window
+```css
 @media (max-width: 640px) {
   .chat-window {
     width: 100%;
     height: 100%;
     bottom: 0;
     right: 0;
-    border-radius: 0;
-  }
-
-  .chatbot__toggle {
-    bottom: 16px;
-    right: 16px;
   }
 }
+```
 
-@media (max-width: 480px) {
-  .chat-window__input-container {
-    padding: 12px;
+## Props Interface
+
+### ChatWindow Props
+```typescript
+interface ChatWindowProps {
+  messages: Array<{
+    text: string;
+    sender: 'user' | 'bot';
+    timestamp: string;
+  }>;
+  inputMessage: string;
+  setInputMessage: (message: string) => void;
+  handleSendMessage: () => void;
+  onClose: () => void;
+}
+```
+
+### Message Props
+```typescript
+interface MessageProps {
+  message: {
+    text: string;
+    sender: 'user' | 'bot';
+    timestamp: string;
+  };
+}
+```
+
+## Usage Guide
+
+### Basic Implementation
+```javascript
+import ChatBot from './components/ChatBot/ChatBot';
+
+function App() {
+  return (
+    <div>
+      <ChatBot />
+    </div>
+  );
+}
+```
+
+### Custom Response Handler
+```javascript
+const handleSendMessage = () => {
+  if (!inputMessage.trim()) return;
+
+  const userMessage = {
+    text: inputMessage.trim(),
+    sender: 'user',
+    timestamp: new Date().toISOString()
+  };
+
+  const newMessages = [...messages, userMessage];
+  
+  // Add custom response logic here
+  if (inputMessage.toLowerCase().includes('help')) {
+    newMessages.push({
+      text: 'How can I assist you today?',
+      sender: 'bot',
+      timestamp: new Date().toISOString()
+    });
   }
 
-  .message__content {
-    max-width: 90%;
+  setMessages(newMessages);
+  setInputMessage('');
+};
+```
+
+## Customization
+
+### Styling Customization
+1. Override default styles:
+```css
+.chatbot__toggle {
+  background-color: #your-color;
+}
+```
+
+2. Modify animations:
+```css
+@keyframes slideUp {
+  /* Custom animation keyframes */
+}
+```
+
+### Behavior Customization
+```javascript
+// Custom message handler
+const handleMessage = (message) => {
+  // Add custom logic
+};
+
+// Custom validation
+const validateMessage = (message) => {
+  // Add validation rules
+};
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. Undefined Sender Property
+```javascript
+// Problem
+Cannot read properties of undefined (reading 'sender')
+
+// Solution
+// Add null check in Message component
+if (!message?.sender) return null;
+```
+
+2. Message List Not Scrolling
+```javascript
+// Solution
+// Add overflow handling
+.message-list {
+  overflow-y: auto;
+  max-height: calc(100% - 120px);
+}
+```
+
+3. Mobile Responsiveness Issues
+```css
+/* Solution */
+@media (max-width: 640px) {
+  .chat-window {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
   }
 }
+```
+
+### Best Practices
+
+1. Error Handling
+```javascript
+// Always check for undefined values
+if (!messages || !Array.isArray(messages)) {
+  return null;
+}
+```
+
+2. Performance
+```javascript
+// Use memoization for message list
+const MemoizedMessageList = React.memo(MessageList);
+```
+
+3. Accessibility
+```javascript
+// Add ARIA labels
+<button
+  aria-label="Open chat"
+  className="chatbot__toggle"
+>
+```
+
+For further assistance or custom implementations, please refer to the component source code or create an issue in the repository.
