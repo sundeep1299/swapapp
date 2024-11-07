@@ -1,161 +1,18 @@
-// Message.js
-import React from 'react';
-import './styles/Message.css';
+button.chatbot_toggle {
+  background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Gradient background */
+  color: #fff; /* White text */
+  font-size: 1.1rem; /* Slightly larger font */
+  font-weight: bold; /* Bold text */
+  padding: 0.8rem 1.5rem; /* Increase padding */
+  border-radius: 8px; /* Rounded corners */
+  border: none; /* Remove border */
+  cursor: pointer; /* Pointer cursor on hover */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Soft shadow */
+  transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transition */
+}
 
-const Message = ({ message }) => {
-  // Add safety check for message object
-  if (!message || typeof message !== 'object') {
-    return null;
-  }
-
-  const messageClass = `message message--${message.sender || 'user'}`;
-  
-  return (
-    <div className={messageClass}>
-      <div className="message__content">
-        {message.text || ''}
-      </div>
-    </div>
-  );
-};
-
-export default Message;
-
-// MessageList.js
-import React from 'react';
-import Message from './Message';
-import './styles/MessageList.css';
-
-const MessageList = ({ messages = [] }) => {  // Add default value
-  return (
-    <div className="message-list">
-      {Array.isArray(messages) && messages.map((message, index) => (
-        <Message 
-          key={`msg-${index}`} 
-          message={message} 
-        />
-      ))}
-    </div>
-  );
-};
-
-export default MessageList;
-
-// ChatBot.js
-import React, { useState } from 'react';
-import { MessageCircle } from 'lucide-react';
-import ChatWindow from './ChatWindow';
-import './styles/ChatBot.css';
-
-const ChatBot = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
-
-    // Create message object with required properties
-    const userMessage = {
-      text: inputMessage.trim(),
-      sender: 'user',
-      timestamp: new Date().toISOString()
-    };
-
-    // Add user message
-    const newMessages = [...messages, userMessage];
-    
-    // Handle bot response
-    if (inputMessage.toLowerCase().includes('hi')) {
-      const botMessage = {
-        text: 'Hello welcome to lumi gpt, how can I help you',
-        sender: 'bot',
-        timestamp: new Date().toISOString()
-      };
-      newMessages.push(botMessage);
-    }
-
-    setMessages(newMessages);
-    setInputMessage('');
-  };
-
-  return (
-    <div className="chatbot">
-      {!isOpen && (
-        <button 
-          className="chatbot__toggle"
-          onClick={() => setIsOpen(true)}
-        >
-          <MessageCircle className="chatbot__toggle-icon" />
-        </button>
-      )}
-      
-      {isOpen && (
-        <ChatWindow
-          messages={messages}
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          handleSendMessage={handleSendMessage}
-          onClose={() => setIsOpen(false)}
-        />
-      )}
-    </div>
-  );
-};
-
-export default ChatBot;
-
-// ChatWindow.js
-import React from 'react';
-import { X, Send } from 'lucide-react';
-import MessageList from './MessageList';
-import './styles/ChatWindow.css';
-
-const ChatWindow = ({
-  messages = [], // Add default value
-  inputMessage = '',
-  setInputMessage,
-  handleSendMessage,
-  onClose
-}) => {
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }
-  };
-
-  return (
-    <div className="chat-window">
-      <div className="chat-window__header">
-        <h3 className="chat-window__title">Chat Support</h3>
-        <button 
-          className="chat-window__close"
-          onClick={onClose}
-        >
-          <X />
-        </button>
-      </div>
-
-      <MessageList messages={messages} />
-
-      <div className="chat-window__input-container">
-        <input
-          type="text"
-          className="chat-window__input"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
-        />
-        <button
-          className="chat-window__send"
-          onClick={handleSendMessage}
-        >
-          <Send />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default ChatWindow;
+button.chatbot_toggle:hover {
+  background: linear-gradient(135deg, #8f94fb, #4e54c8); /* Reverse gradient on hover */
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3); /* Increase shadow on hover */
+  transform: scale(1.05); /* Slightly enlarge on hover */
+}
