@@ -1,37 +1,6 @@
- Here's how you can verify if the table was created using JDBC connection. Add this verification code after the table creation:
+ Ah, you're right! We should first create the table structure before inserting data. Here's the corrected code:
 
 ```python
-def verify_table_creation(spark, password):
-    try:
-        # JDBC connection parameters
-        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/psc_test"
-        
-        # Read and verify table exists
-        verify_df = spark.read \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("driver", "org.postgresql.Driver") \
-            .option("dbtable", "employees") \
-            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-            .option("password", password) \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .load()
-
-        print("\nVerifying table content:")
-        print("Table Schema:")
-        verify_df.printSchema()
-        
-        print("\nTable Data:")
-        verify_df.show()
-        
-        return True
-    except Exception as e:
-        print(f"Error verifying table: {str(e)}")
-        return False
-
-# Modify your get_jdbc_connection function to include verification:
 def get_jdbc_connection(password):
     print("Start: Getting JDBC connection")
     try:
@@ -41,44 +10,90 @@ def get_jdbc_connection(password):
                 "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
             .getOrCreate()
 
-        # Your existing table creation code here
-        # ...
+        # JDBC connection parameters
+        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/psc_test"
 
-        # Add verification
-        if verify_table_creation(spark, password):
-            print("Table created and verified successfully")
-        else:
-            print("Table creation could not be verified")
+        # Create table query
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS employees (
+            id INT PRIMARY KEY,
+            name VARCHAR(100),
+            department VARCHAR(50)
+        )
+        """
 
+        # Execute create table query
+        df = spark.read \
+            .format("jdbc") \
+            .option("url", jdbc_url) \
+            .option("driver", "org.postgresql.Driver") \
+            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
+            .option("password", password) \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .option("query", create_table_query) \
+            .load()
+
+        print("Table created successfully")
+
+        # Now create sample data
+        data = [
+            (1, "John Doe", "Engineering"),
+            (2, "Jane Smith", "Finance"),
+            (3, "Bob Wilson", "Marketing")
+        ]
+        
+        columns = ["id", "name", "department"]
+        
+        # Create DataFrame with sample data
+        df = spark.createDataFrame(data, columns)
+
+        # Insert data into the table
+        df.write \
+            .format("jdbc") \
+            .option("url", jdbc_url) \
+            .option("driver", "org.postgresql.Driver") \
+            .option("dbtable", "employees") \
+            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
+            .option("password", password) \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .mode("append") \  # Using append mode instead of overwrite
+            .save()
+
+        print("Data inserted successfully")
         return True
+
     except Exception as e:
         print(f"Error: {str(e)}")
         return False
+
+def main():
+    password = get_cf_default_access_token()
+    if not password:
+        print("Failed to get access token")
+        return
+
+    success = get_jdbc_connection(password)
+    if not success:
+        print("Failed to create table and insert data")
+
+if __name__ == "__main__":
+    main()
 ```
 
-Or you can execute a simple query to check if the table exists:
+Key changes:
+1. Added explicit CREATE TABLE statement before inserting data
+2. Used CREATE TABLE IF NOT EXISTS to avoid errors if table already exists
+3. Changed the write mode to "append" instead of "overwrite"
+4. Added proper table structure with data types
+5. Separated table creation from data insertion
 
-```python
-# Alternative verification using a simple query
-verify_df = spark.read \
-    .format("jdbc") \
-    .option("url", jdbc_url) \
-    .option("driver", "org.postgresql.Driver") \
-    .option("query", "SELECT COUNT(*) as count FROM employees") \
-    .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-    .option("password", password) \
-    .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-    .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-    .option("ipTypes", "PSC") \
-    .load()
+This should properly:
+1. Create the table first with the correct structure
+2. Then insert the sample data
+3. Handle the process in the correct order
 
-verify_df.show()
-```
-
-This will:
-1. Try to read from the table
-2. Show the table schema
-3. Display the table contents
-4. Show the count of rows
-
-If any of these operations fail, it means the table wasn't created successfully. If they succeed, you'll see the table structure and data.
+Would you like me to explain any part of this in more detail?
