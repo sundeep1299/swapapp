@@ -1,46 +1,13 @@
- Here's how you can create a table and insert some data using JDBC:
+ Here's how you can verify if the table was created using JDBC connection. Add this verification code after the table creation:
 
 ```python
-def get_jdbc_connection(password):
-    print("Start: Getting JDBC connection")
+def verify_table_creation(spark, password):
     try:
-        spark = SparkSession.builder \
-            .appName("CloudSQL JDBC Connection") \
-            .config("spark.jars.packages", 
-                "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
-            .getOrCreate()
-
-        # Create sample data
-        data = [
-            (1, "John Doe", "Engineering"),
-            (2, "Jane Smith", "Finance"),
-            (3, "Bob Wilson", "Marketing")
-        ]
-        
-        columns = ["id", "name", "department"]
-        
-        # Create DataFrame
-        df = spark.createDataFrame(data, columns)
-
-        # JDBC connection properties
+        # JDBC connection parameters
         jdbc_url = "jdbc:postgresql://192.168.19.3:5432/psc_test"
         
-        # Write data to PostgreSQL
-        df.write \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("driver", "org.postgresql.Driver") \
-            .option("dbtable", "employees") \  # Table name
-            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-            .option("password", password) \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .mode("overwrite") \  # This will create new table or overwrite if exists
-            .save()
-
-        # Verify by reading back the data
-        read_df = spark.read \
+        # Read and verify table exists
+        verify_df = spark.read \
             .format("jdbc") \
             .option("url", jdbc_url) \
             .option("driver", "org.postgresql.Driver") \
@@ -52,42 +19,66 @@ def get_jdbc_connection(password):
             .option("ipTypes", "PSC") \
             .load()
 
-        print("\nVerifying written data:")
-        read_df.show()
+        print("\nVerifying table content:")
+        print("Table Schema:")
+        verify_df.printSchema()
+        
+        print("\nTable Data:")
+        verify_df.show()
         
         return True
+    except Exception as e:
+        print(f"Error verifying table: {str(e)}")
+        return False
 
+# Modify your get_jdbc_connection function to include verification:
+def get_jdbc_connection(password):
+    print("Start: Getting JDBC connection")
+    try:
+        spark = SparkSession.builder \
+            .appName("CloudSQL JDBC Connection") \
+            .config("spark.jars.packages", 
+                "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
+            .getOrCreate()
+
+        # Your existing table creation code here
+        # ...
+
+        # Add verification
+        if verify_table_creation(spark, password):
+            print("Table created and verified successfully")
+        else:
+            print("Table creation could not be verified")
+
+        return True
     except Exception as e:
         print(f"Error: {str(e)}")
         return False
-
-def main():
-    # Get access token
-    password = get_cf_default_access_token()
-    if not password:
-        print("Failed to get access token")
-        return
-
-    # Create table and insert data
-    success = get_jdbc_connection(password)
-    if success:
-        print("Successfully created table and inserted data")
-    else:
-        print("Failed to create table and insert data")
-
-if __name__ == "__main__":
-    main()
 ```
 
-This code:
-1. Creates a sample DataFrame with employee data
-2. Writes it to a new table called "employees" in your PostgreSQL database
-3. Reads back the data to verify it was written correctly
-4. Uses "overwrite" mode which will create the table if it doesn't exist or overwrite if it does
+Or you can execute a simple query to check if the table exists:
 
-You can modify the data structure by changing:
-1. The `data` list to include your desired records
-2. The `columns` list to match your desired column names
-3. The `dbtable` option to use your preferred table name
+```python
+# Alternative verification using a simple query
+verify_df = spark.read \
+    .format("jdbc") \
+    .option("url", jdbc_url) \
+    .option("driver", "org.postgresql.Driver") \
+    .option("query", "SELECT COUNT(*) as count FROM employees") \
+    .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
+    .option("password", password) \
+    .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+    .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+    .option("ipTypes", "PSC") \
+    .load()
 
-Would you like me to modify the data structure or add more functionality?
+verify_df.show()
+```
+
+This will:
+1. Try to read from the table
+2. Show the table schema
+3. Display the table contents
+4. Show the count of rows
+
+If any of these operations fail, it means the table wasn't created successfully. If they succeed, you'll see the table structure and data.
