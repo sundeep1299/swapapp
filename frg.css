@@ -1,97 +1,93 @@
- Ah, I see. You need to pass the Google Auth token (password) from the `get_cf_default_access_token()` function to `get_jdbc_connection()`. Here's the corrected code:
+ Here's how you can create a table and insert some data using JDBC:
 
 ```python
-import google.auth
-import google.auth.transport.requests
-from pyspark.sql import SparkSession
-
-def get_cf_default_access_token():
-    print("Start: generating access token")
-    try:
-        creds, project = google.auth.default()
-        auth_req = creds.refresh(google.auth.transport.requests.Request())
-    except Exception as e:
-        print("Error: generating access token")
-        print(e)
-        return None
-    print("End: generating access token")
-    return creds.token
-
-def get_jdbc_connection(password):  # Added password parameter
+def get_jdbc_connection(password):
     print("Start: Getting JDBC connection")
     try:
-        # Initialize Spark Session
         spark = SparkSession.builder \
             .appName("CloudSQL JDBC Connection") \
             .config("spark.jars.packages", 
                 "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
             .getOrCreate()
 
-        # JDBC connection parameters
-        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/psc_test"
+        # Create sample data
+        data = [
+            (1, "John Doe", "Engineering"),
+            (2, "Jane Smith", "Finance"),
+            (3, "Bob Wilson", "Marketing")
+        ]
+        
+        columns = ["id", "name", "department"]
+        
+        # Create DataFrame
+        df = spark.createDataFrame(data, columns)
 
-        # Read data using JDBC
-        df = spark.read \
+        # JDBC connection properties
+        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/psc_test"
+        
+        # Write data to PostgreSQL
+        df.write \
             .format("jdbc") \
             .option("url", jdbc_url) \
             .option("driver", "org.postgresql.Driver") \
+            .option("dbtable", "employees") \  # Table name
             .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-            .option("password", password) \  # Using the passed password
+            .option("password", password) \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .mode("overwrite") \  # This will create new table or overwrite if exists
+            .save()
+
+        # Verify by reading back the data
+        read_df = spark.read \
+            .format("jdbc") \
+            .option("url", jdbc_url) \
+            .option("driver", "org.postgresql.Driver") \
+            .option("dbtable", "employees") \
+            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
+            .option("password", password) \
             .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
             .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
             .option("ipTypes", "PSC") \
             .load()
 
-        print("End: JDBC connection successful")
-        return df
+        print("\nVerifying written data:")
+        read_df.show()
+        
+        return True
 
     except Exception as e:
-        print(f"Error: Failed to establish JDBC connection")
-        print(e)
-        return None
+        print(f"Error: {str(e)}")
+        return False
 
 def main():
-    # First get the access token
+    # Get access token
     password = get_cf_default_access_token()
     if not password:
         print("Failed to get access token")
         return
 
-    # Pass the token to get_jdbc_connection
-    df = get_jdbc_connection(password)  # Passing the token here
-    
-    if df is not None:
-        try:
-            print("Schema:")
-            df.printSchema()
-            
-            print("\nFirst few rows:")
-            df.show(5)
-            
-            # Example query
-            # df.select("column_name").distinct().show()
-            
-        except Exception as e:
-            print(f"Error performing operations on dataframe: {e}")
-        finally:
-            # Stop the Spark session
-            if 'spark' in locals():
-                spark.stop()
-                print("Spark session stopped")
+    # Create table and insert data
+    success = get_jdbc_connection(password)
+    if success:
+        print("Successfully created table and inserted data")
+    else:
+        print("Failed to create table and insert data")
 
 if __name__ == "__main__":
     main()
 ```
 
-Key changes:
-1. Added `password` parameter to `get_jdbc_connection` function
-2. Properly passing the token from `get_cf_default_access_token()` to `get_jdbc_connection()`
-3. Using the passed token in the JDBC connection options
+This code:
+1. Creates a sample DataFrame with employee data
+2. Writes it to a new table called "employees" in your PostgreSQL database
+3. Reads back the data to verify it was written correctly
+4. Uses "overwrite" mode which will create the table if it doesn't exist or overwrite if it does
 
-The flow is now:
-1. `main()` calls `get_cf_default_access_token()`
-2. Gets the token and stores it in `password`
-3. Passes this `password` to `get_jdbc_connection(password)`
-4. Uses the token for authentication in the JDBC connection
+You can modify the data structure by changing:
+1. The `data` list to include your desired records
+2. The `columns` list to match your desired column names
+3. The `dbtable` option to use your preferred table name
 
-Would you like me to explain any part of this in more detail?
+Would you like me to modify the data structure or add more functionality?
