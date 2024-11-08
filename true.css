@@ -1,0 +1,149 @@
+ I'll create a code example for connecting to Cloud SQL using JDBC connector instead of the previous psycopg2 approach. Here's how:
+
+```python
+# Import required packages
+from pyspark.sql import SparkSession
+
+def get_jdbc_connection():
+    print("Start: Getting JDBC connection")
+    try:
+        # Initialize Spark Session with required JDBC packages
+        spark = SparkSession.builder \
+            .appName("CloudSQL JDBC Connection") \
+            .config("spark.jars.packages", 
+                   "org.postgresql:postgresql:42.2.23," + 
+                   "com.google.cloud.sql:postgres-socket-factory:1.11.0") \
+            .getOrCreate()
+
+        # JDBC connection parameters
+        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/dbname"  # Use your IP and database name
+        
+        # Read data using JDBC connection
+        df = spark.read \
+            .format("jdbc") \
+            .option("url", jdbc_url) \
+            .option("driver", "org.postgresql.Driver") \
+            .option("dbtable", "your_table_name") \
+            .option("user", "your_username") \
+            .option("password", "your_password") \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .load()
+
+        print("End: JDBC connection successful")
+        return df
+
+    except Exception as e:
+        print(f"Error: Failed to establish JDBC connection")
+        print(e)
+        return None
+
+def main():
+    # Get JDBC connection and dataframe
+    df = get_jdbc_connection()
+    
+    if df is not None:
+        try:
+            # Example operations with the dataframe
+            print("Schema:")
+            df.printSchema()
+            
+            print("\nFirst few rows:")
+            df.show(5)
+            
+            # Example query
+            # df.select("column_name").distinct().show()
+            
+        except Exception as e:
+            print(f"Error performing operations on dataframe: {e}")
+        finally:
+            # Stop the Spark session
+            if 'spark' in locals():
+                spark.stop()
+                print("Spark session stopped")
+
+if __name__ == "__main__":
+    main()
+```
+
+For writing data to the database:
+
+```python
+def write_to_database(df):
+    print("Start: Writing data to database")
+    try:
+        df.write \
+            .format("jdbc") \
+            .option("url", "jdbc:postgresql://192.168.19.3:5432/dbname") \
+            .option("driver", "org.postgresql.Driver") \
+            .option("dbtable", "target_table") \
+            .option("user", "your_username") \
+            .option("password", "your_password") \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .mode("append") \  # or "overwrite"
+            .save()
+        print("End: Data written successfully")
+        
+    except Exception as e:
+        print(f"Error: Failed to write data to database")
+        print(e)
+```
+
+Test connection example:
+
+```python
+def test_connection():
+    print("Testing database connection...")
+    try:
+        spark = SparkSession.builder \
+            .appName("Test Connection") \
+            .config("spark.jars.packages", 
+                   "org.postgresql:postgresql:42.2.23," + 
+                   "com.google.cloud.sql:postgres-socket-factory:1.11.0") \
+            .getOrCreate()
+
+        # Test query
+        test_df = spark.read \
+            .format("jdbc") \
+            .option("url", "jdbc:postgresql://192.168.19.3:5432/dbname") \
+            .option("driver", "org.postgresql.Driver") \
+            .option("dbtable", "(SELECT 1 as test) AS test_query") \
+            .option("user", "your_username") \
+            .option("password", "your_password") \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .load()
+
+        test_df.show()
+        print("Connection test successful!")
+        return True
+
+    except Exception as e:
+        print(f"Connection test failed: {str(e)}")
+        return False
+    finally:
+        if 'spark' in locals():
+            spark.stop()
+```
+
+Remember to:
+
+1. Replace these values with your actual values:
+   - IP address (192.168.19.3)
+   - Database name
+   - Username
+   - Password
+   - Cloud SQL instance name
+   - Table names
+
+2. Make sure you have the required JARs:
+   - postgresql-42.2.23.jar
+   - postgres-socket-factory-1.11.0.jar
+
+3. Ensure proper network connectivity and permissions
+
+Would you like me to explain any part of this code in more detail or show how to implement specific database operations?
