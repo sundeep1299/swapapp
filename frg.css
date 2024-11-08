@@ -1,43 +1,45 @@
- The output shows that Spark is successfully loading the dependencies, but it seems it's hanging or busy after that. Let's try a simpler approach to first create the table using pure JDBC without Spark for the CREATE TABLE operation:
+ You make a very good point! The main purpose here is to demonstrate and use the Cloud SQL JDBC Socket Factory with Private Service Connect (PSC), as it's specifically designed for secure connectivity to Cloud SQL.
+
+Let's rewrite the code focusing on JDBC Socket Factory approach:
 
 ```python
-import psycopg2
+from pyspark.sql import SparkSession
 
 def get_jdbc_connection(password):
-    print("Start: Getting JDBC connection")
+    print("Start: Getting JDBC connection with Socket Factory")
     try:
-        # First create table using psycopg2
-        conn = psycopg2.connect(
-            database="psc_test",
-            user="svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam",
-            password=password,
-            host="192.168.19.3",
-            port="5432"
-        )
+        # Initialize Spark with explicit JDBC driver and Socket Factory dependencies
+        spark = SparkSession.builder \
+            .appName("CloudSQL JDBC Socket Factory Connection") \
+            .config("spark.jars.packages", 
+                   "org.postgresql:postgresql:42.2.23," + 
+                   "com.google.cloud.sql:postgres-socket-factory:1.11.0") \
+            .getOrCreate()
+
+        # JDBC URL and connection properties
+        jdbc_url = "jdbc:postgresql:///"  # Note: Empty host as Socket Factory will handle connection
         
-        cursor = conn.cursor()
-        
-        # Create table
+        # Create table using JDBC with Socket Factory
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS employees (
+        (CREATE TABLE IF NOT EXISTS employees (
             id INT PRIMARY KEY,
             name VARCHAR(100),
             department VARCHAR(50)
-        )
+        ))
         """
-        cursor.execute(create_table_query)
-        conn.commit()
-        print("Table created successfully")
         
-        cursor.close()
-        conn.close()
-
-        # Now initialize Spark for data insertion
-        spark = SparkSession.builder \
-            .appName("CloudSQL JDBC Connection") \
-            .config("spark.jars.packages", 
-                "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
-            .getOrCreate()
+        # Execute DDL using Socket Factory
+        spark.read \
+            .format("jdbc") \
+            .option("url", jdbc_url) \
+            .option("driver", "org.postgresql.Driver") \
+            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
+            .option("password", password) \
+            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
+            .option("ipTypes", "PSC") \
+            .option("query", create_table_query) \
+            .load()
 
         # Create sample data
         data = [
@@ -46,13 +48,14 @@ def get_jdbc_connection(password):
             (3, "Bob Wilson", "Marketing")
         ]
         
+        # Create DataFrame
         columns = ["id", "name", "department"]
         df = spark.createDataFrame(data, columns)
 
-        # Insert data using Spark JDBC
+        # Insert data using Socket Factory
         df.write \
             .format("jdbc") \
-            .option("url", "jdbc:postgresql://192.168.19.3:5432/psc_test") \
+            .option("url", jdbc_url) \
             .option("driver", "org.postgresql.Driver") \
             .option("dbtable", "employees") \
             .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
@@ -63,36 +66,41 @@ def get_jdbc_connection(password):
             .mode("append") \
             .save()
 
-        print("Data inserted successfully")
+        print("Successfully created table and inserted data using Socket Factory")
         return True
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Socket Factory Connection Error: {str(e)}")
         return False
 
 def main():
+    # Get access token
     password = get_cf_default_access_token()
     if not password:
         print("Failed to get access token")
         return
 
+    # Use Socket Factory for connection
     success = get_jdbc_connection(password)
     if not success:
-        print("Failed to create table and insert data")
+        print("Failed to complete operations using Socket Factory")
 
 if __name__ == "__main__":
     main()
 ```
 
-Key changes:
-1. Using psycopg2 for table creation instead of Spark
-2. Separated table creation and data insertion steps
-3. Using direct PostgreSQL connection for DDL operations
-4. Only using Spark for data insertion
+Key points about why Socket Factory is important:
+1. Security: Socket Factory handles secure authentication and connection to Cloud SQL
+2. Cloud Integration: Specifically designed for Google Cloud SQL connectivity
+3. Private Service Connect: Supports PSC for secure, private connectivity
+4. IAM Integration: Works with Google Cloud IAM authentication
+5. Connection Management: Handles connection pooling and lifecycle
 
-This should avoid the hanging issue by:
-1. Using a lighter-weight connection for table creation
-2. Only using Spark when necessary for data operations
-3. Reducing the complexity of the initial connection setup
+The main differences from psycopg2:
+1. Uses Google's Socket Factory for connection management
+2. Integrates with Cloud SQL security features
+3. Supports Cloud-specific features like PSC
+4. Handles cloud authentication automatically
+5. Better integration with Google Cloud services
 
-Would you like me to modify this approach further?
+Would you like me to explain more about any specific aspect of the Socket Factory approach?
