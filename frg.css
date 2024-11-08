@@ -1,19 +1,23 @@
- Ah, you're right! We should first create the table structure before inserting data. Here's the corrected code:
+ The output shows that Spark is successfully loading the dependencies, but it seems it's hanging or busy after that. Let's try a simpler approach to first create the table using pure JDBC without Spark for the CREATE TABLE operation:
 
 ```python
+import psycopg2
+
 def get_jdbc_connection(password):
     print("Start: Getting JDBC connection")
     try:
-        spark = SparkSession.builder \
-            .appName("CloudSQL JDBC Connection") \
-            .config("spark.jars.packages", 
-                "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
-            .getOrCreate()
-
-        # JDBC connection parameters
-        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/psc_test"
-
-        # Create table query
+        # First create table using psycopg2
+        conn = psycopg2.connect(
+            database="psc_test",
+            user="svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam",
+            password=password,
+            host="192.168.19.3",
+            port="5432"
+        )
+        
+        cursor = conn.cursor()
+        
+        # Create table
         create_table_query = """
         CREATE TABLE IF NOT EXISTS employees (
             id INT PRIMARY KEY,
@@ -21,23 +25,21 @@ def get_jdbc_connection(password):
             department VARCHAR(50)
         )
         """
-
-        # Execute create table query
-        df = spark.read \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("driver", "org.postgresql.Driver") \
-            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-            .option("password", password) \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .option("query", create_table_query) \
-            .load()
-
+        cursor.execute(create_table_query)
+        conn.commit()
         print("Table created successfully")
+        
+        cursor.close()
+        conn.close()
 
-        # Now create sample data
+        # Now initialize Spark for data insertion
+        spark = SparkSession.builder \
+            .appName("CloudSQL JDBC Connection") \
+            .config("spark.jars.packages", 
+                "org.postgresql:postgresql:42.2.23,com.google.cloud.sql:postgres-socket-factory:1.11.0") \
+            .getOrCreate()
+
+        # Create sample data
         data = [
             (1, "John Doe", "Engineering"),
             (2, "Jane Smith", "Finance"),
@@ -45,14 +47,12 @@ def get_jdbc_connection(password):
         ]
         
         columns = ["id", "name", "department"]
-        
-        # Create DataFrame with sample data
         df = spark.createDataFrame(data, columns)
 
-        # Insert data into the table
+        # Insert data using Spark JDBC
         df.write \
             .format("jdbc") \
-            .option("url", jdbc_url) \
+            .option("url", "jdbc:postgresql://192.168.19.3:5432/psc_test") \
             .option("driver", "org.postgresql.Driver") \
             .option("dbtable", "employees") \
             .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
@@ -60,7 +60,7 @@ def get_jdbc_connection(password):
             .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
             .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
             .option("ipTypes", "PSC") \
-            .mode("append") \  # Using append mode instead of overwrite
+            .mode("append") \
             .save()
 
         print("Data inserted successfully")
@@ -85,15 +85,14 @@ if __name__ == "__main__":
 ```
 
 Key changes:
-1. Added explicit CREATE TABLE statement before inserting data
-2. Used CREATE TABLE IF NOT EXISTS to avoid errors if table already exists
-3. Changed the write mode to "append" instead of "overwrite"
-4. Added proper table structure with data types
-5. Separated table creation from data insertion
+1. Using psycopg2 for table creation instead of Spark
+2. Separated table creation and data insertion steps
+3. Using direct PostgreSQL connection for DDL operations
+4. Only using Spark for data insertion
 
-This should properly:
-1. Create the table first with the correct structure
-2. Then insert the sample data
-3. Handle the process in the correct order
+This should avoid the hanging issue by:
+1. Using a lighter-weight connection for table creation
+2. Only using Spark when necessary for data operations
+3. Reducing the complexity of the initial connection setup
 
-Would you like me to explain any part of this in more detail?
+Would you like me to modify this approach further?
