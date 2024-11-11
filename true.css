@@ -1,149 +1,330 @@
- I'll create a code example for connecting to Cloud SQL using JDBC connector instead of the previous psycopg2 approach. Here's how:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMI Platform Engineering</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --background: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+        }
 
-```python
-# Import required packages
-from pyspark.sql import SparkSession
+        @keyframes fadeIn {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-def get_jdbc_connection():
-    print("Start: Getting JDBC connection")
-    try:
-        # Initialize Spark Session with required JDBC packages
-        spark = SparkSession.builder \
-            .appName("CloudSQL JDBC Connection") \
-            .config("spark.jars.packages", 
-                   "org.postgresql:postgresql:42.2.23," + 
-                   "com.google.cloud.sql:postgres-socket-factory:1.11.0") \
-            .getOrCreate()
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
 
-        # JDBC connection parameters
-        jdbc_url = "jdbc:postgresql://192.168.19.3:5432/dbname"  # Use your IP and database name
-        
-        # Read data using JDBC connection
-        df = spark.read \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("driver", "org.postgresql.Driver") \
-            .option("dbtable", "your_table_name") \
-            .option("user", "your_username") \
-            .option("password", "your_password") \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .load()
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        print("End: JDBC connection successful")
-        return df
+        body {
+            background: linear-gradient(to bottom, var(--background), #1e3a8a20, var(--background));
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+        }
 
-    except Exception as e:
-        print(f"Error: Failed to establish JDBC connection")
-        print(e)
-        return None
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('/api/placeholder/1920/1080') center/cover;
+            opacity: 0.1;
+            z-index: -1;
+        }
 
-def main():
-    # Get JDBC connection and dataframe
-    df = get_jdbc_connection()
-    
-    if df is not None:
-        try:
-            # Example operations with the dataframe
-            print("Schema:")
-            df.printSchema()
-            
-            print("\nFirst few rows:")
-            df.show(5)
-            
-            # Example query
-            # df.select("column_name").distinct().show()
-            
-        except Exception as e:
-            print(f"Error performing operations on dataframe: {e}")
-        finally:
-            # Stop the Spark session
-            if 'spark' in locals():
-                spark.stop()
-                print("Spark session stopped")
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-if __name__ == "__main__":
-    main()
-```
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeIn 0.8s ease-out;
+        }
 
-For writing data to the database:
+        .title-container {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
 
-```python
-def write_to_database(df):
-    print("Start: Writing data to database")
-    try:
-        df.write \
-            .format("jdbc") \
-            .option("url", "jdbc:postgresql://192.168.19.3:5432/dbname") \
-            .option("driver", "org.postgresql.Driver") \
-            .option("dbtable", "target_table") \
-            .option("user", "your_username") \
-            .option("password", "your_password") \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .mode("append") \  # or "overwrite"
-            .save()
-        print("End: Data written successfully")
-        
-    except Exception as e:
-        print(f"Error: Failed to write data to database")
-        print(e)
-```
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(to right, #60a5fa, #38bdf8, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
 
-Test connection example:
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
 
-```python
-def test_connection():
-    print("Testing database connection...")
-    try:
-        spark = SparkSession.builder \
-            .appName("Test Connection") \
-            .config("spark.jars.packages", 
-                   "org.postgresql:postgresql:42.2.23," + 
-                   "com.google.cloud.sql:postgres-socket-factory:1.11.0") \
-            .getOrCreate()
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            background: rgba(30, 41, 59, 0.5);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
 
-        # Test query
-        test_df = spark.read \
-            .format("jdbc") \
-            .option("url", "jdbc:postgresql://192.168.19.3:5432/dbname") \
-            .option("driver", "org.postgresql.Driver") \
-            .option("dbtable", "(SELECT 1 as test) AS test_query") \
-            .option("user", "your_username") \
-            .option("password", "your_password") \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .load()
+        .tab {
+            padding: 0.75rem 2rem;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
 
-        test_df.show()
-        print("Connection test successful!")
-        return True
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
 
-    except Exception as e:
-        print(f"Connection test failed: {str(e)}")
-        return False
-    finally:
-        if 'spark' in locals():
-            spark.stop()
-```
+        .tab:hover:not(.active) {
+            color: white;
+            background: rgba(59, 130, 246, 0.1);
+        }
 
-Remember to:
+        .section {
+            margin-bottom: 4rem;
+            animation: fadeIn 0.8s ease-out;
+        }
 
-1. Replace these values with your actual values:
-   - IP address (192.168.19.3)
-   - Database name
-   - Username
-   - Password
-   - Cloud SQL instance name
-   - Table names
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-2. Make sure you have the required JARs:
-   - postgresql-42.2.23.jar
-   - postgres-socket-factory-1.11.0.jar
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
 
-3. Ensure proper network connectivity and permissions
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
 
-Would you like me to explain any part of this code in more detail or show how to implement specific database operations?
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease-out backwards;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            background: rgba(59, 130, 246, 0.2);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            color: var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .card-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="title-container">
+                <h1>LUMI Platform Engineering</h1>
+            </div>
+            <p class="subtitle">Next Generation Big Data Platform Engineering Center of Excellence</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab active">Platform Services</button>
+            <button class="tab">Developer Tools</button>
+            <button class="tab">Management</button>
+        </nav>
+
+        <section class="section" id="platform-services">
+            <h2 class="section-title">Platform Services</h2>
+            <div class="cards-grid">
+                <div class="card" style="animation-delay: 100ms;">
+                    <div class="card-header">
+                        <div class="card-icon">🔍</div>
+                        <h3 class="card-title">BigQuery</h3>
+                    </div>
+                    <p class="card-description">Enterprise data warehouse for large-scale analytics with built-in ML capabilities.</p>
+                </div>
+
+                <div class="card" style="animation-delay: 200ms;">
+                    <div class="card-header">
+                        <div class="card-icon">☁️</div>
+                        <h3 class="card-title">CloudSQL</h3>
+                    </div>
+                    <p class="card-description">Fully managed relational database service with automated backups and security controls.</p>
+                </div>
+
+                <div class="card" style="animation-delay: 300ms;">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <h3 class="card-title">BigTable</h3>
+                    </div>
+                    <p class="card-description">NoSQL database service for large analytical and operational workloads.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="developer-tools">
+            <h2 class="section-title">Developer Tools</h2>
+            <div class="cards-grid">
+                <div class="card" style="animation-delay: 400ms;">
+                    <div class="card-header">
+                        <div class="card-icon">🛠️</div>
+                        <h3 class="card-title">LUMI SDK</h3>
+                    </div>
+                    <p class="card-description">Development kit for building and integrating applications with LUMI platform services.</p>
+                </div>
+
+                <div class="card" style="animation-delay: 500ms;">
+                    <div class="card-header">
+                        <div class="card-icon">📚</div>
+                        <h3 class="card-title">Developer Guide</h3>
+                    </div>
+                    <p class="card-description">Comprehensive documentation and best practices for LUMI platform development.</p>
+                </div>
+
+                <div class="card" style="animation-delay: 600ms;">
+                    <div class="card-header">
+                        <div class="card-icon">🔧</div>
+                        <h3 class="card-title">Tools</h3>
+                    </div>
+                    <p class="card-description">Suite of development and debugging tools for LUMI platform applications.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="management">
+            <h2 class="section-title">Management & Administration</h2>
+            <div class="cards-grid">
+                <div class="card" style="animation-delay: 700ms;">
+                    <div class="card-header">
+                        <div class="card-icon">⚙️</div>
+                        <h3 class="card-title">Platform Administration</h3>
+                    </div>
+                    <p class="card-description">Tools for managing platform resources, access controls, and configurations.</p>
+                </div>
+
+                <div class="card" style="animation-delay: 800ms;">
+                    <div class="card-header">
+                        <div class="card-icon">💰</div>
+                        <h3 class="card-title">Billing/Chargeback</h3>
+                    </div>
+                    <p class="card-description">Cost management and allocation system for cloud resources.</p>
+                </div>
+
+                <div class="card" style="animation-delay: 900ms;">
+                    <div class="card-header">
+                        <div class="card-icon">✅</div>
+                        <h3 class="card-title">Service Validation</h3>
+                    </div>
+                    <p class="card-description">Validation tools for ensuring service reliability and compliance.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Simple tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
