@@ -1,311 +1,193 @@
-import React, { useState } from 'react';
-import { FileText, Book, Server, Database, Cloud, Tool, Settings, GitBranch, Search, Menu, X, ChevronRight } from 'lucide-react';
+<div align="center">
 
-// Separate CSS file content
-const styles = `
-  :root {
-    --primary-color: #4f46e5;
-    --primary-hover: #4338ca;
-    --secondary-color: #06b6d4;
-    --background-dark: #0f172a;
-    --background-light: #1e293b;
-    --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
-    --border-color: #334155;
-  }
+# 🌟 LUMI Platform Engineering
+[![GitHub Actions](https://img.shields.io/badge/CI/CD-Enabled-2ea44f?style=for-the-badge&logo=github)](/)
+[![Documentation](https://img.shields.io/badge/Documentation-Up%20to%20Date-blue?style=for-the-badge&logo=read-the-docs)](/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](/)
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+Next Generation Big Data Platform Engineering Center of Excellence
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: var(--background-dark);
-    color: var(--text-primary);
-    line-height: 1.5;
-  }
+[Explore Docs](/) | [Quick Start](/) | [Contributing](/) | [Support](/)
 
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 250px;
-    background-color: var(--background-light);
-    border-right: 1px solid var(--border-color);
-    padding: 1rem;
-    transition: transform 0.3s ease;
-  }
+<img src="/api/placeholder/1000/300" alt="LUMI Platform Banner" width="1000px">
 
-  .sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1rem;
-  }
+</div>
 
-  .sidebar-logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+---
 
-  .nav-link {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    color: var(--text-secondary);
-    text-decoration: none;
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    transition: background-color 0.2s;
-  }
+<div align="center">
 
-  .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-  }
+### 🚀 Platform Features
 
-  .nav-link svg {
-    margin-right: 0.75rem;
-  }
+| Feature | Description |
+|---------|-------------|
+| 🔍 **BigQuery** | Enterprise Data Warehouse |
+| ☁️ **CloudSQL** | Managed Database Service |
+| 📦 **BigTable** | NoSQL Database Platform |
+| 🛠️ **LUMI SDK** | Development Tools Kit |
 
-  .main-content {
-    margin-left: 250px;
-    padding: 2rem;
-  }
+</div>
 
-  .header {
-    background-color: var(--background-light);
-    padding: 1rem 2rem;
-    margin-bottom: 2rem;
-    border-radius: 8px;
-  }
+---
 
-  .search-bar {
-    position: relative;
-    max-width: 600px;
-    margin: 0 auto;
-  }
+## 📚 Table of Contents
+- [🌟 Overview](#overview)
+- [🚀 Getting Started](#getting-started)
+- [💡 Key Features](#key-features)
+- [🛠️ Installation](#installation)
+- [📖 Documentation](#documentation)
+- [🤝 Contributing](#contributing)
+- [📞 Support](#support)
 
-  .search-input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
-    background-color: var(--background-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-  }
+## 🌟 Overview
 
-  .search-icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-  }
+LUMI (Large-scale Unified Management Infrastructure) is your comprehensive solution for big data management and analytics. Built on GCP, LUMI provides enterprise-grade tools and services for modern data engineering needs.
 
-  .services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
+### 🎯 Core Objectives
+- Enterprise Data Management
+- Scalable Analytics Solutions
+- Secure Infrastructure
+- Developer-First Experience
 
-  .service-card {
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
+<details>
+<summary>📊 Platform Statistics</summary>
 
-  .service-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    border-color: var(--primary-color);
-  }
+- **1000+** Active Users
+- **50+** Enterprise Deployments
+- **99.99%** Uptime
+- **24/7** Support Coverage
 
-  .service-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
+</details>
 
-  .service-icon {
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-    padding: 0.75rem;
-    border-radius: 8px;
-    margin-right: 1rem;
-  }
+## 🚀 Getting Started
 
-  .service-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
+```bash
+# Clone the repository
+git clone https://github.com/your-org/lumi-platform-docs.git
 
-  .service-description {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
+# Navigate to project
+cd lumi-platform-docs
 
-  @media (max-width: 768px) {
-    .sidebar {
-      transform: translateX(-100%);
-    }
+# Set up your credentials
+export LUMI_API_KEY=your_api_key
+```
 
-    .sidebar.open {
-      transform: translateX(0);
-    }
+<details>
+<summary>📋 Prerequisites</summary>
 
-    .main-content {
-      margin-left: 0;
-    }
+- GCP Account Access
+- LUMI SDK Installation
+- Required IAM Permissions
+- Development Environment Setup
 
-    .services-grid {
-      grid-template-columns: 1fr;
-    }
-  }
+</details>
 
-  .quick-links {
-    background-color: var(--background-light);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 2rem;
-  }
+## 💡 Key Features
 
-  .quick-links-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-  }
+<div align="center">
 
-  .quick-link-card {
-    background-color: rgba(255, 255, 255, 0.05);
-    padding: 1rem;
-    border-radius: 6px;
-    transition: background-color 0.2s;
-  }
+| Service | Features | Status |
+|---------|----------|---------|
+| **BigQuery** | Analytics, ML, BI | [![Status](https://img.shields.io/badge/Status-Active-success)](/) |
+| **CloudSQL** | Managed DB, Backups | [![Status](https://img.shields.io/badge/Status-Active-success)](/) |
+| **BigTable** | NoSQL, High Performance | [![Status](https://img.shields.io/badge/Status-Active-success)](/) |
+| **LUMI SDK** | Development Tools | [![Status](https://img.shields.io/badge/Status-Beta-yellow)](/) |
 
-  .quick-link-card:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-`;
+</div>
 
-const Sidebar = ({ isOpen, toggleSidebar }) => (
-  <div className={`sidebar ${isOpen ? 'open' : ''}`}>
-    <div className="sidebar-header">
-      <h2 className="sidebar-logo">LUMI Docs</h2>
-      <button onClick={toggleSidebar} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-        <X />
-      </button>
-    </div>
-    <nav>
-      {[
-        { icon: Book, text: 'Getting Started', href: '#getting-started' },
-        { icon: Server, text: 'Platform Services', href: '#platform-services' },
-        { icon: Tool, text: 'Developer Tools', href: '#developer-tools' },
-        { icon: Settings, text: 'Administration', href: '#administration' }
-      ].map((item, index) => (
-        <a key={index} href={item.href} className="nav-link">
-          <item.icon size={20} />
-          <span>{item.text}</span>
-        </a>
-      ))}
-    </nav>
-  </div>
-);
+## 🛠️ Project Structure
 
-const ServiceCard = ({ icon: Icon, title, description }) => (
-  <div className="service-card">
-    <div className="service-header">
-      <div className="service-icon">
-        <Icon color="white" size={24} />
-      </div>
-      <h3 className="service-title">{title}</h3>
-    </div>
-    <p className="service-description">{description}</p>
-  </div>
-);
+```
+lumi-platform/
+├── 📁 docs/
+│   ├── 📄 platform-services/
+│   ├── 📄 developer-guide/
+│   └── 📄 administration/
+├── 📁 examples/
+│   ├── 📄 sdk/
+│   └── 📄 terraform/
+└── 📄 README.md
+```
 
-const LUMIPlatform = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+## 📖 Documentation
 
-  const services = [
-    {
-      icon: Database,
-      title: "BigQuery",
-      description: "Enterprise data warehouse with built-in ML capabilities."
-    },
-    {
-      icon: Cloud,
-      title: "CloudSQL",
-      description: "Managed relational database service with automated backups."
-    },
-    {
-      icon: FileText,
-      title: "LUMI SDK",
-      description: "Development kit for LUMI platform integration."
-    }
-  ];
+<div align="center">
 
-  return (
-    <>
-      <style>{styles}</style>
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(false)} />
-      
-      <div className="main-content">
-        <div className="header">
-          <div className="search-bar">
-            <Search className="search-icon" size={20} />
-            <input
-              type="text"
-              placeholder="Search documentation..."
-              className="search-input"
-            />
-          </div>
-        </div>
+| Documentation | Description | Link |
+|--------------|-------------|------|
+| 📚 Platform Guide | Complete platform documentation | [View](/) |
+| 🔧 API Reference | API documentation and examples | [View](/) |
+| 📖 User Guide | End-user documentation | [View](/) |
+| 🛠️ SDK Guide | SDK implementation details | [View](/) |
 
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>
-          LUMI Platform Documentation
-        </h1>
+</div>
 
-        <section>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem' }}>Services</h2>
-          <div className="services-grid">
-            {services.map((service, index) => (
-              <ServiceCard key={index} {...service} />
-            ))}
-          </div>
-        </section>
+## 🤝 Contributing
 
-        <section className="quick-links">
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Quick Links</h2>
-          <div className="quick-links-grid">
-            {[
-              { title: "Getting Started Guide", desc: "New to LUMI? Start here" },
-              { title: "API Reference", desc: "Complete API documentation" },
-              { title: "Best Practices", desc: "Recommended patterns" },
-              { title: "Examples", desc: "Code samples and tutorials" }
-            ].map((item, index) => (
-              <div key={index} className="quick-link-card">
-                <h3 style={{ marginBottom: '0.5rem' }}>{item.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </>
-  );
-};
+We welcome contributions! Here's how you can help:
 
-export default LUMIPlatform;
+1. 🍴 Fork the repository
+2. 🌿 Create a feature branch
+   ```bash
+   git checkout -b feature/AmazingFeature
+   ```
+3. 💾 Commit your changes
+   ```bash
+   git commit -m 'Add some AmazingFeature'
+   ```
+4. 📤 Push to the branch
+   ```bash
+   git push origin feature/AmazingFeature
+   ```
+5. 🔃 Open a Pull Request
+
+<details>
+<summary>📋 Contribution Guidelines</summary>
+
+- Follow code standards
+- Include documentation updates
+- Add unit tests if applicable
+- Update changelog
+</details>
+
+## 📞 Support
+
+<div align="center">
+
+| Channel | Purpose | Access |
+|---------|----------|---------|
+| 🎫 **JIRA** | Bug Reports & Features | [Open Ticket](/) |
+| 💬 **Slack** | Quick Questions | [Join Channel](/) |
+| 📧 **Email** | General Support | support@lumi.dev |
+| 📚 **Docs** | Documentation | [View Docs](/) |
+
+</div>
+
+---
+
+<div align="center">
+
+### 🌟 Star us on GitHub
+
+[![Stargazers](https://img.shields.io/github/stars/your-org/lumi-platform-docs?style=social)](/)
+
+### 📅 Latest Updates
+
+| Date | Version | Changes |
+|------|----------|---------|
+| Nov 2024 | v2.1.0 | Feature Release |
+| Oct 2024 | v2.0.1 | Bug Fixes |
+| Sep 2024 | v2.0.0 | Major Update |
+
+</div>
+
+---
+
+<div align="center">
+
+Made with ❤️ by LUMI Platform Team
+
+[![Follow us](https://img.shields.io/twitter/follow/lumiplatform?style=social)](/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](/)
+
+</div>
