@@ -1,35 +1,57 @@
-// build.sbt
-/*
-libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "42.2.24",
-  "com.google.cloud.sql" % "postgres-socket-factory" % "1.11.0",
-  "com.google.auth" % "google-auth-library-oauth2-http" % "1.11.0"
-)
-*/
+ You're right - let's focus on one clear approach using Almond, which is generally the most reliable method for running Scala in Jupyter notebooks.
 
+Here's the step-by-step process:
+
+1. First, install Almond. Open your terminal and run these commands:
+```bash
+curl -Lo coursier https://git.io/coursier-cli
+chmod +x coursier
+./coursier launch almond -- --install
+```
+
+2. After installation completes, start Jupyter Notebook:
+```bash
+jupyter notebook
+```
+
+3. In Jupyter, create a new notebook and select "Scala" as your kernel (not Python).
+
+4. Now, copy and run these cells one at a time (press Shift+Enter after pasting each cell):
+
+First Cell (dependencies):
+```scala
+%use scala-deps
+$dep org.postgresql:postgresql:42.2.24
+$dep com.google.cloud.sql:postgres-socket-factory:1.11.0
+$dep com.google.auth:google-auth-library-oauth2-http:1.11.0
+```
+
+Second Cell (imports):
+```scala
 import com.google.auth.oauth2.GoogleCredentials
 import java.sql.{Connection, DriverManager}
 import scala.util.{Try, Success, Failure}
-import scala.concurrent.duration._
+```
 
-object CloudSqlConnection {
-  def getDefaultAccessToken(): Option[String] = {
+Third Cell (connection code):
+```scala
+def getDefaultAccessToken(): Option[String] = {
     println("Start: generating access token")
     Try {
-      val credentials = GoogleCredentials.getApplicationDefault()
-      credentials.refreshIfExpired()
-      credentials.getAccessToken.getTokenValue
+        val credentials = GoogleCredentials.getApplicationDefault()
+        credentials.refreshIfExpired()
+        credentials.getAccessToken.getTokenValue
     } match {
-      case Success(token) =>
-        println("End: generating access token")
-        Some(token)
-      case Failure(e) =>
-        println(s"Error: generating access token: ${e.getMessage}")
-        None
+        case Success(token) =>
+            println("End: generating access token")
+            Some(token)
+        case Failure(e) =>
+            println(s"Error: generating access token: ${e.getMessage}")
+            None
     }
-  }
+}
 
-  def getDbConnection(connectionStr: String, user: String, password: String): Option[Connection] = {
+def getDbConnection(connectionStr: String, user: String, password: String): Option[Connection] = {
     println(s"Start: getting db connection for $user")
     
     val jdbcUrl = s"jdbc:postgresql://$connectionStr/psc_test"
@@ -40,47 +62,58 @@ object CloudSqlConnection {
     props.setProperty("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc")
 
     def tryConnect(attempts: Int): Option[Connection] = {
-      if (attempts <= 0) None
-      else Try {
-        Class.forName("org.postgresql.Driver")
-        DriverManager.getConnection(jdbcUrl, props)
-      } match {
-        case Success(conn) =>
-          println(s"End: getting db connection for $user")
-          Some(conn)
-        case Failure(e) =>
-          println(s"Error: getting db connection for $user: ${e.getMessage}")
-          Thread.sleep(5000) // 5 second delay
-          tryConnect(attempts - 1)
-      }
+        if (attempts <= 0) None
+        else Try {
+            Class.forName("org.postgresql.Driver")
+            DriverManager.getConnection(jdbcUrl, props)
+        } match {
+            case Success(conn) =>
+                println(s"End: getting db connection for $user")
+                Some(conn)
+            case Failure(e) =>
+                println(s"Error: getting db connection for $user: ${e.getMessage}")
+                Thread.sleep(5000)
+                tryConnect(attempts - 1)
+        }
     }
 
     tryConnect(5)
-  }
-
-  def main(args: Array[String]): Unit = {
-    val user = "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam"
-    
-    // Get access token and use it as password
-    val password = getDefaultAccessToken().getOrElse {
-      println("Failed to get access token")
-      System.exit(1)
-      ""
-    }
-
-    val connectionStr = "prj-d-netsec:us-central1:cloudsql-with-psc"
-    
-    // Attempt to connect
-    val connectionOpt = getDbConnection(connectionStr, user, password)
-    
-    // Use the connection
-    connectionOpt.foreach { conn =>
-      try {
-        // Do your database operations here
-        println("Successfully connected to database")
-      } finally {
-        conn.close()
-      }
-    }
-  }
 }
+```
+
+Fourth Cell (test the connection):
+```scala
+val user = "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam"
+val password = getDefaultAccessToken().getOrElse {
+    println("Failed to get access token")
+    System.exit(1)
+    ""
+}
+val connectionStr = "prj-d-netsec:us-central1:cloudsql-with-psc"
+
+// Test the connection
+getDbConnection(connectionStr, user, password).foreach { conn =>
+    try {
+        println("Successfully connected to database!")
+        // Try a simple query
+        val stmt = conn.createStatement()
+        val rs = stmt.executeQuery("SELECT 1")
+        while (rs.next()) {
+            println(s"Test query result: ${rs.getInt(1)}")
+        }
+        rs.close()
+        stmt.close()
+    } finally {
+        conn.close()
+    }
+}
+```
+
+Let me know which step you're at and what error (if any) you encounter. We can troubleshoot from there or try a different approach if needed.
+
+Common issues you might encounter:
+1. If Almond installation fails, you might need Java installed
+2. If dependencies fail to load, you might see red error text in the notebook
+3. If connection fails, it might be due to credentials or network access
+
+Let me know what happens after you try these steps!
