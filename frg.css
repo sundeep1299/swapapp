@@ -1,30 +1,11 @@
- Ah, perfect! Let's switch to PySpark which is much simpler for this case. Here's how to connect to Cloud SQL using PySpark:
+ Ah, that changes things! For Google Cloud Dataproc Jupyter notebooks, we need to modify the approach since Dataproc already has Spark configured. Here's the corrected version:
 
-1. First, make sure you have PySpark and the required dependencies. Run these in your terminal:
-```bash
-pip install pyspark
-pip install google-cloud-sql-connector
-pip install google-auth
-```
-
-2. Now, in your Jupyter notebook (using Python kernel), paste these cells:
-
-First Cell (imports and setup):
 ```python
 from pyspark.sql import SparkSession
-from google.cloud import storage
-from google.oauth2 import service_account
-import os
 
-# Initialize Spark with PostgreSQL JDBC driver
-spark = SparkSession.builder \
-    .appName("CloudSQL Connection") \
-    .config("spark.jars.packages", "org.postgresql:postgresql:42.2.24") \
-    .getOrCreate()
-```
+# No need to create a new SparkSession - use the existing one
+spark = SparkSession.builder.getOrCreate()
 
-Second Cell (connection function):
-```python
 def get_cloud_sql_connection():
     try:
         # Database connection properties
@@ -49,58 +30,36 @@ def get_cloud_sql_connection():
     except Exception as e:
         print(f"Error connecting to database: {str(e)}")
         return None
-```
 
-Third Cell (test query):
-```python
-# Test the connection with a simple query
+# Test the connection
 try:
-    # Get the connection
     connection = get_cloud_sql_connection()
-    
     if connection:
-        # Example query - replace 'your_table' with an actual table name
+        # Replace 'your_table' with an actual table name
         df = connection \
             .option("query", "SELECT * FROM your_table LIMIT 5") \
             .load()
-        
-        # Show the results
         df.show()
-        
 except Exception as e:
     print(f"Error executing query: {str(e)}")
 ```
 
-To use this code:
+Key differences for Dataproc:
+1. Remove the SparkSession builder configuration - Dataproc already has this set up
+2. No need to specify additional packages as they should be pre-installed
+3. The PostgreSQL driver should already be available in Dataproc
 
-1. Make sure you're using the Python kernel in Jupyter (not Scala)
-2. Run each cell in order
-3. Replace 'your_table' with an actual table name from your database
-4. The connection will use your default Google Cloud credentials
-
-If you want to run a specific query, you can do it like this:
-
+If you still get errors, try these troubleshooting steps:
+1. Check if the PostgreSQL JDBC driver is available:
 ```python
-# Example of running a specific query
-query = """
-SELECT column1, column2
-FROM your_table
-WHERE condition = 'value'
-LIMIT 10
-"""
-
-df = connection \
-    .option("query", query) \
-    .load()
-
-df.show()
+# List available jars
+!ls /usr/lib/spark/jars/postgresql*
 ```
 
-Common troubleshooting:
-1. If you get a driver error, check that the PostgreSQL JDBC driver was properly included
-2. If you get an authentication error, verify your Google Cloud credentials are set up correctly
-3. If you get a connection error, verify the connection string and instance name
+2. Verify your Cloud SQL instance is accessible from the Dataproc cluster:
+```python
+# Test connectivity
+!nc -zv prj-d-netsec:us-central1:cloudsql-with-psc 5432
+```
 
-Let me know what happens when you try this, and I can help with any errors that come up!
-
-Would you like to try a specific query with your database, or should we first confirm the connection is working?
+Let me know what happens when you try this modified version!
