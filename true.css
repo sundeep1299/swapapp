@@ -1,193 +1,86 @@
-<div align="center">
+// build.sbt
+/*
+libraryDependencies ++= Seq(
+  "org.postgresql" % "postgresql" % "42.2.24",
+  "com.google.cloud.sql" % "postgres-socket-factory" % "1.11.0",
+  "com.google.auth" % "google-auth-library-oauth2-http" % "1.11.0"
+)
+*/
 
-# 🌟 LUMI Platform Engineering
-[![GitHub Actions](https://img.shields.io/badge/CI/CD-Enabled-2ea44f?style=for-the-badge&logo=github)](/)
-[![Documentation](https://img.shields.io/badge/Documentation-Up%20to%20Date-blue?style=for-the-badge&logo=read-the-docs)](/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](/)
+import com.google.auth.oauth2.GoogleCredentials
+import java.sql.{Connection, DriverManager}
+import scala.util.{Try, Success, Failure}
+import scala.concurrent.duration._
 
-Next Generation Big Data Platform Engineering Center of Excellence
+object CloudSqlConnection {
+  def getDefaultAccessToken(): Option[String] = {
+    println("Start: generating access token")
+    Try {
+      val credentials = GoogleCredentials.getApplicationDefault()
+      credentials.refreshIfExpired()
+      credentials.getAccessToken.getTokenValue
+    } match {
+      case Success(token) =>
+        println("End: generating access token")
+        Some(token)
+      case Failure(e) =>
+        println(s"Error: generating access token: ${e.getMessage}")
+        None
+    }
+  }
 
-[Explore Docs](/) | [Quick Start](/) | [Contributing](/) | [Support](/)
+  def getDbConnection(connectionStr: String, user: String, password: String): Option[Connection] = {
+    println(s"Start: getting db connection for $user")
+    
+    val jdbcUrl = s"jdbc:postgresql://$connectionStr/psc_test"
+    val props = new java.util.Properties()
+    props.setProperty("user", user)
+    props.setProperty("password", password)
+    props.setProperty("socketFactory", "com.google.cloud.sql.postgres.SocketFactory")
+    props.setProperty("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc")
 
-<img src="/api/placeholder/1000/300" alt="LUMI Platform Banner" width="1000px">
+    def tryConnect(attempts: Int): Option[Connection] = {
+      if (attempts <= 0) None
+      else Try {
+        Class.forName("org.postgresql.Driver")
+        DriverManager.getConnection(jdbcUrl, props)
+      } match {
+        case Success(conn) =>
+          println(s"End: getting db connection for $user")
+          Some(conn)
+        case Failure(e) =>
+          println(s"Error: getting db connection for $user: ${e.getMessage}")
+          Thread.sleep(5000) // 5 second delay
+          tryConnect(attempts - 1)
+      }
+    }
 
-</div>
+    tryConnect(5)
+  }
 
----
+  def main(args: Array[String]): Unit = {
+    val user = "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam"
+    
+    // Get access token and use it as password
+    val password = getDefaultAccessToken().getOrElse {
+      println("Failed to get access token")
+      System.exit(1)
+      ""
+    }
 
-<div align="center">
-
-### 🚀 Platform Features
-
-| Feature | Description |
-|---------|-------------|
-| 🔍 **BigQuery** | Enterprise Data Warehouse |
-| ☁️ **CloudSQL** | Managed Database Service |
-| 📦 **BigTable** | NoSQL Database Platform |
-| 🛠️ **LUMI SDK** | Development Tools Kit |
-
-</div>
-
----
-
-## 📚 Table of Contents
-- [🌟 Overview](#overview)
-- [🚀 Getting Started](#getting-started)
-- [💡 Key Features](#key-features)
-- [🛠️ Installation](#installation)
-- [📖 Documentation](#documentation)
-- [🤝 Contributing](#contributing)
-- [📞 Support](#support)
-
-## 🌟 Overview
-
-LUMI (Large-scale Unified Management Infrastructure) is your comprehensive solution for big data management and analytics. Built on GCP, LUMI provides enterprise-grade tools and services for modern data engineering needs.
-
-### 🎯 Core Objectives
-- Enterprise Data Management
-- Scalable Analytics Solutions
-- Secure Infrastructure
-- Developer-First Experience
-
-<details>
-<summary>📊 Platform Statistics</summary>
-
-- **1000+** Active Users
-- **50+** Enterprise Deployments
-- **99.99%** Uptime
-- **24/7** Support Coverage
-
-</details>
-
-## 🚀 Getting Started
-
-```bash
-# Clone the repository
-git clone https://github.com/your-org/lumi-platform-docs.git
-
-# Navigate to project
-cd lumi-platform-docs
-
-# Set up your credentials
-export LUMI_API_KEY=your_api_key
-```
-
-<details>
-<summary>📋 Prerequisites</summary>
-
-- GCP Account Access
-- LUMI SDK Installation
-- Required IAM Permissions
-- Development Environment Setup
-
-</details>
-
-## 💡 Key Features
-
-<div align="center">
-
-| Service | Features | Status |
-|---------|----------|---------|
-| **BigQuery** | Analytics, ML, BI | [![Status](https://img.shields.io/badge/Status-Active-success)](/) |
-| **CloudSQL** | Managed DB, Backups | [![Status](https://img.shields.io/badge/Status-Active-success)](/) |
-| **BigTable** | NoSQL, High Performance | [![Status](https://img.shields.io/badge/Status-Active-success)](/) |
-| **LUMI SDK** | Development Tools | [![Status](https://img.shields.io/badge/Status-Beta-yellow)](/) |
-
-</div>
-
-## 🛠️ Project Structure
-
-```
-lumi-platform/
-├── 📁 docs/
-│   ├── 📄 platform-services/
-│   ├── 📄 developer-guide/
-│   └── 📄 administration/
-├── 📁 examples/
-│   ├── 📄 sdk/
-│   └── 📄 terraform/
-└── 📄 README.md
-```
-
-## 📖 Documentation
-
-<div align="center">
-
-| Documentation | Description | Link |
-|--------------|-------------|------|
-| 📚 Platform Guide | Complete platform documentation | [View](/) |
-| 🔧 API Reference | API documentation and examples | [View](/) |
-| 📖 User Guide | End-user documentation | [View](/) |
-| 🛠️ SDK Guide | SDK implementation details | [View](/) |
-
-</div>
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-1. 🍴 Fork the repository
-2. 🌿 Create a feature branch
-   ```bash
-   git checkout -b feature/AmazingFeature
-   ```
-3. 💾 Commit your changes
-   ```bash
-   git commit -m 'Add some AmazingFeature'
-   ```
-4. 📤 Push to the branch
-   ```bash
-   git push origin feature/AmazingFeature
-   ```
-5. 🔃 Open a Pull Request
-
-<details>
-<summary>📋 Contribution Guidelines</summary>
-
-- Follow code standards
-- Include documentation updates
-- Add unit tests if applicable
-- Update changelog
-</details>
-
-## 📞 Support
-
-<div align="center">
-
-| Channel | Purpose | Access |
-|---------|----------|---------|
-| 🎫 **JIRA** | Bug Reports & Features | [Open Ticket](/) |
-| 💬 **Slack** | Quick Questions | [Join Channel](/) |
-| 📧 **Email** | General Support | support@lumi.dev |
-| 📚 **Docs** | Documentation | [View Docs](/) |
-
-</div>
-
----
-
-<div align="center">
-
-### 🌟 Star us on GitHub
-
-[![Stargazers](https://img.shields.io/github/stars/your-org/lumi-platform-docs?style=social)](/)
-
-### 📅 Latest Updates
-
-| Date | Version | Changes |
-|------|----------|---------|
-| Nov 2024 | v2.1.0 | Feature Release |
-| Oct 2024 | v2.0.1 | Bug Fixes |
-| Sep 2024 | v2.0.0 | Major Update |
-
-</div>
-
----
-
-<div align="center">
-
-Made with ❤️ by LUMI Platform Team
-
-[![Follow us](https://img.shields.io/twitter/follow/lumiplatform?style=social)](/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](/)
-
-</div>
+    val connectionStr = "prj-d-netsec:us-central1:cloudsql-with-psc"
+    
+    // Attempt to connect
+    val connectionOpt = getDbConnection(connectionStr, user, password)
+    
+    // Use the connection
+    connectionOpt.foreach { conn =>
+      try {
+        // Do your database operations here
+        println("Successfully connected to database")
+      } finally {
+        conn.close()
+      }
+    }
+  }
+}
