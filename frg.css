@@ -1,119 +1,106 @@
- You're right - let's focus on one clear approach using Almond, which is generally the most reliable method for running Scala in Jupyter notebooks.
+ Ah, perfect! Let's switch to PySpark which is much simpler for this case. Here's how to connect to Cloud SQL using PySpark:
 
-Here's the step-by-step process:
-
-1. First, install Almond. Open your terminal and run these commands:
+1. First, make sure you have PySpark and the required dependencies. Run these in your terminal:
 ```bash
-curl -Lo coursier https://git.io/coursier-cli
-chmod +x coursier
-./coursier launch almond -- --install
+pip install pyspark
+pip install google-cloud-sql-connector
+pip install google-auth
 ```
 
-2. After installation completes, start Jupyter Notebook:
-```bash
-jupyter notebook
+2. Now, in your Jupyter notebook (using Python kernel), paste these cells:
+
+First Cell (imports and setup):
+```python
+from pyspark.sql import SparkSession
+from google.cloud import storage
+from google.oauth2 import service_account
+import os
+
+# Initialize Spark with PostgreSQL JDBC driver
+spark = SparkSession.builder \
+    .appName("CloudSQL Connection") \
+    .config("spark.jars.packages", "org.postgresql:postgresql:42.2.24") \
+    .getOrCreate()
 ```
 
-3. In Jupyter, create a new notebook and select "Scala" as your kernel (not Python).
-
-4. Now, copy and run these cells one at a time (press Shift+Enter after pasting each cell):
-
-First Cell (dependencies):
-```scala
-%use scala-deps
-$dep org.postgresql:postgresql:42.2.24
-$dep com.google.cloud.sql:postgres-socket-factory:1.11.0
-$dep com.google.auth:google-auth-library-oauth2-http:1.11.0
+Second Cell (connection function):
+```python
+def get_cloud_sql_connection():
+    try:
+        # Database connection properties
+        connection_properties = {
+            "user": "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam",
+            "driver": "org.postgresql.Driver",
+            "socketFactory": "com.google.cloud.sql.postgres.SocketFactory",
+            "cloudSqlInstance": "prj-d-netsec:us-central1:cloudsql-with-psc"
+        }
+        
+        # JDBC URL
+        jdbc_url = "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test"
+        
+        return spark.read \
+            .format("jdbc") \
+            .option("url", jdbc_url) \
+            .option("driver", connection_properties["driver"]) \
+            .option("user", connection_properties["user"]) \
+            .option("socketFactory", connection_properties["socketFactory"]) \
+            .option("cloudSqlInstance", connection_properties["cloudSqlInstance"])
+            
+    except Exception as e:
+        print(f"Error connecting to database: {str(e)}")
+        return None
 ```
 
-Second Cell (imports):
-```scala
-import com.google.auth.oauth2.GoogleCredentials
-import java.sql.{Connection, DriverManager}
-import scala.util.{Try, Success, Failure}
-```
-
-Third Cell (connection code):
-```scala
-def getDefaultAccessToken(): Option[String] = {
-    println("Start: generating access token")
-    Try {
-        val credentials = GoogleCredentials.getApplicationDefault()
-        credentials.refreshIfExpired()
-        credentials.getAccessToken.getTokenValue
-    } match {
-        case Success(token) =>
-            println("End: generating access token")
-            Some(token)
-        case Failure(e) =>
-            println(s"Error: generating access token: ${e.getMessage}")
-            None
-    }
-}
-
-def getDbConnection(connectionStr: String, user: String, password: String): Option[Connection] = {
-    println(s"Start: getting db connection for $user")
+Third Cell (test query):
+```python
+# Test the connection with a simple query
+try:
+    # Get the connection
+    connection = get_cloud_sql_connection()
     
-    val jdbcUrl = s"jdbc:postgresql://$connectionStr/psc_test"
-    val props = new java.util.Properties()
-    props.setProperty("user", user)
-    props.setProperty("password", password)
-    props.setProperty("socketFactory", "com.google.cloud.sql.postgres.SocketFactory")
-    props.setProperty("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc")
-
-    def tryConnect(attempts: Int): Option[Connection] = {
-        if (attempts <= 0) None
-        else Try {
-            Class.forName("org.postgresql.Driver")
-            DriverManager.getConnection(jdbcUrl, props)
-        } match {
-            case Success(conn) =>
-                println(s"End: getting db connection for $user")
-                Some(conn)
-            case Failure(e) =>
-                println(s"Error: getting db connection for $user: ${e.getMessage}")
-                Thread.sleep(5000)
-                tryConnect(attempts - 1)
-        }
-    }
-
-    tryConnect(5)
-}
+    if connection:
+        # Example query - replace 'your_table' with an actual table name
+        df = connection \
+            .option("query", "SELECT * FROM your_table LIMIT 5") \
+            .load()
+        
+        # Show the results
+        df.show()
+        
+except Exception as e:
+    print(f"Error executing query: {str(e)}")
 ```
 
-Fourth Cell (test the connection):
-```scala
-val user = "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam"
-val password = getDefaultAccessToken().getOrElse {
-    println("Failed to get access token")
-    System.exit(1)
-    ""
-}
-val connectionStr = "prj-d-netsec:us-central1:cloudsql-with-psc"
+To use this code:
 
-// Test the connection
-getDbConnection(connectionStr, user, password).foreach { conn =>
-    try {
-        println("Successfully connected to database!")
-        // Try a simple query
-        val stmt = conn.createStatement()
-        val rs = stmt.executeQuery("SELECT 1")
-        while (rs.next()) {
-            println(s"Test query result: ${rs.getInt(1)}")
-        }
-        rs.close()
-        stmt.close()
-    } finally {
-        conn.close()
-    }
-}
+1. Make sure you're using the Python kernel in Jupyter (not Scala)
+2. Run each cell in order
+3. Replace 'your_table' with an actual table name from your database
+4. The connection will use your default Google Cloud credentials
+
+If you want to run a specific query, you can do it like this:
+
+```python
+# Example of running a specific query
+query = """
+SELECT column1, column2
+FROM your_table
+WHERE condition = 'value'
+LIMIT 10
+"""
+
+df = connection \
+    .option("query", query) \
+    .load()
+
+df.show()
 ```
 
-Let me know which step you're at and what error (if any) you encounter. We can troubleshoot from there or try a different approach if needed.
+Common troubleshooting:
+1. If you get a driver error, check that the PostgreSQL JDBC driver was properly included
+2. If you get an authentication error, verify your Google Cloud credentials are set up correctly
+3. If you get a connection error, verify the connection string and instance name
 
-Common issues you might encounter:
-1. If Almond installation fails, you might need Java installed
-2. If dependencies fail to load, you might see red error text in the notebook
-3. If connection fails, it might be due to credentials or network access
+Let me know what happens when you try this, and I can help with any errors that come up!
 
-Let me know what happens after you try these steps!
+Would you like to try a specific query with your database, or should we first confirm the connection is working?
