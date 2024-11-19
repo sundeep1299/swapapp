@@ -1,106 +1,92 @@
- You make a very good point! The main purpose here is to demonstrate and use the Cloud SQL JDBC Socket Factory with Private Service Connect (PSC), as it's specifically designed for secure connectivity to Cloud SQL.
+// First, in a terminal, install the Scala kernel for Jupyter:
+// pip install spylon-kernel
+// python -m spylon_kernel install
 
-Let's rewrite the code focusing on JDBC Socket Factory approach:
+// In your first Jupyter notebook cell, initialize the dependencies:
+%%init_spark
+dependencies = [
+    "org.postgresql:postgresql:42.2.24",
+    "com.google.cloud.sql:postgres-socket-factory:1.11.0",
+    "com.google.auth:google-auth-library-oauth2-http:1.11.0"
+]
 
-```python
-from pyspark.sql import SparkSession
+// In the next cell, import required libraries:
+import com.google.auth.oauth2.GoogleCredentials
+import java.sql.{Connection, DriverManager}
+import scala.util.{Try, Success, Failure}
 
-def get_jdbc_connection(password):
-    print("Start: Getting JDBC connection with Socket Factory")
-    try:
-        # Initialize Spark with explicit JDBC driver and Socket Factory dependencies
-        spark = SparkSession.builder \
-            .appName("CloudSQL JDBC Socket Factory Connection") \
-            .config("spark.jars.packages", 
-                   "org.postgresql:postgresql:42.2.23," + 
-                   "com.google.cloud.sql:postgres-socket-factory:1.11.0") \
-            .getOrCreate()
+// Define the access token function in another cell:
+def getDefaultAccessToken(): Option[String] = {
+    println("Start: generating access token")
+    Try {
+        val credentials = GoogleCredentials.getApplicationDefault()
+        credentials.refreshIfExpired()
+        credentials.getAccessToken.getTokenValue
+    } match {
+        case Success(token) =>
+            println("End: generating access token")
+            Some(token)
+        case Failure(e) =>
+            println(s"Error: generating access token: ${e.getMessage}")
+            None
+    }
+}
 
-        # JDBC URL and connection properties
-        jdbc_url = "jdbc:postgresql:///"  # Note: Empty host as Socket Factory will handle connection
+// Define the database connection function:
+def getDbConnection(connectionStr: String, user: String, password: String): Option[Connection] = {
+    println(s"Start: getting db connection for $user")
+    
+    val jdbcUrl = s"jdbc:postgresql://$connectionStr/psc_test"
+    val props = new java.util.Properties()
+    props.setProperty("user", user)
+    props.setProperty("password", password)
+    props.setProperty("socketFactory", "com.google.cloud.sql.postgres.SocketFactory")
+    props.setProperty("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc")
+
+    def tryConnect(attempts: Int): Option[Connection] = {
+        if (attempts <= 0) None
+        else Try {
+            Class.forName("org.postgresql.Driver")
+            DriverManager.getConnection(jdbcUrl, props)
+        } match {
+            case Success(conn) =>
+                println(s"End: getting db connection for $user")
+                Some(conn)
+            case Failure(e) =>
+                println(s"Error: getting db connection for $user: ${e.getMessage}")
+                Thread.sleep(5000)
+                tryConnect(attempts - 1)
+        }
+    }
+
+    tryConnect(5)
+}
+
+// In a new cell, use the connection:
+val user = "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam"
+val password = getDefaultAccessToken().getOrElse {
+    println("Failed to get access token")
+    System.exit(1)
+    ""
+}
+val connectionStr = "prj-d-netsec:us-central1:cloudsql-with-psc"
+
+// Try to connect and execute a query:
+getDbConnection(connectionStr, user, password).foreach { conn =>
+    try {
+        // Example query
+        val stmt = conn.createStatement()
+        val rs = stmt.executeQuery("SELECT * FROM your_table LIMIT 5")
         
-        # Create table using JDBC with Socket Factory
-        create_table_query = """
-        (CREATE TABLE IF NOT EXISTS employees (
-            id INT PRIMARY KEY,
-            name VARCHAR(100),
-            department VARCHAR(50)
-        ))
-        """
+        // Process results
+        while (rs.next()) {
+            // Access columns by name or index
+            println(rs.getString(1))
+        }
         
-        # Execute DDL using Socket Factory
-        spark.read \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("driver", "org.postgresql.Driver") \
-            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-            .option("password", password) \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .option("query", create_table_query) \
-            .load()
-
-        # Create sample data
-        data = [
-            (1, "John Doe", "Engineering"),
-            (2, "Jane Smith", "Finance"),
-            (3, "Bob Wilson", "Marketing")
-        ]
-        
-        # Create DataFrame
-        columns = ["id", "name", "department"]
-        df = spark.createDataFrame(data, columns)
-
-        # Insert data using Socket Factory
-        df.write \
-            .format("jdbc") \
-            .option("url", jdbc_url) \
-            .option("driver", "org.postgresql.Driver") \
-            .option("dbtable", "employees") \
-            .option("user", "svc-p-lumi-pscpoc-sa@prj-p-lumi-pscpoc.iam") \
-            .option("password", password) \
-            .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-            .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-            .option("ipTypes", "PSC") \
-            .mode("append") \
-            .save()
-
-        print("Successfully created table and inserted data using Socket Factory")
-        return True
-
-    except Exception as e:
-        print(f"Socket Factory Connection Error: {str(e)}")
-        return False
-
-def main():
-    # Get access token
-    password = get_cf_default_access_token()
-    if not password:
-        print("Failed to get access token")
-        return
-
-    # Use Socket Factory for connection
-    success = get_jdbc_connection(password)
-    if not success:
-        print("Failed to complete operations using Socket Factory")
-
-if __name__ == "__main__":
-    main()
-```
-
-Key points about why Socket Factory is important:
-1. Security: Socket Factory handles secure authentication and connection to Cloud SQL
-2. Cloud Integration: Specifically designed for Google Cloud SQL connectivity
-3. Private Service Connect: Supports PSC for secure, private connectivity
-4. IAM Integration: Works with Google Cloud IAM authentication
-5. Connection Management: Handles connection pooling and lifecycle
-
-The main differences from psycopg2:
-1. Uses Google's Socket Factory for connection management
-2. Integrates with Cloud SQL security features
-3. Supports Cloud-specific features like PSC
-4. Handles cloud authentication automatically
-5. Better integration with Google Cloud services
-
-Would you like me to explain more about any specific aspect of the Socket Factory approach?
+        rs.close()
+        stmt.close()
+    } finally {
+        conn.close()
+    }
+}
