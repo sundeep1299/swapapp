@@ -1,119 +1,66 @@
- You're right - let's focus on one clear approach using Almond, which is generally the most reliable method for running Scala in Jupyter notebooks.
+ The error shows that the PostgreSQL Driver class is not found. This is happening because the PostgreSQL JDBC driver isn't available in the Spark classpath. Let's fix this in Dataproc by doing two things:
 
-Here's the step-by-step process:
+1. First, download and install the PostgreSQL JDBC driver:
 
-1. First, install Almond. Open your terminal and run these commands:
-```bash
-curl -Lo coursier https://git.io/coursier-cli
-chmod +x coursier
-./coursier launch almond -- --install
+```python
+# Download PostgreSQL JDBC driver
+!wget https://jdbc.postgresql.org/download/postgresql-42.2.24.jar -P /tmp/
 ```
 
-2. After installation completes, start Jupyter Notebook:
-```bash
-jupyter notebook
-```
+2. Then modify your code to include the JDBC driver in Spark configuration:
 
-3. In Jupyter, create a new notebook and select "Scala" as your kernel (not Python).
+```python
+from pyspark.sql import SparkSession
 
-4. Now, copy and run these cells one at a time (press Shift+Enter after pasting each cell):
+# Create Spark session with PostgreSQL driver
+spark = SparkSession.builder \
+    .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar") \
+    .config("spark.executor.extraClassPath", "/tmp/postgresql-42.2.24.jar") \
+    .getOrCreate()
 
-First Cell (dependencies):
-```scala
-%use scala-deps
-$dep org.postgresql:postgresql:42.2.24
-$dep com.google.cloud.sql:postgres-socket-factory:1.11.0
-$dep com.google.auth:google-auth-library-oauth2-http:1.11.0
-```
-
-Second Cell (imports):
-```scala
-import com.google.auth.oauth2.GoogleCredentials
-import java.sql.{Connection, DriverManager}
-import scala.util.{Try, Success, Failure}
-```
-
-Third Cell (connection code):
-```scala
-def getDefaultAccessToken(): Option[String] = {
-    println("Start: generating access token")
-    Try {
-        val credentials = GoogleCredentials.getApplicationDefault()
-        credentials.refreshIfExpired()
-        credentials.getAccessToken.getTokenValue
-    } match {
-        case Success(token) =>
-            println("End: generating access token")
-            Some(token)
-        case Failure(e) =>
-            println(s"Error: generating access token: ${e.getMessage}")
-            None
-    }
+# Your connection properties
+connection_properties = {
+    "url": "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test",
+    "user": "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam",
+    "driver": "org.postgresql.Driver",
+    "socketFactory": "com.google.cloud.sql.postgres.SocketFactory",
+    "cloudSqlInstance": "prj-d-netsec:us-central1:cloudsql-with-psc"
 }
 
-def getDbConnection(connectionStr: String, user: String, password: String): Option[Connection] = {
-    println(s"Start: getting db connection for $user")
+# Try to read data
+try:
+    df = spark.read \
+        .format("jdbc") \
+        .option("url", connection_properties["url"]) \
+        .option("driver", connection_properties["driver"]) \
+        .option("user", connection_properties["user"]) \
+        .option("socketFactory", connection_properties["socketFactory"]) \
+        .option("cloudSqlInstance", connection_properties["cloudSqlInstance"]) \
+        .option("query", "SELECT 1 as test") \  # Simple test query
+        .load()
     
-    val jdbcUrl = s"jdbc:postgresql://$connectionStr/psc_test"
-    val props = new java.util.Properties()
-    props.setProperty("user", user)
-    props.setProperty("password", password)
-    props.setProperty("socketFactory", "com.google.cloud.sql.postgres.SocketFactory")
-    props.setProperty("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc")
-
-    def tryConnect(attempts: Int): Option[Connection] = {
-        if (attempts <= 0) None
-        else Try {
-            Class.forName("org.postgresql.Driver")
-            DriverManager.getConnection(jdbcUrl, props)
-        } match {
-            case Success(conn) =>
-                println(s"End: getting db connection for $user")
-                Some(conn)
-            case Failure(e) =>
-                println(s"Error: getting db connection for $user: ${e.getMessage}")
-                Thread.sleep(5000)
-                tryConnect(attempts - 1)
-        }
-    }
-
-    tryConnect(5)
-}
+    print("Connection successful!")
+    df.show()
+    
+except Exception as e:
+    print(f"Error: {str(e)}")
 ```
 
-Fourth Cell (test the connection):
-```scala
-val user = "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam"
-val password = getDefaultAccessToken().getOrElse {
-    println("Failed to get access token")
-    System.exit(1)
-    ""
-}
-val connectionStr = "prj-d-netsec:us-central1:cloudsql-with-psc"
+If you still get an error, you might also need the Socket Factory JAR. Add this additional download:
 
-// Test the connection
-getDbConnection(connectionStr, user, password).foreach { conn =>
-    try {
-        println("Successfully connected to database!")
-        // Try a simple query
-        val stmt = conn.createStatement()
-        val rs = stmt.executeQuery("SELECT 1")
-        while (rs.next()) {
-            println(s"Test query result: ${rs.getInt(1)}")
-        }
-        rs.close()
-        stmt.close()
-    } finally {
-        conn.close()
-    }
-}
+```python
+# Download Socket Factory JAR
+!wget https://storage.googleapis.com/cloud-sql-connectors/postgres-socket-factory/latest/postgres-socket-factory-latest.jar -P /tmp/
+
+# Then modify the Spark session creation to include both JARs:
+spark = SparkSession.builder \
+    .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .config("spark.executor.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .getOrCreate()
 ```
 
-Let me know which step you're at and what error (if any) you encounter. We can troubleshoot from there or try a different approach if needed.
+Run these commands in order:
+1. The wget commands to download the JARs
+2. Then the Spark code with the updated configuration
 
-Common issues you might encounter:
-1. If Almond installation fails, you might need Java installed
-2. If dependencies fail to load, you might see red error text in the notebook
-3. If connection fails, it might be due to credentials or network access
-
-Let me know what happens after you try these steps!
+Let me know if you still get any errors!
