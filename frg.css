@@ -1,12 +1,17 @@
- Here's the PySpark code specifically for Dataproc Jupyter notebook:
+ Great! Now that both JARs are in the /tmp folder, let's modify the Spark session to use both JARs correctly. Here's the complete code:
 
 ```python
 from pyspark.sql import SparkSession
 
-# Use existing Spark session in Dataproc
-spark = SparkSession.builder.getOrCreate()
+# Create Spark session with both drivers
+spark = SparkSession.builder \
+    .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .config("spark.executor.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .getOrCreate()
 
-# Define your connection parameters
+print("Spark session created")
+
+# Connection properties
 connection_properties = {
     "url": "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test",
     "user": "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam",
@@ -15,7 +20,7 @@ connection_properties = {
     "cloudSqlInstance": "prj-d-netsec:us-central1:cloudsql-with-psc"
 }
 
-# Read data using PySpark
+# Try to read data
 try:
     df = spark.read \
         .format("jdbc") \
@@ -24,7 +29,7 @@ try:
         .option("user", connection_properties["user"]) \
         .option("socketFactory", connection_properties["socketFactory"]) \
         .option("cloudSqlInstance", connection_properties["cloudSqlInstance"]) \
-        .option("query", "SELECT * FROM your_table LIMIT 5") \
+        .option("query", "SELECT 1 as test") \
         .load()
     
     print("Connection successful!")
@@ -32,33 +37,25 @@ try:
     
 except Exception as e:
     print(f"Error: {str(e)}")
+    # Print more detailed error information
+    import traceback
+    traceback.print_exc()
 ```
 
-If you need to write data:
-
+If you still get an error, we might need to:
+1. Verify the JARs are in the correct location:
 ```python
-# Example of writing data to PostgreSQL
-try:
-    df.write \
-        .format("jdbc") \
-        .option("url", connection_properties["url"]) \
-        .option("driver", connection_properties["driver"]) \
-        .option("user", connection_properties["user"]) \
-        .option("socketFactory", connection_properties["socketFactory"]) \
-        .option("cloudSqlInstance", connection_properties["cloudSqlInstance"]) \
-        .option("dbtable", "your_target_table") \
-        .mode("append") \  # or "overwrite" to replace existing data
-        .save()
-    
-    print("Data written successfully!")
-    
-except Exception as e:
-    print(f"Error writing data: {str(e)}")
+# Check if files exist
+!ls -l /tmp/postgresql-42.2.24.jar
+!ls -l /tmp/postgres-socket-factory-latest.jar
 ```
 
-Key points:
-1. No need to create a new SparkSession - Dataproc already provides one
-2. Make sure to replace `your_table` and `your_target_table` with actual table names
-3. The `mode()` can be "append", "overwrite", "error", or "ignore" depending on your needs
+2. Try stopping and restarting the Spark session:
+```python
+# Stop current session
+spark.stop()
 
-Let me know if you get any errors when running this code!
+# Create new session
+spark = SparkSession.builder \
+    .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .config("spark.executor.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket
