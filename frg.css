@@ -1,34 +1,40 @@
- Great! Now that both JARs are in the /tmp folder, let's modify the Spark session to use both JARs correctly. Here's the complete code:
+ It seems the PostgreSQL driver still isn't being loaded correctly. Let's try a different approach using Spark's configuration with `--jars` option. Here's what we'll do:
+
+1. First, let's stop the current Spark session:
 
 ```python
 from pyspark.sql import SparkSession
+spark.stop()
+```
 
-# Create Spark session with both drivers
+2. Then create a new Spark session with the JARs explicitly included:
+
+```python
 spark = SparkSession.builder \
+    .appName("PostgreSQL Connection") \
+    .config("spark.jars", "/tmp/postgresql-42.2.24.jar,/tmp/postgres-socket-factory-latest.jar") \
     .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
-    .config("spark.executor.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
     .getOrCreate()
 
 print("Spark session created")
 
-# Connection properties
-connection_properties = {
-    "url": "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test",
-    "user": "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam",
-    "driver": "org.postgresql.Driver",
-    "socketFactory": "com.google.cloud.sql.postgres.SocketFactory",
-    "cloudSqlInstance": "prj-d-netsec:us-central1:cloudsql-with-psc"
-}
+# First verify if the driver is available
+try:
+    # Try to load the driver class
+    spark.sparkContext._jvm.Class.forName("org.postgresql.Driver")
+    print("PostgreSQL driver loaded successfully")
+except Exception as e:
+    print(f"Failed to load PostgreSQL driver: {str(e)}")
 
-# Try to read data
+# Connection properties
 try:
     df = spark.read \
         .format("jdbc") \
-        .option("url", connection_properties["url"]) \
-        .option("driver", connection_properties["driver"]) \
-        .option("user", connection_properties["user"]) \
-        .option("socketFactory", connection_properties["socketFactory"]) \
-        .option("cloudSqlInstance", connection_properties["cloudSqlInstance"]) \
+        .option("driver", "org.postgresql.Driver") \
+        .option("url", "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test") \
+        .option("user", "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam") \
+        .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
+        .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
         .option("query", "SELECT 1 as test") \
         .load()
     
@@ -37,25 +43,35 @@ try:
     
 except Exception as e:
     print(f"Error: {str(e)}")
-    # Print more detailed error information
     import traceback
     traceback.print_exc()
 ```
 
-If you still get an error, we might need to:
-1. Verify the JARs are in the correct location:
+If this still doesn't work, let's try another approach using system properties:
+
 ```python
-# Check if files exist
-!ls -l /tmp/postgresql-42.2.24.jar
-!ls -l /tmp/postgres-socket-factory-latest.jar
+spark = SparkSession.builder \
+    .appName("PostgreSQL Connection") \
+    .config("spark.driver.extraJavaOptions", 
+           f"-Djava.class.path=/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .config("spark.executor.extraJavaOptions", 
+           f"-Djava.class.path=/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
+    .getOrCreate()
 ```
 
-2. Try stopping and restarting the Spark session:
+Also, let's verify the exact files we have:
 ```python
-# Stop current session
-spark.stop()
+# Check the files and their permissions
+!ls -l /tmp/postgresql*
+!ls -l /tmp/postgres-socket*
+```
 
-# Create new session
-spark = SparkSession.builder \
-    .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
-    .config("spark.executor.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket
+If none of these work, we might need to:
+1. Make sure the JARs are in the correct location with proper permissions
+2. Try copying the JARs to Spark's library directory:
+```python
+!sudo cp /tmp/postgresql-42.2.24.jar /usr/lib/spark/jars/
+!sudo cp /tmp/postgres-socket-factory-latest.jar /usr/lib/spark/jars/
+```
+
+Let me know what happens when you try these approaches!
