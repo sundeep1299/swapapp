@@ -1,0 +1,64 @@
+ Here's the PySpark code specifically for Dataproc Jupyter notebook:
+
+```python
+from pyspark.sql import SparkSession
+
+# Use existing Spark session in Dataproc
+spark = SparkSession.builder.getOrCreate()
+
+# Define your connection parameters
+connection_properties = {
+    "url": "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test",
+    "user": "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam",
+    "driver": "org.postgresql.Driver",
+    "socketFactory": "com.google.cloud.sql.postgres.SocketFactory",
+    "cloudSqlInstance": "prj-d-netsec:us-central1:cloudsql-with-psc"
+}
+
+# Read data using PySpark
+try:
+    df = spark.read \
+        .format("jdbc") \
+        .option("url", connection_properties["url"]) \
+        .option("driver", connection_properties["driver"]) \
+        .option("user", connection_properties["user"]) \
+        .option("socketFactory", connection_properties["socketFactory"]) \
+        .option("cloudSqlInstance", connection_properties["cloudSqlInstance"]) \
+        .option("query", "SELECT * FROM your_table LIMIT 5") \
+        .load()
+    
+    print("Connection successful!")
+    df.show()
+    
+except Exception as e:
+    print(f"Error: {str(e)}")
+```
+
+If you need to write data:
+
+```python
+# Example of writing data to PostgreSQL
+try:
+    df.write \
+        .format("jdbc") \
+        .option("url", connection_properties["url"]) \
+        .option("driver", connection_properties["driver"]) \
+        .option("user", connection_properties["user"]) \
+        .option("socketFactory", connection_properties["socketFactory"]) \
+        .option("cloudSqlInstance", connection_properties["cloudSqlInstance"]) \
+        .option("dbtable", "your_target_table") \
+        .mode("append") \  # or "overwrite" to replace existing data
+        .save()
+    
+    print("Data written successfully!")
+    
+except Exception as e:
+    print(f"Error writing data: {str(e)}")
+```
+
+Key points:
+1. No need to create a new SparkSession - Dataproc already provides one
+2. Make sure to replace `your_table` and `your_target_table` with actual table names
+3. The `mode()` can be "append", "overwrite", "error", or "ignore" depending on your needs
+
+Let me know if you get any errors when running this code!
