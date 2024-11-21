@@ -1,77 +1,174 @@
- It seems the PostgreSQL driver still isn't being loaded correctly. Let's try a different approach using Spark's configuration with `--jars` option. Here's what we'll do:
+import google.auth
+import google.auth.transport.requests
+from google.cloud.sql.connector import Connector
+import time
+import psycopg2
 
-1. First, let's stop the current Spark session:
+def get_cf_default_access_token():
+    print("Start: generating access token")
+    try:
+        creds, project = google.auth.default()
+        auth_req = creds.refresh(google.auth.transport.requests.Request())
+    except Exception as e:
+        print("Error: generating access token")
+        print(e)
+        return None
+    print("End: generating access token")
+    return creds.token
 
-```python
-from pyspark.sql import SparkSession
-spark.stop()
-```
+def get_db_connection(connection_str, user, password):
+    print(f'Start: getting db connection for {user}')
+    conn = None
+    for i in range(5):
+        try:
+            connector = Connector()
+            conn = connector.connect(
+                connection_str,
+                "pg8000",
+                ip_type="psc",
+                user=user,
+                password=password,
+                db="psc_test"
+            )
+            break
+        except Exception as e:
+            print(f'Error: getting db connection for {user}')
+            print(e)
+            time.sleep(5)
+    print(f'End: getting db connection for {user}')
+    return conn
 
-2. Then create a new Spark session with the JARs explicitly included:
+class DatabaseOperations:
+    def __init__(self, connection):
+        self.conn = connection
+        self.cursor = connection.cursor()
 
-```python
-spark = SparkSession.builder \
-    .appName("PostgreSQL Connection") \
-    .config("spark.jars", "/tmp/postgresql-42.2.24.jar,/tmp/postgres-socket-factory-latest.jar") \
-    .config("spark.driver.extraClassPath", "/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
-    .getOrCreate()
+    def create_record(self, table_name, data):
+        """
+        Create a new record in the specified table
+        :param table_name: Name of the table
+        :param data: Dictionary containing column names and values
+        :return: ID of the created record
+        """
+        columns = ', '.join(data.keys())
+        values = ', '.join(['%s'] * len(data))
+        query = f"INSERT INTO {table_name} ({columns}) VALUES ({values}) RETURNING id"
+        
+        try:
+            self.cursor.execute(query, list(data.values()))
+            self.conn.commit()
+            return self.cursor.fetchone()[0]
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error creating record: {e}")
+            raise
 
-print("Spark session created")
+    def read_records(self, table_name, conditions=None, fields=None):
+        """
+        Read records from the specified table
+        :param table_name: Name of the table
+        :param conditions: Dictionary of WHERE conditions
+        :param fields: List of fields to retrieve (None for all fields)
+        :return: List of records
+        """
+        fields_str = '*' if not fields else ', '.join(fields)
+        query = f"SELECT {fields_str} FROM {table_name}"
+        
+        if conditions:
+            where_clauses = [f"{k} = %s" for k in conditions.keys()]
+            query += " WHERE " + " AND ".join(where_clauses)
+            
+        try:
+            self.cursor.execute(query, list(conditions.values()) if conditions else None)
+            return self.cursor.fetchall()
+        except Exception as e:
+            print(f"Error reading records: {e}")
+            raise
 
-# First verify if the driver is available
-try:
-    # Try to load the driver class
-    spark.sparkContext._jvm.Class.forName("org.postgresql.Driver")
-    print("PostgreSQL driver loaded successfully")
-except Exception as e:
-    print(f"Failed to load PostgreSQL driver: {str(e)}")
+    def update_record(self, table_name, data, conditions):
+        """
+        Update records in the specified table
+        :param table_name: Name of the table
+        :param data: Dictionary containing column names and new values
+        :param conditions: Dictionary of WHERE conditions
+        :return: Number of updated records
+        """
+        set_clause = ', '.join([f"{k} = %s" for k in data.keys()])
+        where_clause = ' AND '.join([f"{k} = %s" for k in conditions.keys()])
+        query = f"UPDATE {table_name} SET {set_clause} WHERE {where_clause}"
+        
+        try:
+            self.cursor.execute(query, list(data.values()) + list(conditions.values()))
+            self.conn.commit()
+            return self.cursor.rowcount
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error updating record: {e}")
+            raise
 
-# Connection properties
-try:
-    df = spark.read \
-        .format("jdbc") \
-        .option("driver", "org.postgresql.Driver") \
-        .option("url", "jdbc:postgresql://prj-d-netsec:us-central1:cloudsql-with-psc/psc_test") \
-        .option("user", "svc-prj-d-lumi-poc-prj-d-lumi-poc.iam") \
-        .option("socketFactory", "com.google.cloud.sql.postgres.SocketFactory") \
-        .option("cloudSqlInstance", "prj-d-netsec:us-central1:cloudsql-with-psc") \
-        .option("query", "SELECT 1 as test") \
-        .load()
+    def delete_record(self, table_name, conditions):
+        """
+        Delete records from the specified table
+        :param table_name: Name of the table
+        :param conditions: Dictionary of WHERE conditions
+        :return: Number of deleted records
+        """
+        where_clause = ' AND '.join([f"{k} = %s" for k in conditions.keys()])
+        query = f"DELETE FROM {table_name} WHERE {where_clause}"
+        
+        try:
+            self.cursor.execute(query, list(conditions.values()))
+            self.conn.commit()
+            return self.cursor.rowcount
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error deleting record: {e}")
+            raise
+
+    def close(self):
+        """
+        Close the database connection and cursor
+        """
+        self.cursor.close()
+        self.conn.close()
+
+# Example usage:
+if __name__ == "__main__":
+    # Your existing connection setup
+    password = get_cf_default_access_token()
+    connection_str = "prj-d-netsec:us-central1:cloudsql-with-psc"
+    user = "svc-d-lumi-poc-sa@prj-d-lumi-poc.iam"
     
-    print("Connection successful!")
-    df.show()
+    # Get connection
+    conn = get_db_connection(connection_str, user, password)
     
-except Exception as e:
-    print(f"Error: {str(e)}")
-    import traceback
-    traceback.print_exc()
-```
-
-If this still doesn't work, let's try another approach using system properties:
-
-```python
-spark = SparkSession.builder \
-    .appName("PostgreSQL Connection") \
-    .config("spark.driver.extraJavaOptions", 
-           f"-Djava.class.path=/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
-    .config("spark.executor.extraJavaOptions", 
-           f"-Djava.class.path=/tmp/postgresql-42.2.24.jar:/tmp/postgres-socket-factory-latest.jar") \
-    .getOrCreate()
-```
-
-Also, let's verify the exact files we have:
-```python
-# Check the files and their permissions
-!ls -l /tmp/postgresql*
-!ls -l /tmp/postgres-socket*
-```
-
-If none of these work, we might need to:
-1. Make sure the JARs are in the correct location with proper permissions
-2. Try copying the JARs to Spark's library directory:
-```python
-!sudo cp /tmp/postgresql-42.2.24.jar /usr/lib/spark/jars/
-!sudo cp /tmp/postgres-socket-factory-latest.jar /usr/lib/spark/jars/
-```
-
-Let me know what happens when you try these approaches!
+    try:
+        # Initialize database operations
+        db_ops = DatabaseOperations(conn)
+        
+        # Example CRUD operations
+        # Create
+        new_record = {
+            "name": "Test User",
+            "email": "test@example.com",
+            "created_at": "2024-03-21"
+        }
+        new_id = db_ops.create_record("users", new_record)
+        print(f"Created record with ID: {new_id}")
+        
+        # Read
+        records = db_ops.read_records("users", {"id": new_id})
+        print(f"Retrieved records: {records}")
+        
+        # Update
+        updated_data = {"name": "Updated User"}
+        updated_count = db_ops.update_record("users", updated_data, {"id": new_id})
+        print(f"Updated {updated_count} records")
+        
+        # Delete
+        deleted_count = db_ops.delete_record("users", {"id": new_id})
+        print(f"Deleted {deleted_count} records")
+        
+    finally:
+        # Close the connection
+        db_ops.close()
