@@ -4,6 +4,7 @@ from google.cloud.sql.connector import Connector
 import time
 import psycopg2
 
+# [Previous connection functions remain the same]
 def get_cf_default_access_token():
     print("Start: generating access token")
     try:
@@ -43,13 +44,46 @@ class DatabaseOperations:
         self.conn = connection
         self.cursor = connection.cursor()
 
+    def table_exists(self, table_name):
+        """
+        Check if a table exists in the database
+        """
+        self.cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = %s
+            );
+        """, (table_name,))
+        return self.cursor.fetchone()[0]
+
+    def create_table(self, table_name):
+        """
+        Create the users table if it doesn't exist
+        """
+        try:
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100),
+                    email VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            self.conn.commit()
+            print(f"Table {table_name} created successfully")
+        except Exception as e:
+            self.conn.rollback()
+            print(f"Error creating table: {e}")
+            raise
+
     def create_record(self, table_name, data):
         """
         Create a new record in the specified table
-        :param table_name: Name of the table
-        :param data: Dictionary containing column names and values
-        :return: ID of the created record
         """
+        # First check if table exists, if not create it
+        if not self.table_exists(table_name):
+            self.create_table(table_name)
+
         columns = ', '.join(data.keys())
         values = ', '.join(['%s'] * len(data))
         query = f"INSERT INTO {table_name} ({columns}) VALUES ({values}) RETURNING id"
@@ -63,14 +97,11 @@ class DatabaseOperations:
             print(f"Error creating record: {e}")
             raise
 
+    # [Other CRUD methods remain the same]
     def read_records(self, table_name, conditions=None, fields=None):
-        """
-        Read records from the specified table
-        :param table_name: Name of the table
-        :param conditions: Dictionary of WHERE conditions
-        :param fields: List of fields to retrieve (None for all fields)
-        :return: List of records
-        """
+        if not self.table_exists(table_name):
+            raise Exception(f"Table {table_name} does not exist")
+            
         fields_str = '*' if not fields else ', '.join(fields)
         query = f"SELECT {fields_str} FROM {table_name}"
         
@@ -86,13 +117,9 @@ class DatabaseOperations:
             raise
 
     def update_record(self, table_name, data, conditions):
-        """
-        Update records in the specified table
-        :param table_name: Name of the table
-        :param data: Dictionary containing column names and new values
-        :param conditions: Dictionary of WHERE conditions
-        :return: Number of updated records
-        """
+        if not self.table_exists(table_name):
+            raise Exception(f"Table {table_name} does not exist")
+            
         set_clause = ', '.join([f"{k} = %s" for k in data.keys()])
         where_clause = ' AND '.join([f"{k} = %s" for k in conditions.keys()])
         query = f"UPDATE {table_name} SET {set_clause} WHERE {where_clause}"
@@ -107,12 +134,9 @@ class DatabaseOperations:
             raise
 
     def delete_record(self, table_name, conditions):
-        """
-        Delete records from the specified table
-        :param table_name: Name of the table
-        :param conditions: Dictionary of WHERE conditions
-        :return: Number of deleted records
-        """
+        if not self.table_exists(table_name):
+            raise Exception(f"Table {table_name} does not exist")
+            
         where_clause = ' AND '.join([f"{k} = %s" for k in conditions.keys()])
         query = f"DELETE FROM {table_name} WHERE {where_clause}"
         
@@ -134,7 +158,7 @@ class DatabaseOperations:
 
 # Example usage:
 if __name__ == "__main__":
-    # Your existing connection setup
+    # Your connection setup
     password = get_cf_default_access_token()
     connection_str = "prj-d-netsec:us-central1:cloudsql-with-psc"
     user = "svc-d-lumi-poc-sa@prj-d-lumi-poc.iam"
@@ -146,13 +170,17 @@ if __name__ == "__main__":
         # Initialize database operations
         db_ops = DatabaseOperations(conn)
         
+        # Create table if it doesn't exist
+        if not db_ops.table_exists("users"):
+            db_ops.create_table("users")
+        
         # Example CRUD operations
-        # Create
         new_record = {
             "name": "Test User",
-            "email": "test@example.com",
-            "created_at": "2024-03-21"
+            "email": "test@example.com"
         }
+        
+        # Create
         new_id = db_ops.create_record("users", new_record)
         print(f"Created record with ID: {new_id}")
         
