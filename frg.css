@@ -1,0 +1,48 @@
+# GenAI Security Implementation Requirements Matrix
+
+## Core Security Requirements by GenAI Type
+
+| Security Domain | Proprietary LLM | LLM with RAG | Open Source LLM | Custom Developed LLM |
+|----------------|-----------------|--------------|-----------------|---------------------|
+| **Authentication & Access Control** (TECH09.15) | • Enterprise IAM<br>• Role-based access<br>• API key management | • Enterprise IAM<br>• Document level access<br>• Vector store access control | • Enterprise IAM<br>• Model access control<br>• Repository access | • Enterprise IAM<br>• Model development access<br>• Training data access |
+| **Data Protection** (TECH03.01) | • Prompt encryption<br>• No PII in prompts<br>• Response encryption | • Document encryption<br>• Vector store encryption<br>• PII detection & removal | • Training data encryption<br>• Model weights protection<br>• Fine-tuning data security | • Full data encryption<br>• Training set protection<br>• Model artifact security |
+| **Network Security** (TECH08.11) | • API endpoint security<br>• TLS 1.2+<br>• Network isolation | • Multiple endpoint security<br>• Vector DB isolation<br>• Document store security | • Repository security<br>• Model serving isolation<br>• API endpoint protection | • Development network isolation<br>• Training environment security<br>• Model serving protection |
+| **Content Safety** | • Output filtering<br>• Bias detection<br>• Response validation | • Source validation<br>• Retrieved content check<br>• Combined output scan | • Model output scanning<br>• Response filtering<br>• Security validation | • Custom filters<br>• Comprehensive validation<br>• Output security checks |
+| **Storage Requirements** | • 30-day retention max<br>• No sensitive storage<br>• Encrypted chat logs | • Vector DB security<br>• Document retention<br>• Access audit logs | • Model storage security<br>• Version control<br>• Artifact protection | • Secure model storage<br>• Training data vault<br>• Version management |
+| **Monitoring & Logging** (TECH05.01) | • API access logs<br>• Usage monitoring<br>• Security events | • RAG process logs<br>• Retrieval tracking<br>• Access monitoring | • Model behavior logs<br>• Security monitoring<br>• Performance tracking | • Full audit logs<br>• Development tracking<br>• Deployment monitoring |
+| **Threat Assessment** | • Vendor assessment<br>• API security scan<br>• Prompt injection tests | • RAG security review<br>• Document source check<br>• Vector store assessment | • Code security scan<br>• Dependency check<br>• Vulnerability assessment | • Full threat model<br>• Security architecture review<br>• Penetration testing |
+| **Compliance Requirements** | • Vendor compliance<br>• API standards<br>• Security baselines | • Document compliance<br>• Data handling standards<br>• Storage regulations | • Open source license<br>• Security standards<br>• Deployment compliance | • Development standards<br>• Security policies<br>• Internal compliance |
+
+## Implementation Controls
+
+| Control Type | Proprietary LLM | LLM with RAG | Open Source LLM | Custom Developed LLM |
+|-------------|-----------------|--------------|-----------------|---------------------|
+| **Pre-Deployment** | • Vendor validation<br>• API security review<br>• Access setup | • RAG architecture review<br>• Document scanning<br>• Vector DB setup | • Model validation<br>• Security scanning<br>• Repository setup | • Architecture review<br>• Security validation<br>• Development controls |
+| **Runtime** | • Real-time monitoring<br>• Content filtering<br>• Access control | • Content validation<br>• Access monitoring<br>• Retrieval checks | • Output validation<br>• Performance monitoring<br>• Security checks | • Full monitoring<br>• Security validation<br>• Performance tracking |
+| **Post-Processing** | • Response validation<br>• Log analysis<br>• Usage review | • Content verification<br>• Usage analysis<br>• Storage cleanup | • Output analysis<br>• Security review<br>• Update management | • Comprehensive audit<br>• Security review<br>• Performance analysis |
+
+## Mandatory Requirements Across All Types
+
+1. **Security Standards Compliance**
+   - TECH06.35 (API Security)
+   - TECH03.01 (Cryptographic Usage)
+   - TECH09 (Access Management)
+   - TECH05.01 (Logging)
+
+2. **Content Safety Controls**
+   - Bias detection and mitigation
+   - Output validation
+   - Content filtering
+   - Security scanning
+
+3. **Monitoring Requirements**
+   - Security event logging
+   - Performance monitoring
+   - Access tracking
+   - Usage analytics
+
+4. **Risk Management**
+   - Threat modeling
+   - Security assessment
+   - Compliance validation
+   - Regular auditing
