@@ -1,17 +1,4 @@
-I see three issues in your error messages:
-
-1. Logo size prop error:
-Change the Logo component size from "LARGE" to one of the allowed values: "xs", "sm", "md", or "lg"
-
-```javascript
-<Logo alt="American Express" size="lg" styleType="line" />
-```
-
-2. DefaultProps warning:
-This is just a warning about future React changes, you can ignore it for now.
-
-3. Cannot read properties of undefined error in handleSendMessage:
-This error is occurring because the response data isn't being accessed correctly. Let's modify the handleSendMessage function:
+This error means the API response structure isn't what we expected. Let's debug the response first. Modify the handleSendMessage function to log the response:
 
 ```javascript
 const handleSendMessage = async () => {
@@ -47,9 +34,12 @@ const handleSendMessage = async () => {
         // Make API call
         const response = await fetch("http://localhost:5000/query", requestOptions);
         const result = await response.json();
+        
+        // Debug log
+        console.log('API Response:', result);
 
-        // Check if result and similar_docs exist before accessing
-        if (result && result.similar_docs && result.similar_docs.length > 0) {
+        // Add null check and structure verification
+        if (result && Array.isArray(result.similar_docs) && result.similar_docs[0] && result.similar_docs[0].text) {
             const botMessage = {
                 text: result.similar_docs[0].text,
                 sender: 'bot',
@@ -57,9 +47,9 @@ const handleSendMessage = async () => {
             };
             setMessages([...newMessages, botMessage]);
         } else {
-            // Handle case when no valid response
+            console.log('Invalid response structure:', result);
             const errorMessage = {
-                text: "I couldn't find a relevant response.",
+                text: "I couldn't process the response correctly.",
                 sender: 'bot',
                 timestamp: new Date().toISOString()
             };
@@ -78,4 +68,6 @@ const handleSendMessage = async () => {
 };
 ```
 
-I've added proper error checking for the API response and fixed the Logo size prop. Try these changes and let me know if you still see any errors.
+Can you try this version and tell me what you see in the browser's console log when you send a message? That will help us understand the exact structure of the API response and fix the code accordingly.
+
+Look for the "API Response:" log in your browser's console (F12 to open developer tools) and share what you see so I can help you adjust the code to match your API's response structure.
