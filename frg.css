@@ -1,0 +1,81 @@
+I see three issues in your error messages:
+
+1. Logo size prop error:
+Change the Logo component size from "LARGE" to one of the allowed values: "xs", "sm", "md", or "lg"
+
+```javascript
+<Logo alt="American Express" size="lg" styleType="line" />
+```
+
+2. DefaultProps warning:
+This is just a warning about future React changes, you can ignore it for now.
+
+3. Cannot read properties of undefined error in handleSendMessage:
+This error is occurring because the response data isn't being accessed correctly. Let's modify the handleSendMessage function:
+
+```javascript
+const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    // Create user message
+    const userMessage = {
+        text: inputMessage.trim(),
+        sender: 'user',
+        timestamp: new Date().toISOString()
+    };
+
+    // Add user message to chat
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInputMessage('');
+
+    try {
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const raw = JSON.stringify({
+            "query": inputMessage
+        });
+
+        const requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow'
+        };
+
+        // Make API call
+        const response = await fetch("http://localhost:5000/query", requestOptions);
+        const result = await response.json();
+
+        // Check if result and similar_docs exist before accessing
+        if (result && result.similar_docs && result.similar_docs.length > 0) {
+            const botMessage = {
+                text: result.similar_docs[0].text,
+                sender: 'bot',
+                timestamp: new Date().toISOString()
+            };
+            setMessages([...newMessages, botMessage]);
+        } else {
+            // Handle case when no valid response
+            const errorMessage = {
+                text: "I couldn't find a relevant response.",
+                sender: 'bot',
+                timestamp: new Date().toISOString()
+            };
+            setMessages([...newMessages, errorMessage]);
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        const errorMessage = {
+            text: "Sorry, I'm having trouble responding right now.",
+            sender: 'bot',
+            timestamp: new Date().toISOString()
+        };
+        setMessages([...newMessages, errorMessage]);
+    }
+};
+```
+
+I've added proper error checking for the API response and fixed the Logo size prop. Try these changes and let me know if you still see any errors.
