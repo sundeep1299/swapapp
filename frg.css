@@ -1,5 +1,6 @@
-import re
-from typing import Dict, Any, List
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Any
 import numpy as np
 from numpy.linalg import norm
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -8,296 +9,338 @@ import json
 import base64
 import hashlib
 import hmac
-import sys
 import time
 import requests
-import google
-from google.auth import credentials
+import logging
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
-import logging
 
-# Setup logging
-logger = logging.getLogger(__name__)
+# Configuration Classes
+@dataclass
+class DatabaseConfig:
+    host: str
+    port: int
+    database: str
+    user: str
+    password: str
 
-# Import constants
-from constants import (
-    APPID,
-    SECRET,
-    VERSION,
-    IDAAS_URL,
-    LLM_URL,
-    SERVICE_ACCOUNT_FILE
-)
-
-class AIController:
-    def get_gcp_token(self):
-        """
-        Generate GCP token
-        This method generates the GCP token using the SERVICE_ACCOUNT_FILE
-        The token is used to authenticate the user to the GCP service
-        """
-        SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
-        
-        # Load the credentials file
-        credentials = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-        
-        gcp_auth_request = google.auth.transport.requests.Request()
-        credentials.refresh(gcp_auth_request)
-        return credentials.token
-
-    def get_idaas_auth_token(self):
-        """
-        Generate IDaaS token
-        This method generates the IDaaS token using the APPID, SECRET, VERSION and IDAAS_URL
-        The token is used to authenticate the user to the IDaaS service
-        """
-        mac = hmac.new(base64.b64decode(SECRET), digestmod=hashlib.sha256)
-        timestamp = str(int(time.time() * 1000))
-        input_data = "{}-{}-{}".format(APPID.strip(), VERSION, timestamp)
-        mac.update(input_data.encode('utf-8'))
-        raw_mac = mac.digest()
-        
-        hmac_signature = base64.b64encode(raw_mac).decode('utf-8')
-        hmac_signature = hmac_signature.replace('/', '_').replace('+', '-').replace('=', '')
-        
-        idaas_headers = {
-            'Content-Type': 'application/json',
-            'X-Auth-AppID': APPID,
-            'X-Auth-Signature': hmac_signature,
-            'X-Auth-Version': VERSION,
-            'X-Auth-Timestamp': timestamp,
-            'Accept': 'application/json'
-        }
-        
-        idaas_payload = json.dumps({
-            "scope": [
-                "/genai/google/v1/models/gemini-1.5-pro-002/**:post"
-            ]
-        })
-        
-        auth_token = requests.request("POST", IDAAS_URL, headers=idaas_headers, data=idaas_payload, verify=False)
-        return json.loads(auth_token.content)['authorization_token']
-
-    async def call_llm(self, query_text: str) -> Dict:
-        """
-        Call LLM - Gemini
-        This method calls the LLM service using the IDaaS token and GCP token
-        The method returns the response from Gemini
-        """
-        idaas_token = self.get_idaas_auth_token()
-        logger.info("IDaaS Token generated {}".format(idaas_token))
-        
-        gcp_token = self.get_gcp_token()
-        logger.info("GCP Token generated {}".format(gcp_token))
-        
-        headers = {
-            "x-gcp-authorization": f"Bearer {gcp_token}",
-            "Authorization": f"Bearer {idaas_token}",
-            "Content-Type": "application/json",
-            "Accept": "application/json"
+    def get_connection_params(self) -> Dict[str, Any]:
+        return {
+            "host": self.host,
+            "port": self.port,
+            "database": self.database,
+            "user": self.user,
+            "password": self.password
         }
 
-        llm_payload = json.dumps({
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            "text": query_text
-                        }
-                    ],
-                    "role": "model"
-                }
-            ]
-        })
-        
-        logger.info("Payload: {}".format(llm_payload))
-        
-        try:
-            query_response = requests.post(LLM_URL, headers=headers, data=llm_payload, verify=False)
-            if query_response:
-                logger.info("Query response in text format: {}".format(query_response.text))
-                return json.loads(query_response.text)
-            else:
-                logger.info("Query response is None.")
-                logger.info(query_response.content)
-                return None
-        except Exception as e:
-            logger.error("Error: {}".format(e))
-            return None
+@dataclass
+class AuthConfig:
+    app_id: str
+    secret: str
+    version: str
+    idaas_url: str
+    llm_url: str
+    service_account_file: str
 
-class SimpleRAG:
-    def __init__(self, db_config: Dict[str, str]):
-        """
-        Initialize the RAG system with database configuration.
-        Args:
-            db_config: Dictionary containing database connection parameters
-        """
-        self.db_config = db_config
-        self.vectorizer = TfidfVectorizer()
-        self.ai_controller = AIController()
+# Custom Exceptions
+class RAGException(Exception):
+    """Base exception for RAG system"""
+    pass
 
-    async def connect_db(self) -> asyncpg.Connection:
-        """Establish database connection."""
-        conn = await asyncpg.connect(
-            database=self.db_config["database"],
-            user=self.db_config["user"],
-            password=self.db_config["password"],
-            host=self.db_config["host"],
-            port=self.db_config["port"]
+class DatabaseConnectionError(RAGException):
+    """Raised when database connection fails"""
+    pass
+
+class AuthenticationError(RAGException):
+    """Raised when authentication fails"""
+    pass
+
+class LLMError(RAGException):
+    """Raised when LLM interaction fails"""
+    pass
+
+# Interface Definitions
+class ITokenGenerator(ABC):
+    @abstractmethod
+    async def generate_token(self) -> str:
+        pass
+
+class IVectorizer(ABC):
+    @abstractmethod
+    def vectorize(self, text: str) -> List[float]:
+        pass
+
+class IDatabase(ABC):
+    @abstractmethod
+    async def connect(self) -> asyncpg.Connection:
+        pass
+
+    @abstractmethod
+    async def close(self) -> None:
+        pass
+
+# Implementation Classes
+class Logger:
+    def __init__(self, name: str):
+        self.logger = logging.getLogger(name)
+        self._setup_logger()
+
+    def _setup_logger(self):
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-        return conn
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
 
-    def pii_scan(self, text: str) -> str:
-        """
-        Remove PII from text using regex patterns.
-        Args:
-            text: Input text to clean
-        Returns:
-            Cleaned text with PII removed
-        """
-        patterns = {
+class DatabaseManager(IDatabase):
+    def __init__(self, config: DatabaseConfig):
+        self.config = config
+        self.connection: Optional[asyncpg.Connection] = None
+        self.logger = Logger(__name__).logger
+
+    async def connect(self) -> asyncpg.Connection:
+        try:
+            self.connection = await asyncpg.connect(**self.config.get_connection_params())
+            return self.connection
+        except Exception as e:
+            self.logger.error(f"Database connection failed: {str(e)}")
+            raise DatabaseConnectionError(f"Failed to connect to database: {str(e)}")
+
+    async def close(self) -> None:
+        if self.connection:
+            await self.connection.close()
+
+class TFIDFVectorizer(IVectorizer):
+    def __init__(self):
+        self.vectorizer = TfidfVectorizer()
+
+    def vectorize(self, text: str) -> List[float]:
+        X = self.vectorizer.fit_transform([text])
+        return X.toarray()[0].astype(np.float32).tolist()
+
+class PIIProcessor:
+    def __init__(self):
+        self.patterns = {
             'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
             'phone': r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
             'ssn': r'\b\d{3}-\d{2}-\d{4}\b'
         }
-        
+
+    def remove_pii(self, text: str) -> str:
         cleaned_text = text
-        for pii_type, pattern in patterns.items():
+        for pii_type, pattern in self.patterns.items():
             cleaned_text = re.sub(pattern, f'[{pii_type.upper()}]', cleaned_text)
         return cleaned_text
 
-    def embed_text(self, cleaned_text: str) -> List[float]:
-        """
-        Create text embedding using TF-IDF.
-        Args:
-            cleaned_text: Text to embed
-        Returns:
-            Embedding vector as list of floats
-        """
-        # Fit and transform the text
-        X = self.vectorizer.fit_transform([cleaned_text])
-        
-        # Convert sparse matrix to dense array, ensure float32 type
-        vector = X.toarray()[0].astype(np.float32).tolist()
-        return vector
+class TokenManager(ITokenGenerator):
+    def __init__(self, config: AuthConfig):
+        self.config = config
+        self.logger = Logger(__name__).logger
 
-    async def semantic_search(self, query_embedding: List[float], top_k: int = 3) -> List[Dict]:
-        """
-        Perform semantic search in vector database.
-        Args:
-            query_embedding: Query vector
-            top_k: Number of top results to return
-        Returns:
-            List of top k similar documents with metadata
-        """
-        conn = await self.connect_db()
+    async def generate_gcp_token(self) -> str:
         try:
-            # Convert query embedding to numpy array with float32 type
-            query_vector = np.array(query_embedding, dtype=np.float32)
+            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+            credentials = service_account.Credentials.from_service_account_file(
+                self.config.service_account_file, scopes=scopes)
+            credentials.refresh(Request())
+            return credentials.token
+        except Exception as e:
+            raise AuthenticationError(f"Failed to generate GCP token: {str(e)}")
+
+    async def generate_idaas_token(self) -> str:
+        try:
+            mac = hmac.new(base64.b64decode(self.config.secret), digestmod=hashlib.sha256)
+            timestamp = str(int(time.time() * 1000))
+            input_data = f"{self.config.app_id.strip()}-{self.config.version}-{timestamp}"
+            mac.update(input_data.encode('utf-8'))
             
-            # Fetch all vectors from database
-            fetch_query = """
-            SELECT id, text, embedding FROM vectors_aka1128
-            WHERE embedding IS NOT NULL;
+            hmac_signature = base64.b64encode(mac.digest()).decode('utf-8')
+            hmac_signature = hmac_signature.replace('/', '_').replace('+', '-').replace('=', '')
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'X-Auth-AppID': self.config.app_id,
+                'X-Auth-Signature': hmac_signature,
+                'X-Auth-Version': self.config.version,
+                'X-Auth-Timestamp': timestamp,
+                'Accept': 'application/json'
+            }
+            
+            payload = {
+                "scope": ["/genai/google/v1/models/gemini-1.5-pro-002/**:post"]
+            }
+            
+            response = requests.post(
+                self.config.idaas_url, 
+                headers=headers, 
+                json=payload, 
+                verify=False
+            )
+            return response.json()['authorization_token']
+        except Exception as e:
+            raise AuthenticationError(f"Failed to generate IDaaS token: {str(e)}")
+
+class LLMClient:
+    def __init__(self, config: AuthConfig, token_manager: TokenManager):
+        self.config = config
+        self.token_manager = token_manager
+        self.logger = Logger(__name__).logger
+
+    async def generate_response(self, query: str) -> Dict[str, Any]:
+        try:
+            idaas_token = await self.token_manager.generate_idaas_token()
+            gcp_token = await self.token_manager.generate_gcp_token()
+
+            headers = {
+                "x-gcp-authorization": f"Bearer {gcp_token}",
+                "Authorization": f"Bearer {idaas_token}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+
+            payload = {
+                "contents": [{
+                    "parts": [{"text": query}],
+                    "role": "model"
+                }]
+            }
+
+            response = requests.post(
+                self.config.llm_url,
+                headers=headers,
+                json=payload,
+                verify=False
+            )
+            
+            if response.ok:
+                return response.json()
+            else:
+                raise LLMError(f"LLM request failed: {response.text}")
+        except Exception as e:
+            raise LLMError(f"Failed to generate LLM response: {str(e)}")
+
+class SemanticSearch:
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self.logger = Logger(__name__).logger
+
+    async def search(self, query_vector: List[float], top_k: int = 3) -> List[Dict]:
+        try:
+            conn = await self.db_manager.connect()
+            query = """
+            SELECT id, text, embedding 
+            FROM vectors_aka1128 
+            WHERE embedding IS NOT NULL
             """
+            rows = await conn.fetch(query)
             
-            rows = await conn.fetch(fetch_query)
             results = []
+            query_np = np.array(query_vector, dtype=np.float32)
             
             for row in rows:
-                # Convert stored embedding to numpy array with float32 type
                 try:
-                    # Handle case where embedding might be stored as string
-                    if isinstance(row['embedding'], str):
-                        # Remove brackets and split string into float array
-                        embedding_str = row['embedding'].strip('[]')
-                        stored_embedding = np.array([float(x) for x in embedding_str.split(',')], dtype=np.float32)
-                    else:
-                        # Handle case where embedding is already an array
-                        stored_embedding = np.array(row['embedding'], dtype=np.float32)
-                    
-                    # Ensure vectors have the same shape
-                    if query_vector.shape != stored_embedding.shape:
-                        print(f"Shape mismatch: query_vector {query_vector.shape} != stored_embedding {stored_embedding.shape}")
+                    stored_embedding = self._process_embedding(row['embedding'])
+                    if query_np.shape != stored_embedding.shape:
                         continue
-                    
-                    # Calculate cosine similarity with explicit type casting
-                    numerator = np.dot(query_vector, stored_embedding)
-                    denominator = norm(query_vector) * norm(stored_embedding)
-                    
-                    if denominator == 0:
-                        similarity = 0.0
-                    else:
-                        similarity = numerator / denominator
-                    
+                        
+                    similarity = self._calculate_similarity(query_np, stored_embedding)
                     results.append({
                         'id': row['id'],
                         'text': row['text'],
                         'similarity': float(similarity)
                     })
                 except Exception as e:
-                    print(f"Error processing row {row['id']}: {str(e)}")
+                    self.logger.error(f"Error processing row {row['id']}: {str(e)}")
                     continue
-            
-            # Sort by similarity and get top k results
-            sorted_results = sorted(results, key=lambda x: x['similarity'], reverse=True)
-            return sorted_results[:top_k]
+                    
+            return sorted(results, key=lambda x: x['similarity'], reverse=True)[:top_k]
         finally:
-            await conn.close()
+            await self.db_manager.close()
+
+    def _process_embedding(self, embedding) -> np.ndarray:
+        if isinstance(embedding, str):
+            embedding_str = embedding.strip('[]')
+            return np.array([float(x) for x in embedding_str.split(',')], dtype=np.float32)
+        return np.array(embedding, dtype=np.float32)
+
+    def _calculate_similarity(self, vec1: np.ndarray, vec2: np.ndarray) -> float:
+        numerator = np.dot(vec1, vec2)
+        denominator = norm(vec1) * norm(vec2)
+        return 0.0 if denominator == 0 else numerator / denominator
+
+class RAGSystem:
+    def __init__(self, 
+                 db_config: DatabaseConfig,
+                 auth_config: AuthConfig):
+        self.db_manager = DatabaseManager(db_config)
+        self.token_manager = TokenManager(auth_config)
+        self.llm_client = LLMClient(auth_config, self.token_manager)
+        self.vectorizer = TFIDFVectorizer()
+        self.pii_processor = PIIProcessor()
+        self.semantic_search = SemanticSearch(self.db_manager)
+        self.logger = Logger(__name__).logger
 
     async def process_query(self, query: str) -> Dict[str, Any]:
-        """
-        Process user query through the RAG pipeline.
-        Args:
-            query: User input query
-        Returns:
-            Dictionary containing processed results
-        """
-        # Clean and embed query
-        clean_query = self.pii_scan(query)
-        query_embedding = self.embed_text(clean_query)
-        
-        # Perform semantic search
-        similar_docs = await self.semantic_search(query_embedding)
-        
-        # Get context from similar documents
-        context = " ".join([doc["text"] for doc in similar_docs])
-        
-        # Combine query with context for LLM
-        enhanced_query = f"Context: {context}\n\nQuery: {clean_query}"
-        
-        # Get LLM response through AI Controller
-        llm_response = await self.ai_controller.call_llm(enhanced_query)
-        
-        # Prepare response
-        return {
-            'original_query': query,
-            'clean_query': clean_query,
-            'similar_docs': similar_docs,
-            'llm_response': llm_response
-        }
+        try:
+            # Clean query
+            clean_query = self.pii_processor.remove_pii(query)
+            
+            # Generate embedding
+            query_embedding = self.vectorizer.vectorize(clean_query)
+            
+            # Perform semantic search
+            similar_docs = await self.semantic_search.search(query_embedding)
+            
+            # Prepare context
+            context = " ".join([doc["text"] for doc in similar_docs])
+            enhanced_query = f"Context: {context}\n\nQuery: {clean_query}"
+            
+            # Get LLM response
+            llm_response = await self.llm_client.generate_response(enhanced_query)
+            
+            return {
+                'original_query': query,
+                'clean_query': clean_query,
+                'similar_docs': similar_docs,
+                'llm_response': llm_response
+            }
+        except Exception as e:
+            self.logger.error(f"Error processing query: {str(e)}")
+            raise RAGException(f"Failed to process query: {str(e)}")
 
 # Example usage
 if __name__ == "__main__":
-    # Example configuration
-    db_config = {
-        "host": "localhost",
-        "port": 5432,
-        "database": "vectors_db",
-        "user": "user",
-        "password": "password"
-    }
+    # Load configurations
+    db_config = DatabaseConfig(
+        host="localhost",
+        port=5432,
+        database="vectors_db",
+        user="user",
+        password="password"
+    )
+    
+    auth_config = AuthConfig(
+        app_id="d1bec33a-3d0a-3c8d-a430-367cf59a52a9",
+        secret="your_secret",
+        version="2",
+        idaas_url="https://oneidentityapi-dev.aexp.com/security/digital/v1/application/token",
+        llm_url="https://pap-dev.aexp.com/genai/google/v1/models/gemini-1.5-pro-002/generateContent",
+        service_account_file="path_to_your_service_account_file"
+    )
     
     # Initialize RAG system
-    rag = SimpleRAG(db_config)
+    rag_system = RAGSystem(db_config, auth_config)
     
     # Example query processing
     async def run_example():
-        query = "What are the key features of our product?"
-        result = await rag.process_query(query)
-        print(json.dumps(result, indent=2))
+        try:
+            query = "What are the key features of our product?"
+            result = await rag_system.process_query(query)
+            print(json.dumps(result, indent=2))
+        except RAGException as e:
+            print(f"Error: {str(e)}")
     
     # Run the example
     import asyncio
