@@ -1,65 +1,38 @@
-class ITokenGenerator(ABC):
-    @abstractmethod
-    async def generate_token(self) -> Dict[str, str]:
-        """Generate all required tokens"""
-        pass
-
-class TokenManager(ITokenGenerator):
-    def __init__(self, config: AuthConfig):
+class LLMClient:
+    def __init__(self, config: AuthConfig, token_manager: TokenManager):
         self.config = config
+        self.token_manager = token_manager
         self.logger = Logger(__name__).logger
 
-    async def generate_token(self) -> Dict[str, str]:
-        """Implements the abstract method and returns both tokens"""
+    async def generate_response(self, query: str) -> Dict[str, Any]:
         try:
-            gcp_token = await self.generate_gcp_token()
-            idaas_token = await self.generate_idaas_token()
-            return {
-                "gcp_token": gcp_token,
-                "idaas_token": idaas_token
-            }
-        except Exception as e:
-            raise AuthenticationError(f"Failed to generate tokens: {str(e)}")
-
-    async def generate_gcp_token(self) -> str:
-        try:
-            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-            credentials = service_account.Credentials.from_service_account_file(
-                self.config.service_account_file, scopes=scopes)
-            credentials.refresh(Request())
-            return credentials.token
-        except Exception as e:
-            raise AuthenticationError(f"Failed to generate GCP token: {str(e)}")
-
-    async def generate_idaas_token(self) -> str:
-        try:
-            mac = hmac.new(base64.b64decode(self.config.secret), digestmod=hashlib.sha256)
-            timestamp = str(int(time.time() * 1000))
-            input_data = f"{self.config.app_id.strip()}-{self.config.version}-{timestamp}"
-            mac.update(input_data.encode('utf-8'))
-            
-            hmac_signature = base64.b64encode(mac.digest()).decode('utf-8')
-            hmac_signature = hmac_signature.replace('/', '_').replace('+', '-').replace('=', '')
+            # Get both tokens using the generate_token method
+            tokens = await self.token_manager.generate_token()
             
             headers = {
-                'Content-Type': 'application/json',
-                'X-Auth-AppID': self.config.app_id,
-                'X-Auth-Signature': hmac_signature,
-                'X-Auth-Version': self.config.version,
-                'X-Auth-Timestamp': timestamp,
-                'Accept': 'application/json'
+                "x-gcp-authorization": f"Bearer {tokens['gcp_token']}",
+                "Authorization": f"Bearer {tokens['idaas_token']}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             }
-            
+
             payload = {
-                "scope": ["/genai/google/v1/models/gemini-1.5-pro-002/**:post"]
+                "contents": [{
+                    "parts": [{"text": query}],
+                    "role": "model"
+                }]
             }
-            
+
             response = requests.post(
-                self.config.idaas_url, 
-                headers=headers, 
-                json=payload, 
+                self.config.llm_url,
+                headers=headers,
+                json=payload,
                 verify=False
             )
-            return response.json()['authorization_token']
+            
+            if response.ok:
+                return response.json()
+            else:
+                raise LLMError(f"LLM request failed: {response.text}")
         except Exception as e:
-            raise AuthenticationError(f"Failed to generate IDaaS token: {str(e)}")
+            raise LLMError(f"Failed to generate LLM response: {str(e)}")
