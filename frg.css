@@ -1,1 +1,81 @@
 
+// Function to safely get environment variables
+const getEnvVar = (varName) => {
+    const value = pm.environment.get(varName);
+    if (!value) {
+        throw new Error(`Environment variable '${varName}' is not set`);
+    }
+    return value;
+};
+
+try {
+    // Get required environment variables with validation
+    const appID = getEnvVar('appID');
+    const secret = getEnvVar('secret');
+    const version = getEnvVar('version');
+
+    // Validate environment variables
+    if (!appID || !secret || !version) {
+        throw new Error('Required environment variables are missing');
+    }
+
+    // Generate timestamp
+    const tsn_value = Date.now();
+    pm.environment.set('timestamp', tsn_value);
+
+    // Create message string
+    const message = `${appID}:${version}:${tsn_value}`;
+
+    // Generate hash function
+    const generateHash = (message, secret) => {
+        if (!message || !secret) {
+            throw new Error('Message and secret are required for hash generation');
+        }
+
+        try {
+            // Create hash using CryptoJS
+            const hash = CryptoJS.HmacSHA256(message, secret);
+            
+            // Convert to Base64
+            let hashInBase64 = CryptoJS.enc.Base64.stringify(hash);
+            
+            // Clean up the Base64 string
+            hashInBase64 = hashInBase64
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+            
+            return hashInBase64;
+        } catch (error) {
+            throw new Error(`Hash generation failed: ${error.message}`);
+        }
+    };
+
+    // Generate MAC signature
+    const hmacSignature = generateHash(message, secret);
+    pm.environment.set('hmac-signature', hmacSignature);
+
+    // Set request headers
+    pm.request.headers.add({
+        key: 'X-Auth-AppID',
+        value: appID
+    });
+    pm.request.headers.add({
+        key: 'X-Auth-Signature',
+        value: hmacSignature
+    });
+    pm.request.headers.add({
+        key: 'X-Auth-Timestamp',
+        value: tsn_value.toString()
+    });
+    pm.request.headers.add({
+        key: 'X-Auth-Version',
+        value: version
+    });
+
+    console.log('Pre-request script completed successfully');
+    
+} catch (error) {
+    console.error(`Pre-request script failed: ${error.message}`);
+    throw error;
+}
