@@ -1,7 +1,11 @@
+Here is the code in a clean, easily copyable format:<antArtifact identifier="postman-script" type="application/vnd.ant.code" language="javascript" title="Postman Pre-request Script">
+pm.environment.set('appID', 'a1bec33a-3d8a-3c8d-a430-367cf59a52e9');
+pm.environment.set('secret', 'iuTxnrJyg4PSjOgdhwNyo2UELbh3v2pRWR645sOd0k');
+pm.environment.set('version', '2');
 
-// Function to safely get environment variables
 const getEnvVar = (varName) => {
-    const value = pm.environment.get(varName);
+    const value = pm.environment.get(varName) || pm.variables.get(varName);
+    console.log(`Getting ${varName}:`, value);
     if (!value) {
         throw new Error(`Environment variable '${varName}' is not set`);
     }
@@ -9,73 +13,64 @@ const getEnvVar = (varName) => {
 };
 
 try {
-    // Get required environment variables with validation
     const appID = getEnvVar('appID');
     const secret = getEnvVar('secret');
     const version = getEnvVar('version');
 
-    // Validate environment variables
-    if (!appID || !secret || !version) {
-        throw new Error('Required environment variables are missing');
-    }
+    console.log('Environment variables retrieved:', { appID, version });
 
-    // Generate timestamp
     const tsn_value = Date.now();
     pm.environment.set('timestamp', tsn_value);
+    console.log('Timestamp set:', tsn_value);
 
-    // Create message string
     const message = `${appID}:${version}:${tsn_value}`;
+    console.log('Message created:', message);
 
-    // Generate hash function
-    const generateHash = (message, secret) => {
-        if (!message || !secret) {
-            throw new Error('Message and secret are required for hash generation');
-        }
+    const hash = CryptoJS.HmacSHA256(message, secret);
+    console.log('Hash generated');
 
-        try {
-            // Create hash using CryptoJS
-            const hash = CryptoJS.HmacSHA256(message, secret);
-            
-            // Convert to Base64
-            let hashInBase64 = CryptoJS.enc.Base64.stringify(hash);
-            
-            // Clean up the Base64 string
-            hashInBase64 = hashInBase64
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=+$/, '');
-            
-            return hashInBase64;
-        } catch (error) {
-            throw new Error(`Hash generation failed: ${error.message}`);
-        }
-    };
+    let hashInBase64 = CryptoJS.enc.Base64.stringify(hash);
+    hashInBase64 = hashInBase64
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    
+    console.log('Final hash:', hashInBase64);
 
-    // Generate MAC signature
-    const hmacSignature = generateHash(message, secret);
-    pm.environment.set('hmac-signature', hmacSignature);
+    pm.environment.set('hmac-signature', hashInBase64);
 
-    // Set request headers
-    pm.request.headers.add({
+    pm.request.headers.upsert({
         key: 'X-Auth-AppID',
         value: appID
     });
-    pm.request.headers.add({
+    pm.request.headers.upsert({
         key: 'X-Auth-Signature',
-        value: hmacSignature
+        value: hashInBase64
     });
-    pm.request.headers.add({
+    pm.request.headers.upsert({
         key: 'X-Auth-Timestamp',
         value: tsn_value.toString()
     });
-    pm.request.headers.add({
+    pm.request.headers.upsert({
         key: 'X-Auth-Version',
         value: version
     });
+    pm.request.headers.upsert({
+        key: 'Content-Type',
+        value: 'application/json'
+    });
 
+    console.log('Headers set successfully');
     console.log('Pre-request script completed successfully');
-    
+
 } catch (error) {
     console.error(`Pre-request script failed: ${error.message}`);
     throw error;
 }
+
+You can now:
+1. Select all of this code
+2. Copy it
+3. Paste it directly into your Postman pre-request script tab
+
+The code is formatted cleanly and should work immediately after pasting. Let me know if you need any modifications or have any issues!
