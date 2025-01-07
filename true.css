@@ -1,0 +1,145 @@
+import requests
+import json
+from typing import Dict, Any
+import os
+from datetime import datetime
+from dotenv import load_dotenv
+
+class APIClient:
+    def __init__(self, config: Dict[str, str]):
+        self.host = config['host']
+        self.app_id = config['app_id']
+        self.secret = config['secret']
+        self.version = config['version']
+        
+    def get_idaas_jwt(self) -> Dict[str, Any]:
+        """
+        Method to get IDAAS JWT token for Gemini
+        """
+        url = f"{self.host}/security/digital/v1/application"
+        
+        payload = {
+            "scope": [
+                "/genai/google/v1/models/gemini-1.5-pro-002/**:post"
+            ]
+        }
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Auth-AppID': self.app_id,
+            'X-Auth-Signature': self.secret,
+            'X-Auth-Version': self.version,
+            'X-Auth-Timestamp': str(int(datetime.now().timestamp())),
+            'Accept': 'application/json'
+        }
+        
+        try:
+            response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+            response.raise_for_status()  # Raise an exception for bad status codes
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error getting JWT token: {e}")
+            return None
+
+    def call_genai_llm(self, auth_token: str, user_prompt: str) -> Dict[str, Any]:
+        """
+        Method to call GenAI LLM API with user provided prompt
+        """
+        url = "https://eap-dev.aexp.com/genai/google/v1/models/gemini-1.5-pro-002/generateContent"
+        
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": user_prompt
+                        }
+                    ]
+                },
+                {
+                    "role": "model"
+                }
+            ]
+        }
+        
+        headers = {
+            'Authorization': f'Bearer {auth_token}',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+        }
+        
+        try:
+            response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error calling Gemini API: {e}")
+            return None
+
+def get_user_input() -> str:
+    """
+    Get the prompt from the user with input validation
+    """
+    while True:
+        prompt = input("\nEnter your prompt for Gemini (or 'quit' to exit): ").strip()
+        if prompt.lower() == 'quit':
+            return None
+        if prompt:
+            return prompt
+        print("Please enter a valid prompt!")
+
+def main():
+    # Load environment variables
+    load_dotenv()
+    
+    # Initialize client with config
+    config = {
+        'host': os.getenv('IDAAS_HOST'),
+        'app_id': os.getenv('APP_ID'),
+        'secret': os.getenv('SECRET'),
+        'version': os.getenv('VERSION')
+    }
+    
+    # Validate environment variables
+    if not all(config.values()):
+        print("Error: Missing required environment variables. Please check your .env file.")
+        return
+    
+    client = APIClient(config)
+    
+    print("Welcome to the Gemini API Interface!")
+    print("-----------------------------------")
+    
+    while True:
+        # Get user input
+        user_prompt = get_user_input()
+        if user_prompt is None:
+            print("\nGoodbye!")
+            break
+            
+        # Get JWT token
+        print("\nGetting authentication token...")
+        jwt_response = client.get_idaas_jwt()
+        
+        if not jwt_response or 'auth_token' not in jwt_response:
+            print("Failed to get authentication token. Please try again.")
+            continue
+            
+        auth_token = jwt_response['auth_token']
+        
+        # Call Gemini API
+        print("Sending prompt to Gemini...")
+        llm_response = client.call_genai_llm(auth_token, user_prompt)
+        
+        if llm_response:
+            print("\nGemini Response:")
+            print("-----------------")
+            # Pretty print the response
+            print(json.dumps(llm_response, indent=2))
+        else:
+            print("Failed to get response from Gemini. Please try again.")
+        
+        print("\n" + "="*50 + "\n")
+
+if __name__ == "__main__":
+    main()
