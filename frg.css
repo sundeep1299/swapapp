@@ -1,0 +1,11 @@
+# API Endpoints
+IDAAS_HOST=https://oneidentityapi-dev.aexp.com
+
+# Authentication Details
+APP_ID=a1bec33a-3d8a-3c8d-a430-367cf59a52e9
+SECRET=iUTxnrJyg4PSdQgdhwNyo2UELbh3v2pRWR645eQg0k=
+VERSION=2
+
+# Optional - Additional configuration if needed
+HMAC_SIGNATURE=MsPScZ-8dQNhStgrgfDtKW9GQ7MPqHeZJetSCZCcuT1M
+AUTH_TOKEN=eyJraWQiOiJyc2FLZVVOSVUxiwiYWxnIjoiUlMyNTYifQ
