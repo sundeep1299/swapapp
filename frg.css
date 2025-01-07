@@ -1,69 +1,13 @@
-I see the issue - there's a Unicode decode error which suggests the .env file might have incorrect encoding or special characters. Let's fix this by creating the .env file with proper encoding.
-
-Here's how to create it correctly in PowerShell:
-
-1. First, run this command to ensure we're in the right directory:
-```powershell
-cd "C:\Users\wake12\OneDrive - American Express\Documents\Github\llm_api"
-```
-
-2. Then create the .env file with explicit UTF-8 encoding without BOM (Byte Order Mark):
-```powershell
-@'
-IDAAS_HOST=https://oneidentityapi-dev.aexp.com
-APP_ID=a1bec33a-3d8a-3c8d-a430-367cf59a52e9
-SECRET=iUTxnrJyg4PSdQgdhwNyo2UELbh3v2pRWR645eQg0k=
-VERSION=2
-'@ | Out-File -FilePath .env -Encoding UTF8NoBOM -NoNewline
-```
-
-If you don't have access to PowerShell or the above doesn't work, try this alternative method:
-
-1. Open Notepad
-2. Copy and paste this exact content:
-```
-IDAAS_HOST=https://oneidentityapi-dev.aexp.com
-APP_ID=a1bec33a-3d8a-3c8d-a430-367cf59a52e9
-SECRET=iUTxnrJyg4PSdQgdhwNyo2UELbh3v2pRWR645eQg0k=
-VERSION=2
-```
-3. Click File → Save As
-4. Navigate to your project directory
-5. In the "Save as type" dropdown, select "All Files (*.*)"
-6. In the "Encoding" dropdown at the bottom, select "UTF-8"
-7. Name the file `.env` (including the dot)
-8. Click Save
-
-Also, let's modify the Python script slightly to handle encoding issues:
-
 import requests
 import json
 from typing import Dict, Any
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+import urllib3
 
-def check_environment_variables():
-    """
-    Check and print status of all required environment variables
-    """
-    required_vars = {
-        'IDAAS_HOST': os.getenv('IDAAS_HOST'),
-        'APP_ID': os.getenv('APP_ID'),
-        'SECRET': os.getenv('SECRET'),
-        'VERSION': os.getenv('VERSION')
-    }
-    
-    missing_vars = []
-    print("\nEnvironment Variables Status:")
-    print("-" * 30)
-    for var_name, var_value in required_vars.items():
-        status = "✓ Present" if var_value else "✗ Missing"
-        print(f"{var_name}: {status}")
-        if not var_value:
-            missing_vars.append(var_name)
-    
-    return missing_vars
+# Disable SSL verification warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class APIClient:
     def __init__(self, config: Dict[str, str]):
@@ -96,7 +40,8 @@ class APIClient:
         try:
             print(f"\nMaking request to: {url}")
             print("Headers:", json.dumps(headers, indent=2))
-            response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+            # Added verify=False to bypass SSL verification
+            response = requests.request("POST", url, headers=headers, data=json.dumps(payload), verify=False)
             print(f"Response Status Code: {response.status_code}")
             response.raise_for_status()
             return response.json()
@@ -133,11 +78,14 @@ class APIClient:
         }
         
         try:
-            response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+            # Added verify=False to bypass SSL verification
+            response = requests.request("POST", url, headers=headers, data=json.dumps(payload), verify=False)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error calling Gemini API: {e}")
+            if 'response' in locals():
+                print(f"Response content: {response.text}")
             return None
 
 def get_user_input() -> str:
@@ -155,35 +103,30 @@ def get_user_input() -> str:
 def main():
     # Load environment variables
     try:
-    load_dotenv(override=True, encoding='utf-8')
-except Exception as e:
-    print(f"Error loading .env file: {e}")
-    print("Please make sure your .env file is saved with UTF-8 encoding")
-    
-    # Check environment variables
-    missing_vars = check_environment_variables()
-    
-    if missing_vars:
-        print("\nError: Missing required environment variables:")
-        for var in missing_vars:
-            print(f"- {var}")
-        print("\nPlease check your .env file contains these variables with correct values.")
-        print("Your .env file should look like this:")
-        print("""
-IDAAS_HOST=https://oneidentityapi-dev.aexp.com
-APP_ID=a1bec33a-3d8a-3c8d-a430-367cf59a52e9
-SECRET=iUTxnrJyg4PSdQgdhwNyo2UELbh3v2
-VERSION=2
-        """)
+        load_dotenv(override=True, encoding='utf-8')
+    except Exception as e:
+        print(f"Error loading .env file: {e}")
+        print("Please make sure your .env file is saved with UTF-8 encoding")
         return
-    
-    # Initialize client with config
+
+    # Check environment variables
     config = {
         'host': os.getenv('IDAAS_HOST'),
         'app_id': os.getenv('APP_ID'),
         'secret': os.getenv('SECRET'),
         'version': os.getenv('VERSION')
     }
+
+    # Validate config
+    missing_vars = [key for key, value in config.items() if not value]
+    if missing_vars:
+        print("\nError: Missing required environment variables:", missing_vars)
+        return
+        
+    print("\nEnvironment Variables Status:")
+    print("-" * 30)
+    for key, value in config.items():
+        print(f"{key}: {'✓ Present' if value else '✗ Missing'}")
     
     client = APIClient(config)
     
@@ -222,25 +165,3 @@ VERSION=2
 
 if __name__ == "__main__":
     main()
-
-After making these changes:
-
-1. Delete any existing .env file
-2. Create a new one using one of the methods above
-3. Run the Python script again
-
-If you still get errors, we can try to debug by adding this to your script temporarily:
-
-```python
-# Add this at the top of your script
-import os
-
-# Add this right after load_dotenv()
-print("\nDEBUG: Current working directory:", os.getcwd())
-print("DEBUG: Files in directory:", os.listdir())
-if os.path.exists('.env'):
-    with open('.env', 'rb') as f:
-        print("DEBUG: First few bytes of .env:", f.read(50))
-```
-
-Could you try these steps and let me know what happens? This will help us identify exactly where the issue is occurring.
