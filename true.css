@@ -5,6 +5,28 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 
+def check_environment_variables():
+    """
+    Check and print status of all required environment variables
+    """
+    required_vars = {
+        'IDAAS_HOST': os.getenv('IDAAS_HOST'),
+        'APP_ID': os.getenv('APP_ID'),
+        'SECRET': os.getenv('SECRET'),
+        'VERSION': os.getenv('VERSION')
+    }
+    
+    missing_vars = []
+    print("\nEnvironment Variables Status:")
+    print("-" * 30)
+    for var_name, var_value in required_vars.items():
+        status = "✓ Present" if var_value else "✗ Missing"
+        print(f"{var_name}: {status}")
+        if not var_value:
+            missing_vars.append(var_name)
+    
+    return missing_vars
+
 class APIClient:
     def __init__(self, config: Dict[str, str]):
         self.host = config['host']
@@ -34,11 +56,15 @@ class APIClient:
         }
         
         try:
+            print(f"\nMaking request to: {url}")
+            print("Headers:", json.dumps(headers, indent=2))
             response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-            response.raise_for_status()  # Raise an exception for bad status codes
+            print(f"Response Status Code: {response.status_code}")
+            response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             print(f"Error getting JWT token: {e}")
+            print(f"Response content: {response.text if 'response' in locals() else 'No response'}")
             return None
 
     def call_genai_llm(self, auth_token: str, user_prompt: str) -> Dict[str, Any]:
@@ -90,7 +116,24 @@ def get_user_input() -> str:
 
 def main():
     # Load environment variables
-    load_dotenv()
+    load_dotenv(override=True)
+    
+    # Check environment variables
+    missing_vars = check_environment_variables()
+    
+    if missing_vars:
+        print("\nError: Missing required environment variables:")
+        for var in missing_vars:
+            print(f"- {var}")
+        print("\nPlease check your .env file contains these variables with correct values.")
+        print("Your .env file should look like this:")
+        print("""
+IDAAS_HOST=https://oneidentityapi-dev.aexp.com
+APP_ID=a1bec33a-3d8a-3c8d-a430-367cf59a52e9
+SECRET=iUTxnrJyg4PSdQgdhwNyo2UELbh3v2
+VERSION=2
+        """)
+        return
     
     # Initialize client with config
     config = {
@@ -100,14 +143,9 @@ def main():
         'version': os.getenv('VERSION')
     }
     
-    # Validate environment variables
-    if not all(config.values()):
-        print("Error: Missing required environment variables. Please check your .env file.")
-        return
-    
     client = APIClient(config)
     
-    print("Welcome to the Gemini API Interface!")
+    print("\nWelcome to the Gemini API Interface!")
     print("-----------------------------------")
     
     while True:
@@ -134,7 +172,6 @@ def main():
         if llm_response:
             print("\nGemini Response:")
             print("-----------------")
-            # Pretty print the response
             print(json.dumps(llm_response, indent=2))
         else:
             print("Failed to get response from Gemini. Please try again.")
