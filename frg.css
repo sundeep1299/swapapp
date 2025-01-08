@@ -3,6 +3,9 @@ import json
 from typing import Dict, Any, Optional
 import os
 from datetime import datetime
+import base64
+import hmac
+import hashlib
 from dotenv import load_dotenv
 import urllib3
 
@@ -16,6 +19,31 @@ class GenAIClient:
         self.app_id = config['app_id']
         self.secret = config['secret']
         self.version = config['version']
+
+    def generate_signature(self, message: str, secret: str) -> str:
+        """
+        Generate HMAC signature following Postman's pre-request script logic
+        """
+        # Create HMAC SHA256 hash
+        hash_obj = hmac.new(
+            secret.encode('utf-8'),
+            message.encode('utf-8'),
+            hashlib.sha256
+        )
+        
+        # Get base64 of hash
+        hash_base64 = base64.b64encode(hash_obj.digest()).decode('utf-8')
+        
+        # Replace special characters as done in Postman script
+        hash_base64 = hash_base64.replace('+', '-').replace('/', '_').replace('=', '')
+        
+        return hash_base64
+
+    def get_mac_id(self, secret: str, version: str, app_id: str) -> str:
+        """Generate MAC ID following Postman's logic"""
+        timestamp = str(int(datetime.now().timestamp()))
+        message = f"{app_id}-{version}-{timestamp}"
+        return self.generate_signature(message, secret)
         
     def get_idaas_jwt(self) -> Optional[str]:
         """
@@ -23,6 +51,12 @@ class GenAIClient:
         Returns: JWT token string or None if failed
         """
         url = f"{self.host}/security/digital/v1/application"
+        
+        # Generate timestamp
+        timestamp = str(int(datetime.now().timestamp()))
+        
+        # Generate HMAC signature
+        mac = self.get_mac_id(self.secret, self.version, self.app_id)
         
         payload = {
             "scope": [
@@ -33,16 +67,19 @@ class GenAIClient:
         headers = {
             'Content-Type': 'application/json',
             'X-Auth-AppID': self.app_id,
-            'X-Auth-Signature': self.secret,
+            'X-Auth-Signature': mac,  # Using the generated MAC
             'X-Auth-Version': self.version,
-            'X-Auth-Timestamp': str(int(datetime.now().timestamp())),
+            'X-Auth-Timestamp': timestamp,
             'Accept': 'application/json'
         }
         
         try:
             print("\nGetting JWT token...")
             print(f"Making request to: {url}")
+            print("Headers:", json.dumps(headers, indent=2))
+            
             response = requests.post(url, headers=headers, json=payload, verify=False)
+            print(f"Response Status Code: {response.status_code}")
             
             if response.status_code == 200:
                 token_response = response.json()
@@ -50,9 +87,9 @@ class GenAIClient:
                     print("Successfully obtained JWT token")
                     return token_response['authorization_token']
                 print("Error: No authorization_token in response")
+                print("Response:", json.dumps(token_response, indent=2))
             else:
-                print(f"Error: Status code {response.status_code}")
-                print(f"Response: {response.text}")
+                print(f"Error response: {response.text}")
             
             return None
             
@@ -63,13 +100,6 @@ class GenAIClient:
     def call_genai_llm(self, auth_token: str, prompt: str) -> Optional[Dict]:
         """
         Call the Gemini LLM API with the provided authentication token and prompt
-        
-        Args:
-            auth_token: JWT token obtained from get_idaas_jwt()
-            prompt: User's input prompt for the LLM
-            
-        Returns:
-            Dictionary containing the API response or None if failed
         """
         url = "https://eap-dev.aexp.com/genai/google/v1/models/gemini-1.5-pro-002/generateContent"
         
@@ -96,6 +126,7 @@ class GenAIClient:
         
         try:
             print("\nCalling Gemini API...")
+            print(f"Making request to: {url}")
             response = requests.post(url, headers=headers, json=payload, verify=False)
             
             if response.status_code == 200:
@@ -110,24 +141,12 @@ class GenAIClient:
             return None
 
     def process_user_query(self, prompt: str) -> Optional[Dict]:
-        """
-        Process a user query by:
-        1. Getting the JWT token
-        2. Using the token to call the Gemini API
-        
-        Args:
-            prompt: User's input prompt
-            
-        Returns:
-            Dictionary containing the API response or None if failed
-        """
-        # Step 1: Get JWT token
+        """Process a user query by getting JWT token and calling Gemini API"""
         auth_token = self.get_idaas_jwt()
         if not auth_token:
             print("Failed to get authentication token")
             return None
         
-        # Step 2: Use token to call Gemini API
         return self.call_genai_llm(auth_token, prompt)
 
 def get_user_input() -> Optional[str]:
@@ -155,23 +174,19 @@ def main():
         print(f"Error: Missing environment variables: {', '.join(missing)}")
         return
 
-    # Initialize client
     client = GenAIClient(config)
     
     print("\nWelcome to the Gemini API Interface!")
     print("-----------------------------------")
     
     while True:
-        # Get user input
         prompt = get_user_input()
         if prompt is None:
             print("\nGoodbye!")
             break
         
-        # Process the query
         response = client.process_user_query(prompt)
         
-        # Handle response
         if response:
             print("\nGemini Response:")
             print("-----------------")
