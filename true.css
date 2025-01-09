@@ -1,182 +1,69 @@
-import requests
-import json
-from typing import Dict, Any
-import os
-from datetime import datetime
-from dotenv import load_dotenv
+Here's the corrected `app.py` code that should resolve the async errors:
 
-def check_environment_variables():
-    """
-    Check and print status of all required environment variables
-    """
-    required_vars = {
-        'IDAAS_HOST': os.getenv('IDAAS_HOST'),
-        'APP_ID': os.getenv('APP_ID'),
-        'SECRET': os.getenv('SECRET'),
-        'VERSION': os.getenv('VERSION')
-    }
-    
-    missing_vars = []
-    print("\nEnvironment Variables Status:")
-    print("-" * 30)
-    for var_name, var_value in required_vars.items():
-        status = "✓ Present" if var_value else "✗ Missing"
-        print(f"{var_name}: {status}")
-        if not var_value:
-            missing_vars.append(var_name)
-    
-    return missing_vars
+```python
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from request_to_llm import main
+import asyncio
+from asgiref.wsgi import WsgiToAsgi
+from hypercorn.asyncio import serve
+from hypercorn.config import Config
 
-class APIClient:
-    def __init__(self, config: Dict[str, str]):
-        self.host = config['host']
-        self.app_id = config['app_id']
-        self.secret = config['secret']
-        self.version = config['version']
-        
-    def get_idaas_jwt(self) -> Dict[str, Any]:
-        """
-        Method to get IDAAS JWT token for Gemini
-        """
-        url = f"{self.host}/security/digital/v1/application"
-        
-        payload = {
-            "scope": [
-                "/genai/google/v1/models/gemini-1.5-pro-002/**:post"
-            ]
-        }
-        
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Auth-AppID': self.app_id,
-            'X-Auth-Signature': self.secret,
-            'X-Auth-Version': self.version,
-            'X-Auth-Timestamp': str(int(datetime.now().timestamp())),
-            'Accept': 'application/json'
-        }
-        
-        try:
-            print(f"\nMaking request to: {url}")
-            print("Headers:", json.dumps(headers, indent=2))
-            response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-            print(f"Response Status Code: {response.status_code}")
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error getting JWT token: {e}")
-            print(f"Response content: {response.text if 'response' in locals() else 'No response'}")
-            return None
+app = Flask(__name__)
+CORS(app)
 
-    def call_genai_llm(self, auth_token: str, user_prompt: str) -> Dict[str, Any]:
-        """
-        Method to call GenAI LLM API with user provided prompt
-        """
-        url = "https://eap-dev.aexp.com/genai/google/v1/models/gemini-1.5-pro-002/generateContent"
-        
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            "text": user_prompt
-                        }
-                    ]
-                },
-                {
-                    "role": "model"
-                }
-            ]
-        }
-        
-        headers = {
-            'Authorization': f'Bearer {auth_token}',
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-        }
-        
-        try:
-            response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling Gemini API: {e}")
-            return None
-
-def get_user_input() -> str:
-    """
-    Get the prompt from the user with input validation
-    """
-    while True:
-        prompt = input("\nEnter your prompt for Gemini (or 'quit' to exit): ").strip()
-        if prompt.lower() == 'quit':
-            return None
-        if prompt:
-            return prompt
-        print("Please enter a valid prompt!")
-
-def main():
-    # Load environment variables
-    load_dotenv(override=True)
-    
-    # Check environment variables
-    missing_vars = check_environment_variables()
-    
-    if missing_vars:
-        print("\nError: Missing required environment variables:")
-        for var in missing_vars:
-            print(f"- {var}")
-        print("\nPlease check your .env file contains these variables with correct values.")
-        print("Your .env file should look like this:")
-        print("""
-IDAAS_HOST=https://oneidentityapi-dev.aexp.com
-APP_ID=a1bec33a-3d8a-3c8d-a430-367cf59a52e9
-SECRET=iUTxnrJyg4PSdQgdhwNyo2UELbh3v2
-VERSION=2
-        """)
-        return
-    
-    # Initialize client with config
-    config = {
-        'host': os.getenv('IDAAS_HOST'),
-        'app_id': os.getenv('APP_ID'),
-        'secret': os.getenv('SECRET'),
-        'version': os.getenv('VERSION')
-    }
-    
-    client = APIClient(config)
-    
-    print("\nWelcome to the Gemini API Interface!")
-    print("-----------------------------------")
-    
-    while True:
-        # Get user input
-        user_prompt = get_user_input()
-        if user_prompt is None:
-            print("\nGoodbye!")
-            break
+@app.route('/query', methods=['POST'])
+async def lumi_orchestrator():
+    try:
+        data = request.get_json()
+        if "query" not in data:
+            return jsonify({"error": "query is required"}), 400
             
-        # Get JWT token
-        print("\nGetting authentication token...")
-        jwt_response = client.get_idaas_jwt()
+        query = data.get('query')
+        print(f"Received query: {query}")
         
-        if not jwt_response or 'auth_token' not in jwt_response:
-            print("Failed to get authentication token. Please try again.")
-            continue
-            
-        auth_token = jwt_response['auth_token']
-        
-        # Call Gemini API
-        print("Sending prompt to Gemini...")
-        llm_response = client.call_genai_llm(auth_token, user_prompt)
-        
-        if llm_response:
-            print("\nGemini Response:")
-            print("-----------------")
-            print(json.dumps(llm_response, indent=2))
-        else:
-            print("Failed to get response from Gemini. Please try again.")
-        
-        print("\n" + "="*50 + "\n")
+        # Await the async main function
+        result = await main(query)
+        print(f"Result: {result}")
+        return jsonify(result)
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+# Convert WSGI app to ASGI
+asgi_app = WsgiToAsgi(app)
+
+async def start_server():
+    config = Config()
+    config.bind = ["127.0.0.1:5000"]
+    await serve(asgi_app, config)
 
 if __name__ == "__main__":
-    main()
+    print("Starting server on http://127.0.0.1:5000")
+    asyncio.run(start_server())
+```
+
+First, install these additional dependencies:
+```bash
+pip install hypercorn asgiref
+```
+
+Key changes made:
+1. Added ASGI support through hypercorn and asgiref
+2. Properly configured async server
+3. Added better error logging
+4. Added startup message
+
+To run the server:
+```bash
+python app.py
+```
+
+To test it with curl:
+```bash
+curl -X POST http://127.0.0.1:5000/query \
+-H "Content-Type: application/json" \
+-d '{"query": "What is Lumi"}'
+```
+
+This implementation should resolve the TypeError you were seeing and properly handle the async routes. Let me know if you encounter any other errors!
