@@ -1,73 +1,54 @@
-Here's the complete implementation for both files:
+I see you're getting an SSL error and issues with the curl command format. Let me help fix both:
 
-1. First, let's update `app.py`:
+1. First, let's fix the curl command. The correct format should be:
+
+```bash
+curl -X POST http://127.0.0.1:5000/query \
+-H "Content-Type: application/json" \
+--data "{\"query\": \"What is Lumi\"}"
+```
+
+Or more simply:
+```bash
+curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"What is Lumi\"}" http://127.0.0.1:5000/query
+```
+
+2. For the SSL error, let's modify the app.py to handle SSL properly:
 
 ```python
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from quart import Quart, request, jsonify
+from quart_cors import cors
 from request_to_llm import main
-import asyncio
+import ssl
 
-app = Flask(__name__)
-CORS(app)
+app = Quart(__name__)
+app = cors(app)
 
 @app.route('/query', methods=['POST'])
 async def lumi_orchestrator():
     try:
-        data = request.get_json()
+        data = await request.get_json()
         if "query" not in data:
             return jsonify({"error": "query is required"}), 400
             
         query = data.get('query')
-        print(query)
-        # Await the async main function
+        print(f"Received query: {query}")
+        
         result = await main(query)
-        print("result is", result)
+        print(f"Result: {result}")
         return jsonify(result)
     except Exception as e:
+        print(f"Error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Use asyncio to run the Flask app
-    app.run(debug=True)
+    # Create SSL context
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    # Run without SSL for local testing
+    app.run(host="127.0.0.1", port=5000, debug=True, ssl=None)
 ```
 
-2. Keep your `request_to_llm.py` as is, since it's already properly structured with async functions:
-
-```python
-# request_to_llm.py remains the same as your current implementation
-# Just ensure it's using the correct database configuration
-
-async def main(query: str):
-    print("Inside main")
-    # Database configuration
-    db_config = {
-        "database": "lumitoolsdb",
-        "user": "lumitoolsdb_app",
-        "password": "lumitoolsdb_appw1u1",
-        "host": "10.11.144.230",
-        "port": "5432"
-    }
-
-    # Initialize RAG system
-    rag = SimpleRAG(db_config)
-    result = await rag.process_query(query)
-    return {"results": result}
-```
-
-3. To run and test:
-
-```bash
-# Terminal 1 - Start the server
-python app.py
-
-# Terminal 2 - Test with curl
-curl -X POST http://127.0.0.1:5000/query \
--H "Content-Type: application/json" \
--d '{"query": "What is Lumi"}'
-```
-
-4. For a more complete test script, you can create `test_api.py`:
+3. Test the API using Python requests instead of curl (create a test.py):
 
 ```python
 import requests
@@ -83,7 +64,7 @@ def test_api():
     }
     
     try:
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=data, verify=False)
         print("Status Code:", response.status_code)
         print("Response:", json.dumps(response.json(), indent=2))
     except Exception as e:
@@ -93,27 +74,20 @@ if __name__ == "__main__":
     test_api()
 ```
 
-5. Additional requirements (make sure these are installed):
-
+To run:
+1. Start the server:
 ```bash
-pip install flask flask-cors asyncpg numpy scikit-learn tensorflow-text requests
+python app.py
 ```
 
-This implementation:
-- Properly handles async/await in Flask
-- Maintains CORS support
-- Includes error handling
-- Returns properly formatted JSON responses
-- Logs key information for debugging
+2. In another terminal, test using either:
+```bash
+python test.py
+```
 
-Key differences from your original implementation:
-1. Added async keyword to the Flask route
-2. Properly awaits the main() function
-3. Added better error handling and validation
-4. Includes proper response formatting
+or using the curl command:
+```bash
+curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"What is Lumi\"}" http://127.0.0.1:5000/query
+```
 
-Would you like me to:
-1. Add more detailed error handling?
-2. Include additional validation?
-3. Add logging configuration?
-4. Create a more comprehensive test suite?
+The SSL error should be resolved now. Let me know if you need any clarification or run into other issues!
