@@ -1,200 +1,323 @@
-import requests
-import json
-from typing import Dict, Any, Optional
-import os
-from datetime import datetime
-import base64
-import hmac
-import hashlib
-from dotenv import load_dotenv
-import urllib3
+I'll break down the implementation into separate files for better organization and explain where each part goes.
 
-# Disable SSL verification warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+project_root/
+├── app/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── processor/
+│   │   ├── __init__.py
+│   │   ├── pii_scanner.py
+│   │   ├── embedding_generator.py
+│   │   ├── semantic_searcher.py
+│   │   ├── prompt_enhancer.py
+│   │   └── llm_caller.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   └── api.py
+│   └── utils/
+│       ├── __init__.py
+│       └── database.py
+├── requirements.txt
+└── main.py
 
-class GenAIClient:
-    def __init__(self, config: Dict[str, str]):
-        """Initialize the client with configuration"""
-        self.host = config['host']
-        self.app_id = config['app_id']
-        self.secret = config['secret']
-        self.version = config['version']
+Let me break down each file and its contents:
 
-    def generate_signature(self, message: str, secret: str) -> str:
-        """
-        Generate HMAC signature following Postman's pre-request script logic
-        """
-        # Create HMAC SHA256 hash
-        hash_obj = hmac.new(
-            secret.encode('utf-8'),
-            message.encode('utf-8'),
-            hashlib.sha256
+1. First, create the project structure:
+```bash
+mkdir -p rag_api/app/processor rag_api/app/routes rag_api/app/utils
+cd rag_api
+```
+
+2. `config.py`:
+```python
+# app/config.py
+
+DB_CONFIG = {
+    "database": "lumitoolsdb",
+    "user": "lumitoolsdb_app",
+    "password": "lumitoolsdb_appe1u1",
+    "host": "10.13.144.230",
+    "port": "5432"
+}
+
+CONNECTION_STRING = f"postgresql+psycopg2://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
+
+LLM_CONFIG = {
+    "project_id": "your-project-id",
+    "endpoint_id": "your-endpoint-id"
+}
+```
+
+3. `database.py`:
+```python
+# app/utils/database.py
+
+import psycopg2
+from pgvector.psycopg2 import register_vector
+from app.config import DB_CONFIG
+
+def get_db_connection():
+    conn = psycopg2.connect(**DB_CONFIG)
+    register_vector(conn)
+    return conn
+```
+
+4. `pii_scanner.py`:
+```python
+# app/processor/pii_scanner.py
+
+import re
+from typing import Tuple, List, Dict
+
+class PIIScanner:
+    def __init__(self):
+        self.pii_patterns = {
+            'ssn': {
+                'pattern': r'\b\d{3}-\d{2}-\d{4}\b',
+                'mask': '[SSN]'
+            },
+            'email': {
+                'pattern': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b',
+                'mask': '[EMAIL]'
+            },
+            'phone': {
+                'pattern': r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
+                'mask': '[PHONE]'
+            }
+        }
+
+    def scan_text(self, text: str) -> Tuple[str, List[Dict]]:
+        masked_text = text
+        pii_found = []
+
+        for pii_type, pattern_info in self.pii_patterns.items():
+            matches = re.finditer(pattern_info['pattern'], text)
+            for match in matches:
+                pii_found.append({
+                    'type': pii_type,
+                    'value': match.group(),
+                    'position': match.span()
+                })
+                masked_text = masked_text.replace(match.group(), pattern_info['mask'])
+
+        return masked_text, pii_found
+```
+
+5. `semantic_searcher.py`:
+```python
+# app/processor/semantic_searcher.py
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores.pgvector import PGVector
+from app.config import CONNECTION_STRING
+from app.utils.database import get_db_connection
+from typing import List, Dict
+
+class SemanticSearcher:
+    def __init__(self):
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'}
         )
         
-        # Get base64 of hash
-        hash_base64 = base64.b64encode(hash_obj.digest()).decode('utf-8')
+        self.vector_store = PGVector(
+            connection_string=CONNECTION_STRING,
+            embedding_function=self.embeddings,
+            collection_name="document_embeddings"
+        )
         
-        # Replace special characters as done in Postman script
-        hash_base64 = hash_base64.replace('+', '-').replace('/', '_').replace('=', '')
-        
-        return hash_base64
-
-    def get_mac_id(self, secret: str, version: str, app_id: str) -> str:
-        """Generate MAC ID following Postman's logic"""
-        timestamp = str(int(datetime.now().timestamp()))
-        message = f"{app_id}-{version}-{timestamp}"
-        return self.generate_signature(message, secret)
-        
-    def get_idaas_jwt(self) -> Optional[str]:
-        """
-        Get IDAAS JWT token for authentication
-        Returns: JWT token string or None if failed
-        """
-        url = f"{self.host}/security/digital/v1/application"
-        
-        # Generate timestamp
-        timestamp = str(int(datetime.now().timestamp()))
-        
-        # Generate HMAC signature
-        mac = self.get_mac_id(self.secret, self.version, self.app_id)
-        
-        payload = {
-            "scope": [
-                "/genai/google/v1/models/gemini-1.5-pro-002/**:post"
-            ]
-        }
-        
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Auth-AppID': self.app_id,
-            'X-Auth-Signature': mac,  # Using the generated MAC
-            'X-Auth-Version': self.version,
-            'X-Auth-Timestamp': timestamp,
-            'Accept': 'application/json'
-        }
-        
+    async def search(self, query_embedding: List[float], top_k: int = 5) -> List[Dict]:
+        conn = get_db_connection()
         try:
-            print("\nGetting JWT token...")
-            print(f"Making request to: {url}")
-            print("Headers:", json.dumps(headers, indent=2))
+            cur = conn.cursor()
+            embedding_str = f"[{','.join(map(str, query_embedding))}]"
             
-            response = requests.post(url, headers=headers, json=payload, verify=False)
-            print(f"Response Status Code: {response.status_code}")
+            cur.execute("""
+                SELECT 
+                    content,
+                    metadata,
+                    1 - (embedding <=> %s::vector) as similarity
+                FROM document_embeddings
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """, (embedding_str, embedding_str, top_k))
             
-            if response.status_code == 200:
-                token_response = response.json()
-                if 'authorization_token' in token_response:
-                    print("Successfully obtained JWT token")
-                    return token_response['authorization_token']
-                print("Error: No authorization_token in response")
-                print("Response:", json.dumps(token_response, indent=2))
-            else:
-                print(f"Error response: {response.text}")
+            results = cur.fetchall()
             
-            return None
+            return [{
+                'content': content,
+                'metadata': metadata,
+                'similarity_score': similarity
+            } for content, metadata, similarity in results]
             
-        except requests.exceptions.RequestException as e:
-            print(f"Error getting JWT token: {e}")
-            return None
+        except Exception as e:
+            print(f"Search error: {str(e)}")
+            return []
+        finally:
+            cur.close()
+            conn.close()
+```
 
-    def call_genai_llm(self, auth_token: str, prompt: str) -> Optional[Dict]:
-        """
-        Call the Gemini LLM API with the provided authentication token and prompt
-        """
-        url = "https://eap-dev.aexp.com/genai/google/v1/models/gemini-1.5-pro-002/generateContent"
+6. `prompt_enhancer.py`:
+```python
+# app/processor/prompt_enhancer.py
+
+from langchain.prompts import PromptTemplate
+from typing import List, Dict
+
+class PromptEnhancer:
+    def __init__(self):
+        self.prompt_template = PromptTemplate(
+            input_variables=["context", "query"],
+            template="""Use the following context to answer the question. 
+            If you cannot find the answer in the context, say 'I don't have enough information.'
+
+            Context: {context}
+            
+            Question: {query}
+            
+            Answer: Let me help you with that."""
+        )
+
+    def enhance_prompt(self, query: str, context: List[Dict]) -> str:
+        combined_context = "\n".join([
+            f"{doc['content']} (Relevance: {doc['similarity_score']:.2f})"
+            for doc in context
+        ])
         
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {
-                            "text": prompt
-                        }
-                    ]
-                },
-                {
-                    "role": "model"
-                }
-            ]
-        }
-        
-        headers = {
-            'Authorization': f'Bearer {auth_token}',
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-        }
-        
+        return self.prompt_template.format(
+            context=combined_context,
+            query=query
+        )
+```
+
+7. `llm_caller.py`:
+```python
+# app/processor/llm_caller.py
+
+from google.cloud import aiplatform
+from app.config import LLM_CONFIG
+from typing import List, Dict
+
+class LLMCaller:
+    def __init__(self):
+        aiplatform.init(project=LLM_CONFIG['project_id'])
+        self.endpoint = aiplatform.Endpoint(LLM_CONFIG['endpoint_id'])
+
+    async def generate_response(self, prompt: str, query: str, context: List[Dict]) -> str:
         try:
-            print("\nCalling Gemini API...")
-            print(f"Making request to: {url}")
-            response = requests.post(url, headers=headers, json=payload, verify=False)
+            full_prompt = {
+                "prompt": prompt,
+                "original_query": query,
+                "temperature": 0.7,
+                "max_output_tokens": 1024,
+                "top_p": 0.8,
+                "top_k": 40
+            }
             
-            if response.status_code == 200:
-                return response.json()
-            else:
-                print(f"Error: Status code {response.status_code}")
-                print(f"Response: {response.text}")
-                return None
-                
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling Gemini API: {e}")
-            return None
+            response = self.endpoint.predict(instances=[full_prompt])
+            return response.predictions[0]
+        except Exception as e:
+            print(f"LLM error: {str(e)}")
+            return "Error processing request"
+```
 
-    def process_user_query(self, prompt: str) -> Optional[Dict]:
-        """Process a user query by getting JWT token and calling Gemini API"""
-        auth_token = self.get_idaas_jwt()
-        if not auth_token:
-            print("Failed to get authentication token")
-            return None
+8. `api.py`:
+```python
+# app/routes/api.py
+
+from flask import Blueprint, request, jsonify
+from app.processor.pii_scanner import PIIScanner
+from app.processor.semantic_searcher import SemanticSearcher
+from app.processor.prompt_enhancer import PromptEnhancer
+from app.processor.llm_caller import LLMCaller
+
+api = Blueprint('api', __name__)
+
+@api.route('/process_query', methods=['POST'])
+async def process_query():
+    try:
+        data = request.json
+        user_query = data.get('query')
         
-        return self.call_genai_llm(auth_token, prompt)
+        if not user_query:
+            return jsonify({'error': 'No query provided'}), 400
 
-def get_user_input() -> Optional[str]:
-    """Get and validate user input"""
-    prompt = input("\nEnter your prompt for Gemini (or 'quit' to exit): ").strip()
-    if prompt.lower() == 'quit':
-        return None
-    return prompt if prompt else None
-
-def main():
-    # Load environment variables
-    load_dotenv()
-    
-    # Initialize configuration
-    config = {
-        'host': os.getenv('IDAAS_HOST'),
-        'app_id': os.getenv('APP_ID'),
-        'secret': os.getenv('SECRET'),
-        'version': os.getenv('VERSION')
-    }
-
-    # Validate configuration
-    if not all(config.values()):
-        missing = [key for key, value in config.items() if not value]
-        print(f"Error: Missing environment variables: {', '.join(missing)}")
-        return
-
-    client = GenAIClient(config)
-    
-    print("\nWelcome to the Gemini API Interface!")
-    print("-----------------------------------")
-    
-    while True:
-        prompt = get_user_input()
-        if prompt is None:
-            print("\nGoodbye!")
-            break
+        # Initialize processors
+        pii_scanner = PIIScanner()
+        semantic_searcher = SemanticSearcher()
+        prompt_enhancer = PromptEnhancer()
+        llm_caller = LLMCaller()
         
-        response = client.process_user_query(prompt)
+        # Process query
+        cleaned_query, pii_findings = pii_scanner.scan_text(user_query)
+        query_embedding = semantic_searcher.embeddings.embed_query(cleaned_query)
+        search_results = await semantic_searcher.search(query_embedding)
+        enhanced_prompt = prompt_enhancer.enhance_prompt(cleaned_query, search_results)
+        final_response = await llm_caller.generate_response(
+            enhanced_prompt,
+            cleaned_query,
+            search_results
+        )
         
-        if response:
-            print("\nGemini Response:")
-            print("-----------------")
-            print(json.dumps(response, indent=2))
-        else:
-            print("\nFailed to get response from Gemini")
-        
-        print("\n" + "="*50)
+        return jsonify({
+            'original_query': user_query,
+            'cleaned_query': cleaned_query,
+            'pii_detected': pii_findings,
+            'context_used': search_results,
+            'response': final_response
+        })
 
-if __name__ == "__main__":
-    main()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+```
+
+9. `main.py`:
+```python
+# main.py
+
+from flask import Flask
+from app.routes.api import api
+
+app = Flask(__name__)
+app.register_blueprint(api, url_prefix='/api/v1')
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
+```
+
+10. `requirements.txt`:
+```text
+flask
+langchain
+langchain-community
+sentence-transformers
+psycopg2-binary
+pgvector
+google-cloud-aiplatform
+```
+
+To run the API:
+
+1. Install requirements:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the application:
+```bash
+python main.py
+```
+
+3. Test the API:
+```python
+import requests
+
+response = requests.post('http://localhost:5000/api/v1/process_query', 
+                        json={'query': 'your question here'})
+print(response.json())
+```
+
+This structure separates concerns and makes the code more maintainable. Each component is isolated and can be tested independently. The main processing logic is in separate classes, and the API routes simply orchestrate these components.
+
+Would you like me to explain any part in more detail or make any modifications?
