@@ -2,48 +2,44 @@ import streamlit as st
 import requests
 import json
 
-def main():
-    st.title("API Client Interface")
-    st.write("Enter your prompt below to get a response from the API")
+st.title("API Client Interface")
+st.write("Enter your prompt below to get a response from the API")
 
-    # Input fields
-    prompt = st.text_area("Enter your prompt:", "generate C code for linked lists")
-    max_tokens = st.slider("Max tokens:", min_value=1, max_value=512, value=256)
-    min_tokens = st.slider("Min tokens:", min_value=1, max_value=256, value=128)
+# Input fields
+prompt = st.text_area("Enter your prompt:", "generate C code for linked lists")
+max_tokens = st.slider("Max tokens:", min_value=1, max_value=512, value=256)
+min_tokens = st.slider("Min tokens:", min_value=1, max_value=256, value=128)
 
-    # API endpoint
-    url = "10.50.66.58:8081/v1/completions"
+# API endpoint
+url = "http://10.50.66.58:8081/v1/completions"
 
-    if st.button("Submit"):
-        try:
-            # Prepare the payload
-            payload = {
-                "model": "model1",
-                "prompt": prompt,
-                "max_tokens": max_tokens,
-                "min_tokens": min_tokens
-            }
+if st.button("Submit"):
+    try:
+        # Prepare the payload
+        payload = {
+            "model": "model1",
+            "prompt": prompt,
+            "max_tokens": max_tokens,
+            "min_tokens": min_tokens
+        }
 
-            headers = {
-                "Content-Type": "application/json"
-            }
+        headers = {
+            "Content-Type": "application/json"
+        }
 
-            with st.spinner("Getting response..."):
-                response = requests.post(
-                    url, 
-                    headers=headers,
-                    data=json.dumps(payload)
-                )
+        with st.spinner("Getting response..."):
+            response = requests.post(
+                url, 
+                headers=headers,
+                data=json.dumps(payload)
+            )
 
-                if response.status_code == 200:
-                    st.success("Response received!")
-                    st.text_area("API Response:", value=response.text, height=300)
-                else:
-                    st.error(f"Error: Status code {response.status_code}")
-                    st.text(response.text)
+            if response.status_code == 200:
+                st.success("Response received!")
+                st.text_area("API Response:", value=response.text, height=300)
+            else:
+                st.error(f"Error: Status code {response.status_code}")
+                st.text(response.text)
 
-        except requests.exceptions.RequestException as e:
-            st.error(f"An error occurred: {str(e)}")
-
-if __name__ == "__main__":
-    main()
+    except requests.exceptions.RequestException as e:
+        st.error(f"An error occurred: {str(e)}")
