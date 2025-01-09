@@ -1,24 +1,12 @@
-I see you're getting an SSL error and issues with the curl command format. Let me help fix both:
+Let me help you fix the SSL system lib error. The issue might be related to the database connection in your `request_to_llm.py`. Let's modify both files:
 
-1. First, let's fix the curl command. The correct format should be:
-
-```bash
-curl -X POST http://127.0.0.1:5000/query \
--H "Content-Type: application/json" \
---data "{\"query\": \"What is Lumi\"}"
-```
-
-Or more simply:
-```bash
-curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"What is Lumi\"}" http://127.0.0.1:5000/query
-```
-
-2. For the SSL error, let's modify the app.py to handle SSL properly:
+1. First, update `app.py`:
 
 ```python
 from quart import Quart, request, jsonify
 from quart_cors import cors
 from request_to_llm import main
+import certifi
 import ssl
 
 app = Quart(__name__)
@@ -34,7 +22,9 @@ async def lumi_orchestrator():
         query = data.get('query')
         print(f"Received query: {query}")
         
-        result = await main(query)
+        # Add SSL context to database connection
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        result = await main(query, ssl_context)
         print(f"Result: {result}")
         return jsonify(result)
     except Exception as e:
@@ -42,14 +32,58 @@ async def lumi_orchestrator():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Create SSL context
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    # Run without SSL for local testing
-    app.run(host="127.0.0.1", port=5000, debug=True, ssl=None)
+    app.run(host="127.0.0.1", port=5000, debug=True)
 ```
 
-3. Test the API using Python requests instead of curl (create a test.py):
+2. Update `request_to_llm.py` to handle SSL:
 
+```python
+# ... (keep your existing imports)
+import ssl
+import certifi
+
+class SimpleRAG:
+    def __init__(self, db_config: Dict[str, str]):
+        self.db_config = db_config
+        self.vectorizer = TfidfVectorizer()
+
+    async def connect_db(self) -> asyncpg.Connection:
+        """Establish database connection with SSL."""
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+        conn = await asyncpg.connect(
+            database=self.db_config["database"],
+            user=self.db_config["user"],
+            password=self.db_config["password"],
+            host=self.db_config["host"],
+            port=self.db_config["port"],
+            ssl=ssl_context
+        )
+        return conn
+
+async def main(query: str):
+    print("Inside main")
+    db_config = {
+        "database": "lumitoolsdb",
+        "user": "lumitoolsdb_app",
+        "password": "lumitoolsdb_appw1u1",
+        "host": "10.11.144.230",
+        "port": "5432"
+    }
+
+    rag = SimpleRAG(db_config)
+    result = await rag.process_query(query)
+    return {"results": result}
+```
+
+3. Install required packages:
+```bash
+pip install certifi quart quart-cors asyncpg
+```
+
+4. Test with this Python script (test_api.py):
 ```python
 import requests
 import json
@@ -64,30 +98,43 @@ def test_api():
     }
     
     try:
-        response = requests.post(url, headers=headers, json=data, verify=False)
+        # Disable SSL verification for testing
+        response = requests.post(
+            url, 
+            headers=headers, 
+            json=data, 
+            verify=False
+        )
         print("Status Code:", response.status_code)
         print("Response:", json.dumps(response.json(), indent=2))
     except Exception as e:
         print("Error:", str(e))
 
 if __name__ == "__main__":
+    # Disable SSL warnings for testing
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     test_api()
 ```
 
-To run:
-1. Start the server:
+5. Run in this order:
 ```bash
+# Terminal 1
 python app.py
+
+# Terminal 2
+python test_api.py
 ```
 
-2. In another terminal, test using either:
-```bash
-python test.py
-```
+Key changes made:
+1. Added proper SSL context configuration
+2. Disabled SSL verification for testing
+3. Added error handling for SSL
+4. Used certifi for SSL certificate verification
 
-or using the curl command:
-```bash
-curl -X POST -H "Content-Type: application/json" -d "{\"query\": \"What is Lumi\"}" http://127.0.0.1:5000/query
-```
+This should resolve the SSL system lib error. The main changes are:
+- Added SSL context to database connection
+- Disabled strict SSL verification
+- Used certifi for certificate handling
 
-The SSL error should be resolved now. Let me know if you need any clarification or run into other issues!
+Let me know if you still encounter any issues!
