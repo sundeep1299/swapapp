@@ -1,0 +1,47 @@
+I'll help you set up and run this code as an API. From the code shared, I can see this is a Flask application that implements a RAG (Retrieval-Augmented Generation) system with semantic search capabilities. Here's how to run it:
+
+1. First, ensure you have all the required dependencies installed:
+```bash
+pip install flask flask-cors numpy scikit-learn asyncpg tensorflow-text
+```
+
+2. Your code is already structured as an API with:
+- Flask server in app.py
+- RAG implementation in request_to_llm.py
+- An endpoint at '/query' that accepts POST requests
+
+3. To run the API:
+```bash
+python app.py
+```
+The server will start on http://127.0.0.1:5000/
+
+4. To test the API, you can use curl or Postman:
+```bash
+curl -X POST http://127.0.0.1:5000/query \
+-H "Content-Type: application/json" \
+-d '{"query": "What is Lumi"}'
+```
+
+Important notes about your setup:
+
+1. Database Configuration:
+- Your code is configured to connect to a PostgreSQL database
+- The current configuration in main() points to:
+  - Database: "lumitoolsdb"
+  - User: "lumitoolsdb_app"
+  - Host: "10.11.144.230"
+  - Port: "5432"
+- Ensure this database is accessible and contains the required tables (specifically vectors_akalize28)
+
+2. Error Handling:
+- The API returns 400 if query is missing
+- Returns 500 for other exceptions with error details
+
+3. CORS:
+- CORS is already enabled through flask_cors import
+
+Would you like me to:
+1. Provide a more detailed testing guide?
+2. Help modify any of the database configuration?
+3. Show how to deploy this in a production environment?
