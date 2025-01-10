@@ -1,45 +1,67 @@
-import streamlit as st
+I'll help you convert this Postman request into Python code that you can run locally. The code will make the same API request to the specified endpoint.
+
+
+
+```python
 import requests
 import json
-
-st.title("API Client Interface")
-st.write("Enter your prompt below to get a response from the API")
-
-# Input fields
-prompt = st.text_area("Enter your prompt:", "generate C code for linked lists")
-max_tokens = st.slider("Max tokens:", min_value=1, max_value=512, value=256)
-min_tokens = st.slider("Min tokens:", min_value=1, max_value=256, value=128)
 
 # API endpoint
 url = "http://10.50.66.58:8081/v1/completions"
 
-if st.button("Submit"):
-    try:
-        # Prepare the payload
-        payload = {
-            "model": "model1",
-            "prompt": prompt,
-            "max_tokens": max_tokens,
-            "min_tokens": min_tokens
-        }
+# Request headers
+headers = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'PostmanRuntime/7.30.0',
+    'Accept': '*/*',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive'
+}
 
-        headers = {
-            "Content-Type": "application/json"
-        }
+# Request body
+payload = {
+    "model": "model1",
+    "prompt": "generate C code for linked lists?",
+    "max_tokens": 256,
+    "min_tokens": 120
+}
 
-        with st.spinner("Getting response..."):
-            response = requests.post(
-                url, 
-                headers=headers,
-                data=json.dumps(payload)
-            )
+try:
+    # Make the POST request
+    response = requests.post(
+        url, 
+        headers=headers,
+        json=payload
+    )
+    
+    # Print the response
+    print(response.text)
+    
+    # Check if request was successful
+    if response.status_code == 200:
+        print("\nRequest successful!")
+    else:
+        print(f"\nRequest failed with status code: {response.status_code}")
+        
+except requests.exceptions.RequestException as e:
+    print(f"An error occurred: {e}")
+```
 
-            if response.status_code == 200:
-                st.success("Response received!")
-                st.text_area("API Response:", value=response.text, height=300)
-            else:
-                st.error(f"Error: Status code {response.status_code}")
-                st.text(response.text)
+A few notes about this code:
 
-    except requests.exceptions.RequestException as e:
-        st.error(f"An error occurred: {str(e)}")
+1. Make sure you have the `requests` library installed. You can install it using:
+   ```bash
+   pip install requests
+   ```
+
+2. I've included the same headers as shown in your Postman request, though some of them (like User-Agent) might not be strictly necessary.
+
+3. The payload matches exactly what you had in the Postman body.
+
+4. I've added basic error handling and status code checking.
+
+5. The code will print the full response text, just like you would see in Postman.
+
+You can run this script locally, and it will make the same request to your local endpoint at `10.50.66.58:8081`. Make sure the server is running and accessible at that address before running the script.
+
+Would you like me to modify anything about this code or add any additional functionality?
