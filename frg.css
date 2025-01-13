@@ -1,67 +1,32 @@
-I'll help you convert this Postman request into Python code that you can run locally. The code will make the same API request to the specified endpoint.
-
-
-
-```python
-import requests
+import http.client
 import json
+import ssl
 
-# API endpoint
-url = "http://10.50.66.58:8081/v1/completions"
+# Create a custom SSL context
+context = ssl.create_default_context()
+context.check_hostname = False
+context.verify_mode = ssl.CERT_NONE
 
-# Request headers
-headers = {
-    'Content-Type': 'application/json',
-    'User-Agent': 'PostmanRuntime/7.30.0',
-    'Accept': '*/*',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Connection': 'keep-alive'
-}
+# Create connection with SSL context
+conn = http.client.HTTPSConnection("10.50.66.58", 8081, context=context)
 
-# Request body
-payload = {
+payload = json.dumps({
     "model": "model1",
-    "prompt": "generate C code for linked lists?",
+    "prompt": "generate C code for linked lists",
     "max_tokens": 256,
-    "min_tokens": 120
+    "min_tokens": 128
+})
+
+headers = {
+    'Content-Type': 'application/json'
 }
 
 try:
-    # Make the POST request
-    response = requests.post(
-        url, 
-        headers=headers,
-        json=payload
-    )
-    
-    # Print the response
-    print(response.text)
-    
-    # Check if request was successful
-    if response.status_code == 200:
-        print("\nRequest successful!")
-    else:
-        print(f"\nRequest failed with status code: {response.status_code}")
-        
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
-```
-
-A few notes about this code:
-
-1. Make sure you have the `requests` library installed. You can install it using:
-   ```bash
-   pip install requests
-   ```
-
-2. I've included the same headers as shown in your Postman request, though some of them (like User-Agent) might not be strictly necessary.
-
-3. The payload matches exactly what you had in the Postman body.
-
-4. I've added basic error handling and status code checking.
-
-5. The code will print the full response text, just like you would see in Postman.
-
-You can run this script locally, and it will make the same request to your local endpoint at `10.50.66.58:8081`. Make sure the server is running and accessible at that address before running the script.
-
-Would you like me to modify anything about this code or add any additional functionality?
+    conn.request("POST", "/v1/completions", payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+    print(data.decode("utf-8"))
+except Exception as e:
+    print(f"Error occurred: {str(e)}")
+finally:
+    conn.close()
