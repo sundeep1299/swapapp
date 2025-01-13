@@ -30,23 +30,82 @@ def call_llm_api(prompt: str) -> dict:
     finally:
         conn.close()
 
-def main():
-    st.title("LLM Interface")
-    
-    # Text input for the prompt
-    prompt = st.text_area("Enter your prompt:", height=100)
-    
-    # Submit button
-    if st.button("Generate"):
-        if prompt:
-            with st.spinner("Generating response..."):
-                response = call_llm_api(prompt)
+def format_response(response: dict):
+    """
+    Format the response in a more readable way
+    """
+    if "choices" in response:
+        st.subheader("Generated Response")
+        
+        # Display each choice in a separate box
+        for idx, choice in enumerate(response["choices"]):
+            with st.expander(f"Response {idx + 1}", expanded=True):
+                if "text" in choice:
+                    # Display code in a code block if it looks like code
+                    text = choice["text"].strip()
+                    if text.startswith("#include") or text.startswith("def ") or text.startswith("int ") or text.startswith("//"):
+                        st.code(text, language="c")  # or detect language and set accordingly
+                    else:
+                        st.text(text)
                 
-                if "error" in response:
-                    st.error(f"Error: {response['error']}")
-                else:
-                    st.success("Generation Complete!")
-                    st.json(response)  # Display the full response
+                # Display other useful metadata
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Index", choice.get("index", "N/A"))
+                with col2:
+                    st.metric("Tokens Used", len(text.split()) if "text" in choice else "N/A")
+
+        # Display metadata
+        st.subheader("Response Metadata")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Model", response.get("model", "N/A"))
+        with col2:
+            st.metric("Created", response.get("created", "N/A"))
+        with col3:
+            st.metric("Response Time", "Instant" if response.get("created") else "N/A")
+
+        # Display raw JSON in expandable section
+        with st.expander("Raw JSON Response"):
+            st.json(response)
+    else:
+        # If response doesn't match expected format, show raw JSON
+        st.json(response)
+
+def main():
+    # Set page config
+    st.set_page_config(
+        page_title="LLM Code Generator",
+        page_icon="💻",
+        layout="wide"
+    )
+    
+    # Add title and description
+    st.title("💻 LLM Code Generator")
+    st.markdown("""
+    Enter your prompt below to generate code or text using the LLM API.
+    For best results, be specific in your prompt about what you want to generate.
+    """)
+    
+    # Create a form for input
+    with st.form("generation_form"):
+        prompt = st.text_area(
+            "Enter your prompt:",
+            height=100,
+            placeholder="Example: Generate C code for a linked list implementation..."
+        )
+        submit = st.form_submit_button("Generate")
+    
+    # Handle form submission
+    if submit and prompt:
+        with st.spinner("Generating response..."):
+            response = call_llm_api(prompt)
+            
+            if "error" in response:
+                st.error(f"Error: {response['error']}")
+            else:
+                st.success("Generation Complete! 🎉")
+                format_response(response)
 
 if __name__ == "__main__":
     main()
