@@ -1,17 +1,24 @@
 import streamlit as st
 import http.client
 import json
+import io
+import base64
+from datetime import datetime
 
-def call_llm_api(prompt: str) -> dict:
+def call_llm_api(prompt: str, script_content: str = None) -> dict:
     """
-    Call the LLM API with the given prompt
+    Call the LLM API with the given prompt and script content
     """
-    # Create HTTP connection (not HTTPS)
     conn = http.client.HTTPConnection("10.50.66.58", 8081)
+    
+    # Combine script content with prompt if script exists
+    full_prompt = prompt
+    if script_content:
+        full_prompt = f"{prompt}\n\nHere's the script to convert:\n\n{script_content}"
     
     payload = json.dumps({
         "model": "model1",
-        "prompt": prompt,
+        "prompt": full_prompt,
         "max_tokens": 256,
         "min_tokens": 128
     })
@@ -30,82 +37,98 @@ def call_llm_api(prompt: str) -> dict:
     finally:
         conn.close()
 
-def format_response(response: dict):
+def get_download_link(text: str, filename: str) -> str:
     """
-    Format the response in a more readable way
+    Generate a download link for the given text content
     """
+    b64 = base64.b64encode(text.encode()).decode()
+    return f'<a href="data:text/plain;base64,{b64}" download="{filename}">Download {filename}</a>'
+
+def format_response_for_file(response: dict) -> str:
+    """
+    Format the response for file output
+    """
+    output = []
+    
+    # Add metadata as comments
+    output.append("# Generated GCP Implementation")
+    output.append(f"# Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    output.append(f"# Model: {response.get('model', 'N/A')}")
+    output.append("")
+    
+    # Add the generated code
     if "choices" in response:
-        st.subheader("Generated Response")
-        
-        # Display each choice in a separate box
         for idx, choice in enumerate(response["choices"]):
-            with st.expander(f"Response {idx + 1}", expanded=True):
-                if "text" in choice:
-                    # Display code in a code block if it looks like code
-                    text = choice["text"].strip()
-                    if text.startswith("#include") or text.startswith("def ") or text.startswith("int ") or text.startswith("//"):
-                        st.code(text, language="c")  # or detect language and set accordingly
-                    else:
-                        st.text(text)
-                
-                # Display other useful metadata
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Index", choice.get("index", "N/A"))
-                with col2:
-                    st.metric("Tokens Used", len(text.split()) if "text" in choice else "N/A")
-
-        # Display metadata
-        st.subheader("Response Metadata")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Model", response.get("model", "N/A"))
-        with col2:
-            st.metric("Created", response.get("created", "N/A"))
-        with col3:
-            st.metric("Response Time", "Instant" if response.get("created") else "N/A")
-
-        # Display raw JSON in expandable section
-        with st.expander("Raw JSON Response"):
-            st.json(response)
-    else:
-        # If response doesn't match expected format, show raw JSON
-        st.json(response)
+            if "text" in choice:
+                output.append(choice["text"].strip())
+            output.append("")  # Add blank line between choices
+    
+    return "\n".join(output)
 
 def main():
-    # Set page config
     st.set_page_config(
-        page_title="LLM Code Generator",
-        page_icon="💻",
+        page_title="Shell Script Converter",
+        page_icon="🔄",
         layout="wide"
     )
     
-    # Add title and description
-    st.title("💻 LLM Code Generator")
+    st.title("🔄 Shell Script to GCP Converter")
     st.markdown("""
-    Enter your prompt below to generate code or text using the LLM API.
-    For best results, be specific in your prompt about what you want to generate.
+    Upload your shell script and enter instructions for converting it to GCP implementation.
+    The tool will generate the converted code which you can then download.
     """)
     
+    # File uploader
+    uploaded_file = st.file_uploader("Upload your shell script", type=['sh'])
+    script_content = None
+    
+    if uploaded_file:
+        script_content = uploaded_file.getvalue().decode()
+        st.subheader("Uploaded Script Content:")
+        st.code(script_content, language='bash')
+    
     # Create a form for input
-    with st.form("generation_form"):
+    with st.form("conversion_form"):
         prompt = st.text_area(
-            "Enter your prompt:",
+            "Enter your conversion instructions:",
+            value="Convert this shell script to GCP implementation",
             height=100,
-            placeholder="Example: Generate C code for a linked list implementation..."
+            placeholder="Example: Convert this script to use GCP Cloud Run and Cloud Storage..."
         )
-        submit = st.form_submit_button("Generate")
+        submit = st.form_submit_button("Convert Script")
     
     # Handle form submission
-    if submit and prompt:
-        with st.spinner("Generating response..."):
-            response = call_llm_api(prompt)
+    if submit and script_content:
+        with st.spinner("Converting script..."):
+            response = call_llm_api(prompt, script_content)
             
             if "error" in response:
                 st.error(f"Error: {response['error']}")
             else:
-                st.success("Generation Complete! 🎉")
-                format_response(response)
+                st.success("Conversion Complete! 🎉")
+                
+                # Format and display the response
+                if "choices" in response:
+                    for idx, choice in enumerate(response["choices"]):
+                        if "text" in choice:
+                            st.subheader(f"Converted Implementation {idx + 1}")
+                            st.code(choice["text"], language='python')  # Assuming GCP implementation will be in Python
+                
+                # Create downloadable file
+                formatted_response = format_response_for_file(response)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"gcp_implementation_{timestamp}.py"
+                
+                # Create download button
+                st.markdown("### Download Converted Implementation")
+                st.markdown(get_download_link(formatted_response, filename), unsafe_allow_html=True)
+                
+                # Display metadata
+                with st.expander("Response Metadata"):
+                    st.json(response)
+    
+    elif submit and not script_content:
+        st.warning("Please upload a shell script first!")
 
 if __name__ == "__main__":
     main()
