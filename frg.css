@@ -1,19 +1,19 @@
 import streamlit as st
 import http.client
 import json
-from typing import Dict, Any
 
-def call_llm_api(prompt: str, max_tokens: int = 256, min_tokens: int = 128) -> Dict[Any, Any]:
+def call_llm_api(prompt: str) -> dict:
     """
-    Call the LLM API with the given prompt and parameters
+    Call the LLM API with the given prompt
     """
+    # Create HTTP connection (not HTTPS)
     conn = http.client.HTTPConnection("10.50.66.58", 8081)
     
     payload = json.dumps({
         "model": "model1",
         "prompt": prompt,
-        "max_tokens": max_tokens,
-        "min_tokens": min_tokens
+        "max_tokens": 256,
+        "min_tokens": 128
     })
     
     headers = {
@@ -31,59 +31,22 @@ def call_llm_api(prompt: str, max_tokens: int = 256, min_tokens: int = 128) -> D
         conn.close()
 
 def main():
-    st.set_page_config(page_title="LLM Interface", page_icon="🤖", layout="wide")
+    st.title("LLM Interface")
     
-    st.title("🤖 LLM Interface")
-    st.markdown("""
-    Enter your prompt below to generate text using the LLM API.
-    """)
+    # Text input for the prompt
+    prompt = st.text_area("Enter your prompt:", height=100)
     
-    # User input section
-    with st.form("llm_form"):
-        prompt = st.text_area("Enter your prompt:", height=150)
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            max_tokens = st.slider("Maximum tokens:", 
-                                 min_value=64, 
-                                 max_value=512, 
-                                 value=256,
-                                 step=32)
-        with col2:
-            min_tokens = st.slider("Minimum tokens:", 
-                                 min_value=32, 
-                                 max_value=256, 
-                                 value=128,
-                                 step=32)
-        
-        submit_button = st.form_submit_button("Generate")
-    
-    # Handle form submission
-    if submit_button and prompt:
-        with st.spinner("Generating response..."):
-            response = call_llm_api(prompt, max_tokens, min_tokens)
-            
-            if "error" in response:
-                st.error(f"Error: {response['error']}")
-            else:
-                st.success("Generation Complete!")
+    # Submit button
+    if st.button("Generate"):
+        if prompt:
+            with st.spinner("Generating response..."):
+                response = call_llm_api(prompt)
                 
-                # Display the response in a nice format
-                st.markdown("### Generated Response:")
-                st.markdown("---")
-                if isinstance(response, dict) and "choices" in response:
-                    # Assuming the API returns a structure similar to OpenAI's
-                    for i, choice in enumerate(response["choices"], 1):
-                        st.markdown(f"**Response {i}:**")
-                        st.markdown(choice.get("text", "No text generated"))
-                        st.markdown("---")
+                if "error" in response:
+                    st.error(f"Error: {response['error']}")
                 else:
-                    # Fallback for different response structure
-                    st.json(response)
-                
-                # Add copy button
-                st.markdown("### Raw Response:")
-                st.code(json.dumps(response, indent=2))
+                    st.success("Generation Complete!")
+                    st.json(response)  # Display the full response
 
 if __name__ == "__main__":
     main()
