@@ -1,54 +1,184 @@
-I see you're getting a tunnel connection error when trying to connect to Google's API. The error message indicates a proxy connection issue: "Cannot connect to proxy... Tunnel connection failed: 407 AuthorizationOnly".
-
-To fix this, you need to:
-
-1. If you're behind a corporate proxy, make sure you have the correct proxy configuration:
-
-```python
-# At the top of your script, configure proxy settings
+import requests
+import json
+import time
+import hmac
+import base64
+import hashlib
+from typing import Dict, Any, Optional
 import os
+from dotenv import load_dotenv
+import urllib3
 
-# Set proxy environment variables if needed
-os.environ['HTTP_PROXY'] = 'http://your-proxy-server:port'
-os.environ['HTTPS_PROXY'] = 'https://your-proxy-server:port'
+# Disable SSL verification warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# If proxy requires authentication
-os.environ['HTTPS_PROXY'] = 'https://username:password@your-proxy-server:port'
-```
+class GenAIClient:
+    def __init__(self, config: Dict[str, str]):
+        """Initialize the client with configuration"""
+        self.host = config['host']
+        self.app_id = config['app_id']
+        self.secret = config['secret']
+        self.version = config['version']
+        
+    def get_idaas_auth_token(self):
+        """
+        Get IDAAS JWT token following the exact implementation shown
+        """
+        # Create HMAC instance with base64 decoded secret
+        mac = hmac.new(base64.b64decode(self.secret), digestmod=hashlib.sha256)
+        
+        # Generate timestamp (milliseconds)
+        timestamp = str(int(time.time() * 1000))
+        
+        # Format input data
+        input_data = "{}-{}-{}".format(self.app_id.strip(), self.version, timestamp)
+        
+        # Update MAC with input data
+        mac.update(input_data.encode('utf-8'))
+        
+        # Get raw MAC digest
+        raw_mac = mac.digest()
+        
+        # Create URL-safe base64 encoded signature
+        hmac_signature = base64.urlsafe_b64encode(raw_mac).decode('utf-8')
+        
+        # Replace special characters
+        hmac_signature = hmac_signature.replace("/", "_").replace("+", "-").replace("=", "")
+        
+        # Prepare headers
+        idaas_headers = {
+            'Content-Type': 'application/json',
+            'X-Auth-AppID': self.app_id,
+            'X-Auth-Signature': hmac_signature,
+            'X-Auth-Version': self.version,
+            'X-Auth-Timestamp': timestamp,
+            'Accept': 'application/json'
+        }
+        
+        # Prepare payload
+        idaas_payload = json.dumps({
+            "scope": [
+                "/genai/google/v1/models/gemini-1.5-pro-002/**:post"
+            ]
+        })
+        
+        # Make request
+        auth_token = requests.request(
+            "POST",
+            f"{self.host}/security/digital/v1/application",
+            headers=idaas_headers,
+            data=idaas_payload,
+            verify=False,
+            proxies={
+                'http': None,
+                'https': None
+            }
+        )
+        
+        return json.loads(auth_token.content)['authorization_token']
 
-2. If you need to bypass the proxy for this connection:
-
-```python
-# Add these before making the request
-os.environ['NO_PROXY'] = 'googleapis.com,*.googleapis.com'
-```
-
-3. You can also modify your requests call to handle proxy settings:
-
-```python
-requests.request("POST", IDAAS_URL, 
-                headers=idaas_headers, 
-                data=idaas_payload, 
+    def call_genai_llm(self, auth_token: str, prompt: str) -> Optional[Dict]:
+        """
+        Call the Gemini LLM API with the provided authentication token and prompt
+        """
+        url = "https://eap-dev.aexp.com/genai/google/v1/models/gemini-1.5-pro-002/generateContent"
+        
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": prompt
+                        }
+                    ]
+                },
+                {
+                    "role": "model"
+                }
+            ]
+        }
+        
+        headers = {
+            'Authorization': f'Bearer {auth_token}',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+        }
+        
+        try:
+            print("\nCalling Gemini API...")
+            response = requests.post(
+                url, 
+                headers=headers, 
+                json=payload, 
                 verify=False,
                 proxies={
                     'http': None,
                     'https': None
-                })
-```
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Error: Status code {response.status_code}")
+                print(f"Response: {response.text}")
+                return None
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Error calling Gemini API: {e}")
+            return None
 
-4. If you're getting certificate verification issues, you might need to:
-   - Either properly configure your certificates
-   - Or (temporarily for testing) disable SSL verification:
-```python
-import urllib3
-urllib3.disable_warnings()
-```
+    def process_user_query(self, prompt: str) -> Optional[Dict]:
+        """Process a user query by getting JWT token and calling Gemini API"""
+        try:
+            print("\nGetting authentication token...")
+            auth_token = self.get_idaas_auth_token()
+            print("Successfully obtained authentication token")
+            
+            return self.call_genai_llm(auth_token, prompt)
+        except Exception as e:
+            print(f"Error processing query: {e}")
+            return None
 
-I recommend first trying to bypass the proxy to see if that resolves the issue. If you still need to use the proxy, then you'll need to get the correct proxy credentials from your IT department.
+def main():
+    # Load environment variables
+    load_dotenv()
+    
+    # Initialize configuration
+    config = {
+        'host': os.getenv('IDAAS_HOST'),
+        'app_id': os.getenv('APP_ID'),
+        'secret': os.getenv('SECRET'),
+        'version': os.getenv('VERSION')
+    }
 
-Also, make sure you have the latest versions of your packages:
-```bash
-pip install --upgrade requests urllib3
-```
+    # Validate configuration
+    if not all(config.values()):
+        missing = [key for key, value in config.items() if not value]
+        print(f"Error: Missing environment variables: {', '.join(missing)}")
+        return
 
-Would you like me to help you implement any of these solutions?
+    client = GenAIClient(config)
+    
+    print("\nWelcome to the Gemini API Interface!")
+    print("-----------------------------------")
+    
+    while True:
+        prompt = input("\nEnter your prompt for Gemini (or 'quit' to exit): ").strip()
+        if prompt.lower() == 'quit':
+            print("\nGoodbye!")
+            break
+        
+        response = client.process_user_query(prompt)
+        
+        if response:
+            print("\nGemini Response:")
+            print("-----------------")
+            print(json.dumps(response, indent=2))
+        else:
+            print("\nFailed to get response from Gemini")
+        
+        print("\n" + "="*50)
+
+if __name__ == "__main__":
+    main()
