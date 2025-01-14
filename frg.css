@@ -1,134 +1,54 @@
-import streamlit as st
-import http.client
-import json
-import io
-import base64
-from datetime import datetime
+I see you're getting a tunnel connection error when trying to connect to Google's API. The error message indicates a proxy connection issue: "Cannot connect to proxy... Tunnel connection failed: 407 AuthorizationOnly".
 
-def call_llm_api(prompt: str, script_content: str = None) -> dict:
-    """
-    Call the LLM API with the given prompt and script content
-    """
-    conn = http.client.HTTPConnection("10.50.66.58", 8081)
-    
-    # Combine script content with prompt if script exists
-    full_prompt = prompt
-    if script_content:
-        full_prompt = f"{prompt}\n\nHere's the script to convert:\n\n{script_content}"
-    
-    payload = json.dumps({
-        "model": "model1",
-        "prompt": full_prompt,
-        "max_tokens": 256,
-        "min_tokens": 128
-    })
-    
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    
-    try:
-        conn.request("POST", "/v1/completions", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
-        return json.loads(data.decode("utf-8"))
-    except Exception as e:
-        return {"error": str(e)}
-    finally:
-        conn.close()
+To fix this, you need to:
 
-def get_download_link(text: str, filename: str) -> str:
-    """
-    Generate a download link for the given text content
-    """
-    b64 = base64.b64encode(text.encode()).decode()
-    return f'<a href="data:text/plain;base64,{b64}" download="{filename}">Download {filename}</a>'
+1. If you're behind a corporate proxy, make sure you have the correct proxy configuration:
 
-def format_response_for_file(response: dict) -> str:
-    """
-    Format the response for file output
-    """
-    output = []
-    
-    # Add metadata as comments
-    output.append("# Generated GCP Implementation")
-    output.append(f"# Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    output.append(f"# Model: {response.get('model', 'N/A')}")
-    output.append("")
-    
-    # Add the generated code
-    if "choices" in response:
-        for idx, choice in enumerate(response["choices"]):
-            if "text" in choice:
-                output.append(choice["text"].strip())
-            output.append("")  # Add blank line between choices
-    
-    return "\n".join(output)
+```python
+# At the top of your script, configure proxy settings
+import os
 
-def main():
-    st.set_page_config(
-        page_title="Shell Script Converter",
-        page_icon="🔄",
-        layout="wide"
-    )
-    
-    st.title("🔄 Shell Script to GCP Converter")
-    st.markdown("""
-    Upload your shell script and enter instructions for converting it to GCP implementation.
-    The tool will generate the converted code which you can then download.
-    """)
-    
-    # File uploader
-    uploaded_file = st.file_uploader("Upload your shell script", type=['sh'])
-    script_content = None
-    
-    if uploaded_file:
-        script_content = uploaded_file.getvalue().decode()
-        st.subheader("Uploaded Script Content:")
-        st.code(script_content, language='bash')
-    
-    # Create a form for input
-    with st.form("conversion_form"):
-        prompt = st.text_area(
-            "Enter your conversion instructions:",
-            value="Convert this shell script to GCP implementation",
-            height=100,
-            placeholder="Example: Convert this script to use GCP Cloud Run and Cloud Storage..."
-        )
-        submit = st.form_submit_button("Convert Script")
-    
-    # Handle form submission
-    if submit and script_content:
-        with st.spinner("Converting script..."):
-            response = call_llm_api(prompt, script_content)
-            
-            if "error" in response:
-                st.error(f"Error: {response['error']}")
-            else:
-                st.success("Conversion Complete! 🎉")
-                
-                # Format and display the response
-                if "choices" in response:
-                    for idx, choice in enumerate(response["choices"]):
-                        if "text" in choice:
-                            st.subheader(f"Converted Implementation {idx + 1}")
-                            st.code(choice["text"], language='python')  # Assuming GCP implementation will be in Python
-                
-                # Create downloadable file
-                formatted_response = format_response_for_file(response)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"gcp_implementation_{timestamp}.py"
-                
-                # Create download button
-                st.markdown("### Download Converted Implementation")
-                st.markdown(get_download_link(formatted_response, filename), unsafe_allow_html=True)
-                
-                # Display metadata
-                with st.expander("Response Metadata"):
-                    st.json(response)
-    
-    elif submit and not script_content:
-        st.warning("Please upload a shell script first!")
+# Set proxy environment variables if needed
+os.environ['HTTP_PROXY'] = 'http://your-proxy-server:port'
+os.environ['HTTPS_PROXY'] = 'https://your-proxy-server:port'
 
-if __name__ == "__main__":
-    main()
+# If proxy requires authentication
+os.environ['HTTPS_PROXY'] = 'https://username:password@your-proxy-server:port'
+```
+
+2. If you need to bypass the proxy for this connection:
+
+```python
+# Add these before making the request
+os.environ['NO_PROXY'] = 'googleapis.com,*.googleapis.com'
+```
+
+3. You can also modify your requests call to handle proxy settings:
+
+```python
+requests.request("POST", IDAAS_URL, 
+                headers=idaas_headers, 
+                data=idaas_payload, 
+                verify=False,
+                proxies={
+                    'http': None,
+                    'https': None
+                })
+```
+
+4. If you're getting certificate verification issues, you might need to:
+   - Either properly configure your certificates
+   - Or (temporarily for testing) disable SSL verification:
+```python
+import urllib3
+urllib3.disable_warnings()
+```
+
+I recommend first trying to bypass the proxy to see if that resolves the issue. If you still need to use the proxy, then you'll need to get the correct proxy credentials from your IT department.
+
+Also, make sure you have the latest versions of your packages:
+```bash
+pip install --upgrade requests urllib3
+```
+
+Would you like me to help you implement any of these solutions?
