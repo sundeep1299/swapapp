@@ -81,15 +81,65 @@ class AIController:
         
         return pii_findings
 
-    def get_idaas_auth_token(self) -> str:
+    def get_gcp_token(self):
         """
-        Get authentication token for API calls
+        Generates the GCP token using the SERVICE_ACCOUNT_FILE
+        The token is used to authenticate the user to the GCP service
         """
         try:
-            self.credentials.refresh(Request())
-            return self.credentials.token
+            # Import required
+            from google.oauth2 import service_account
+            from google.auth.transport.requests import Request
+            from constants import SERVICE_ACCOUNT_FILE
+
+            # Set up authentication scopes
+            SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+            
+            # Load the credentials file
+            credentials = service_account.Credentials.from_service_account_file(
+                SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+            
+            # Get and refresh the token
+            gcp_auth_request = google.auth.transport.requests.Request()
+            credentials.refresh(gcp_auth_request)
+            return credentials.token
+            
         except Exception as e:
-            logger.error(f"Error getting auth token: {str(e)}")
+            logger.error(f"Error getting GCP token: {str(e)}")
+            raise
+
+    def get_idaas_auth_token(self):
+        """
+        Generates the IDaaS token using the APPID, SECRET, VERSION and IDAAS_URL
+        The token is used to authenticate the user to the IDaaS service
+        """
+        try:
+            # Create HMAC signature
+            mac = hmac.new(base64.b64decode(self.SECRET), digestmod=hashlib.sha256)
+            timestamp = str(int(time.time() * 1000))
+            
+            # Format input data
+            input_data = "{}.{}.{}".format(self.APPID.strip(), self.VERSION, timestamp)
+            mac.update(input_data.encode('utf-8'))
+            
+            # Generate and format signature
+            hmac_signature = base64.urlsafe_b64encode(mac.digest()).decode('utf-8')
+            hmac_signature = hmac_signature.replace("/", "_").replace("+", "-").replace("=", "")
+            
+            # Create IDaaS headers
+            idaas_headers = {
+                'Content-Type': 'application/json',
+                'X-Auth-AppID': self.APPID,
+                'X-Auth-Signature': hmac_signature,
+                'X-Auth-Version': self.VERSION,
+                'X-Auth-Timestamp': timestamp,
+                'Accept': 'application/json'
+            }
+            
+            return idaas_headers
+            
+        except Exception as e:
+            logger.error(f"Error generating IDaaS token: {str(e)}")
             raise
 
     def get_embeddings(self, text: str) -> List[float]:
@@ -160,57 +210,66 @@ class AIController:
             logger.error(f"Error in semantic search: {str(e)}")
             raise
 
-    def call_llm(
-        self, 
-        query: str,
-        context: Optional[str] = None,
-        temperature: float = 0.7
-    ) -> str:
+    def call_llm(self):
         """
-        Call Gemini 1.5 Pro LLM API
+        Call LLM - Gemini
+        This method calls the LLM service using the IDaaS token and GCP token
+        The method returns the response from Gemini
         """
-        try:
-            auth_token = self.get_auth_token()
-            
-            headers = {
-                'Authorization': f'Bearer {auth_token}',
-                'Content-Type': 'application/json'
-            }
-            
-            # Construct prompt with context if available
-            prompt = query
-            if context:
-                prompt = f"""Context: {context}\n\nQuestion: {query}
-                Please provide a response based on the given context."""
-            
-            payload = {
-                "contents": [{
-                    "parts": [{
-                        "text": prompt
-                    }],
-                    "role": "user"
-                }],
-                "generationConfig": {
-                    "temperature": temperature,
-                    "topP": 0.8,
-                    "topK": 40
+        # Get IDAAS token
+        idaas_token = self.get_idaas_auth_token()
+        logger.info("IDAAS Token generated {}".format(idaas_token))
+        print("IDAAS Token generated {}".format(idaas_token))
+
+        # Get GCP token
+        gcp_token = self.get_gcp_token()
+        logger.info("GCP Token generated {}".format(gcp_token))
+
+        # Create headers with both tokens
+        headers = {
+            "x-gcp-authorization": f"Bearer {gcp_token}",
+            "Authorization": f"Bearer {idaas_token}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+
+        # Create LLM payload
+        llm_payload = json.dumps({
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": "Can you give me some info about Google LLM Gemini 1.5 Pro API details"
+                        }
+                    ],
+                    "role": "model"
                 }
-            }
-            
-            response = requests.post(
+            ]
+        })
+
+        logger.info("Payload: {}".format(llm_payload))
+
+        # Call LLM - gemini pro
+        try:
+            query_response = requests.post(
                 self.LLM_URL,
                 headers=headers,
-                json=payload
+                data=llm_payload,
+                verify=False
             )
-            
-            if response.status_code == 200:
-                return response.json()['candidates'][0]['content']
+
+            if query_response:
+                logger.info("Query response in text format: {}".format(query_response.text))
+                print(query_response.text)
+                return json.loads(query_response.text)
             else:
-                raise Exception(f"LLM API error: {response.text}")
-                
+                logger.info("Query response is None.")
+                logger.info(query_response.content)
+                return None
+
         except Exception as e:
-            logger.error(f"Error calling LLM: {str(e)}")
-            raise
+            logger.error("Error: {}".format(e))
+            return None
 
     def process_query(self, query: str) -> Dict:
         """
