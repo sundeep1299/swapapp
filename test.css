@@ -1,1 +1,281 @@
+import re
+import json
+import time
+import logging
+import base64
+import hmac
+import hashlib
+import requests
+from typing import Dict, List, Optional, Tuple
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+class AIController:
+    def __init__(
+        self,
+        service_account_file: str,
+        vector_db_host: str = "localhost",
+        vector_db_port: int = 5432,
+        vector_db_name: str = "vectors_db",
+        vector_db_user: str = "user",
+        vector_db_password: str = "password"
+    ):
+        # Constants
+        self.SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+        self.EMBEDDINGS_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/textembedding-gecko@latest"
+        self.LLM_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/gemini-1.5-pro"
+        
+        # Initialize credentials
+        self.credentials = service_account.Credentials.from_service_account_file(
+            service_account_file, 
+            scopes=self.SCOPES
+        )
+        
+        # Vector DB configuration
+        self.vector_db_config = {
+            "host": vector_db_host,
+            "port": vector_db_port,
+            "database": vector_db_name,
+            "user": vector_db_user,
+            "password": vector_db_password
+        }
+
+    def scan_pii(self, text: str) -> Dict[str, List[str]]:
+        """
+        Scan text for PII such as SSN, email, phone numbers
+        """
+        pii_findings = {
+            'ssn': [],
+            'email': [],
+            'phone': [],
+            'credit_card': []
+        }
+        
+        patterns = {
+            'ssn': r'\b\d{3}-\d{2}-\d{4}\b',
+            'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            'phone': r'\b(\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b',
+            'credit_card': r'\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b'
+        }
+        
+        for pii_type, pattern in patterns.items():
+            matches = re.findall(pattern, text)
+            if matches:
+                pii_findings[pii_type].extend(matches)
+        
+        return pii_findings
+
+    def get_auth_token(self) -> str:
+        """
+        Get authentication token for API calls
+        """
+        try:
+            self.credentials.refresh(Request())
+            return self.credentials.token
+        except Exception as e:
+            logger.error(f"Error getting auth token: {str(e)}")
+            raise
+
+    def get_embeddings(self, text: str) -> List[float]:
+        """
+        Generate embeddings using Google's embedding model
+        """
+        try:
+            auth_token = self.get_auth_token()
+            
+            headers = {
+                'Authorization': f'Bearer {auth_token}',
+                'Content-Type': 'application/json'
+            }
+            
+            payload = {
+                "instances": [{
+                    "content": text
+                }]
+            }
+            
+            response = requests.post(
+                self.EMBEDDINGS_URL,
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                embeddings = response.json()['predictions'][0]['embeddings']
+                return embeddings
+            else:
+                raise Exception(f"Embedding API error: {response.text}")
+                
+        except Exception as e:
+            logger.error(f"Error generating embeddings: {str(e)}")
+            raise
+
+    def semantic_search(
+        self, 
+        embedding: List[float], 
+        limit: int = 3,
+        similarity_threshold: float = 0.7
+    ) -> List[Dict]:
+        """
+        Perform semantic search in vector database
+        """
+        try:
+            # Here you would implement your vector database search
+            # This is a placeholder - implement based on your chosen vector DB
+            query = f"""
+                SELECT text, embedding_vector, 
+                       1 - (embedding_vector <=> '{embedding}') as similarity
+                FROM documents
+                WHERE 1 - (embedding_vector <=> '{embedding}') > {similarity_threshold}
+                ORDER BY similarity DESC
+                LIMIT {limit}
+            """
+            
+            # Execute query and return results
+            # Placeholder return
+            return [{"text": "Sample context", "similarity": 0.85}]
+            
+        except Exception as e:
+            logger.error(f"Error in semantic search: {str(e)}")
+            raise
+
+    def call_llm(
+        self, 
+        query: str,
+        context: Optional[str] = None,
+        temperature: float = 0.7
+    ) -> str:
+        """
+        Call Gemini 1.5 Pro LLM API
+        """
+        try:
+            auth_token = self.get_auth_token()
+            
+            headers = {
+                'Authorization': f'Bearer {auth_token}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Construct prompt with context if available
+            prompt = query
+            if context:
+                prompt = f"""Context: {context}\n\nQuestion: {query}
+                Please provide a response based on the given context."""
+            
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": prompt
+                    }],
+                    "role": "user"
+                }],
+                "generationConfig": {
+                    "temperature": temperature,
+                    "topP": 0.8,
+                    "topK": 40
+                }
+            }
+            
+            response = requests.post(
+                self.LLM_URL,
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                return response.json()['candidates'][0]['content']
+            else:
+                raise Exception(f"LLM API error: {response.text}")
+                
+        except Exception as e:
+            logger.error(f"Error calling LLM: {str(e)}")
+            raise
+
+    def process_query(self, query: str) -> Dict:
+        """
+        Process user query through the complete pipeline
+        """
+        try:
+            # 1. PII Scanning
+            logger.info("Scanning for PII...")
+            pii_findings = self.scan_pii(query)
+            if any(findings for findings in pii_findings.values()):
+                return {
+                    "error": "PII detected in query",
+                    "pii_findings": pii_findings
+                }
+            
+            # 2. Generate Embeddings
+            logger.info("Generating embeddings...")
+            embeddings = self.get_embeddings(query)
+            
+            # 3. Semantic Search
+            logger.info("Performing semantic search...")
+            similar_docs = self.semantic_search(embeddings)
+            
+            # 4. Prepare Context
+            context = "\n".join([doc["text"] for doc in similar_docs])
+            
+            # 5. Call LLM
+            logger.info("Calling LLM...")
+            response = self.call_llm(query, context)
+            
+            return {
+                "query": query,
+                "similar_documents": similar_docs,
+                "response": response
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing query: {str(e)}")
+            return {"error": str(e)}
+
+def main():
+    try:
+        # Initialize controller
+        controller = AIController(
+            service_account_file="path/to/your/service-account.json"
+        )
+        
+        while True:
+            # Get user input
+            print("\nEnter your question (or 'quit' to exit):")
+            query = input().strip()
+            
+            if query.lower() == 'quit':
+                break
+            
+            # Process query
+            print("\nProcessing your query...")
+            result = controller.process_query(query)
+            
+            # Display results
+            if "error" in result:
+                print(f"\nError: {result['error']}")
+                if "pii_findings" in result:
+                    print("\nPII detected:")
+                    for pii_type, findings in result["pii_findings"].items():
+                        if findings:
+                            print(f"{pii_type}: {len(findings)} instance(s)")
+            else:
+                print("\nRelevant documents found:")
+                for doc in result["similar_documents"]:
+                    print(f"- Similarity: {doc['similarity']:.2f}")
+                    print(f"  Text: {doc['text'][:100]}...")
+                
+                print("\nResponse:")
+                print(result["response"])
+            
+            print("\n" + "="*50)
+            
+    except KeyboardInterrupt:
+        print("\nExiting...")
+    except Exception as e:
+        print(f"\nAn error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    main()
