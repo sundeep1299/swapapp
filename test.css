@@ -15,14 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class AIController:
-    def __init__(
-        self,
-        vector_db_host: str = "localhost",
-        vector_db_port: int = 5432,
-        vector_db_name: str = "vectors_db",
-        vector_db_user: str = "user",
-        vector_db_password: str = "password"
-    ):
+    def __init__(self):
         # Import constants
         from constants import (
             APPID,
@@ -30,7 +23,12 @@ class AIController:
             VERSION,
             IDAAS_URL,
             LLM_URL,
-            EMBEDDINGS_URL
+            EMBEDDINGS_URL,
+            DB_HOST,
+            DB_PORT,
+            DB_NAME,
+            DB_USER,
+            DB_PASSWORD
         )
         
         # Set constants from imports
@@ -41,13 +39,21 @@ class AIController:
         self.LLM_URL = LLM_URL
         self.EMBEDDINGS_URL = EMBEDDINGS_URL
         
-        # Vector DB configuration
+        # Set constants from imports
+        self.APPID = APPID
+        self.SECRET = SECRET
+        self.VERSION = VERSION
+        self.IDAAS_URL = IDAAS_URL
+        self.LLM_URL = LLM_URL
+        self.EMBEDDINGS_URL = EMBEDDINGS_URL
+        
+        # Vector DB configuration from constants
         self.vector_db_config = {
-            "host": vector_db_host,
-            "port": vector_db_port,
-            "database": vector_db_name,
-            "user": vector_db_user,
-            "password": vector_db_password
+            "host": DB_HOST,
+            "port": DB_PORT,
+            "database": DB_NAME,
+            "user": DB_USER,
+            "password": DB_PASSWORD
         }
 
     def scan_pii(self, text: str) -> Dict[str, List[str]]:
@@ -248,9 +254,7 @@ class AIController:
 def main():
     try:
         # Initialize controller
-        controller = AIController(
-            service_account_file="path/to/your/service-account.json"
-        )
+        controller = AIController()
         
         while True:
             # Get user input
