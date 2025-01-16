@@ -1,14 +1,8 @@
 import http.client
 import json
-import ssl
 
-# Create a custom SSL context
-context = ssl.create_default_context()
-context.check_hostname = False
-context.verify_mode = ssl.CERT_NONE
-
-# Create connection with SSL context
-conn = http.client.HTTPSConnection("10.50.66.58", 8081, context=context)
+# Using HTTPConnection instead of HTTPSConnection since the server is likely not using SSL
+conn = http.client.HTTPConnection("10.50.66.58", 8081)
 
 payload = json.dumps({
     "model": "model1",
