@@ -17,23 +17,29 @@ logger = logging.getLogger(__name__)
 class AIController:
     def __init__(
         self,
-        service_account_file: str,
         vector_db_host: str = "localhost",
         vector_db_port: int = 5432,
         vector_db_name: str = "vectors_db",
         vector_db_user: str = "user",
         vector_db_password: str = "password"
     ):
-        # Constants
-        self.SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
-        self.EMBEDDINGS_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/textembedding-gecko@latest"
-        self.LLM_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/gemini-1.5-pro"
-        
-        # Initialize credentials
-        self.credentials = service_account.Credentials.from_service_account_file(
-            service_account_file, 
-            scopes=self.SCOPES
+        # Import constants
+        from constants import (
+            APPID,
+            SECRET,
+            VERSION,
+            IDAAS_URL,
+            LLM_URL,
+            EMBEDDINGS_URL
         )
+        
+        # Set constants from imports
+        self.APPID = APPID
+        self.SECRET = SECRET
+        self.VERSION = VERSION
+        self.IDAAS_URL = IDAAS_URL
+        self.LLM_URL = LLM_URL
+        self.EMBEDDINGS_URL = EMBEDDINGS_URL
         
         # Vector DB configuration
         self.vector_db_config = {
@@ -69,7 +75,7 @@ class AIController:
         
         return pii_findings
 
-    def get_auth_token(self) -> str:
+    def get_idaas_auth_token(self) -> str:
         """
         Get authentication token for API calls
         """
@@ -82,32 +88,37 @@ class AIController:
 
     def get_embeddings(self, text: str) -> List[float]:
         """
-        Generate embeddings using Google's embedding model
+        Generate embeddings using the bge-large model
         """
         try:
-            auth_token = self.get_auth_token()
+            # Get IDAAS token first
+            idaas_token = self.get_idaas_auth_token()
             
             headers = {
-                'Authorization': f'Bearer {auth_token}',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {idaas_token}',
+                'Accept': 'application/json'
             }
             
-            payload = {
-                "instances": [{
-                    "content": text
-                }]
+            embeddings_payload = {
+                "instances": [
+                    {"input": text}
+                ]
             }
+            
+            logger.info(f"Payload: {embeddings_payload}")
             
             response = requests.post(
                 self.EMBEDDINGS_URL,
                 headers=headers,
-                json=payload
+                data=json.dumps(embeddings_payload),
+                verify=False  # Note: In production, use proper certificate verification
             )
             
             if response.status_code == 200:
-                embeddings = response.json()['predictions'][0]['embeddings']
-                return embeddings
+                return response.json()['embeddings'][0]
             else:
+                logger.error(f"Embedding API error: {response.status_code}, {response.text}")
                 raise Exception(f"Embedding API error: {response.text}")
                 
         except Exception as e:
