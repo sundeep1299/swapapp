@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Send, Trash2 } from 'lucide-react';
 
-const GPTInterface = () => {
+function GPTInterface() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,121 +58,95 @@ const GPTInterface = () => {
 
   const clearChat = () => {
     setMessages([]);
-    inputRef.current?.focus();
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white p-4 hidden md:block">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-xl font-semibold">LLM Chat</h1>
-          <button
-            onClick={clearChat}
-            className="p-2 hover:bg-gray-800 rounded"
-            title="Clear chat"
-          >
-            <Trash2 size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto bg-white">
-          <div className="max-w-3xl mx-auto py-8 px-4">
-            {messages.length === 0 && (
-              <div className="text-center text-gray-500 my-8">
-                <MessageSquare className="mx-auto mb-4" size={32} />
-                <h2 className="text-2xl font-semibold mb-2">Start a conversation</h2>
-                <p>Ask anything to get started...</p>
-              </div>
-            )}
-            
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`mb-6 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
-              >
-                <div className={`flex items-start gap-4 max-w-2xl 
-                  ${message.role === 'user' ? 'flex-row-reverse' : ''}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center
-                    ${message.role === 'user' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-green-500 text-white'}`}
-                  >
-                    {message.role === 'user' ? 'U' : 'A'}
-                  </div>
-                  
-                  <div className={`flex-1 p-4 rounded-lg 
-                    ${message.role === 'user'
-                      ? 'bg-blue-100 text-blue-900'
-                      : message.error
-                        ? 'bg-red-100 text-red-900'
-                        : 'bg-gray-100 text-gray-900'}`}
-                  >
-                    <pre className="whitespace-pre-wrap font-sans">
-                      {message.content}
-                    </pre>
-                    
-                    {message.raw && (
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-sm text-gray-600">
-                          Show raw response
-                        </summary>
-                        <pre className="mt-2 p-2 bg-gray-800 text-gray-200 rounded text-sm overflow-auto">
-                          {JSON.stringify(message.raw, null, 2)}
-                        </pre>
-                      </details>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {loading && (
-              <div className="flex items-center gap-2 text-gray-500 mb-6">
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        {/* Input Area */}
-        <div className="border-t bg-white p-4">
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-            <div className="flex gap-4">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading || !inputValue.trim()}
-                className={`p-2 rounded-lg ${
-                  loading || !inputValue.trim()
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-                }`}
-              >
-                <Send size={20} />
-              </button>
+      {/* Chat container */}
+      <div className="flex-1 flex flex-col max-w-5xl mx-auto p-4">
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto bg-white rounded-lg shadow-sm p-4 mb-4">
+          {messages.length === 0 && (
+            <div className="text-center text-gray-500 my-8">
+              <h2 className="text-2xl font-semibold mb-2">Start a conversation</h2>
+              <p>Ask anything to get started...</p>
             </div>
+          )}
+          
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`mb-4 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'} max-w-[80%]`}
+            >
+              <div className={`p-3 rounded-lg ${
+                message.role === 'user' 
+                  ? 'bg-blue-500 text-white ml-auto' 
+                  : message.error 
+                    ? 'bg-red-100 text-red-900'
+                    : 'bg-gray-100 text-gray-900'
+              }`}>
+                <pre className="whitespace-pre-wrap font-sans">
+                  {message.content}
+                </pre>
+                
+                {message.raw && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-sm opacity-70">
+                      Show raw response
+                    </summary>
+                    <pre className="mt-2 p-2 bg-gray-800 text-gray-200 rounded text-sm overflow-auto">
+                      {JSON.stringify(message.raw, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          {loading && (
+            <div className="flex items-center gap-2 p-4">
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150" />
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-300" />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input area */}
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !inputValue.trim()}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                loading || !inputValue.trim()
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              Send
+            </button>
+            <button
+              type="button"
+              onClick={clearChat}
+              className="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-gray-100"
+            >
+              Clear
+            </button>
           </form>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default GPTInterface;
