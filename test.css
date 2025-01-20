@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import './App.css';
 
-function GPTInterface() {
+function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -16,19 +17,17 @@ function GPTInterface() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim() || loading) return;
+    if (!inputValue.trim() || isLoading) return;
 
-    const userMessage = { role: 'user', content: inputValue };
-    setMessages(prev => [...prev, userMessage]);
+    // Add user message
+    setMessages(prev => [...prev, { type: 'user', content: inputValue }]);
     setInputValue('');
-    setLoading(true);
+    setIsLoading(true);
 
     try {
       const response = await fetch('http://10.50.66.58:8081/v1/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'model1',
           prompt: inputValue,
@@ -38,63 +37,54 @@ function GPTInterface() {
       });
 
       const data = await response.json();
-      const assistantMessage = {
-        role: 'assistant',
+      setMessages(prev => [...prev, {
+        type: 'assistant',
         content: data.choices?.[0]?.text || 'No response generated',
         raw: data
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (err) {
-      const errorMessage = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error processing your request.',
-        error: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      }]);
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        type: 'error',
+        content: 'Sorry, something went wrong. Please try again.'
+      }]);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const clearChat = () => {
-    setMessages([]);
-  };
-
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Chat container */}
+    <div className="flex h-screen bg-slate-100">
       <div className="flex-1 flex flex-col max-w-5xl mx-auto p-4">
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto bg-white rounded-lg shadow-sm p-4 mb-4">
+        {/* Chat container */}
+        <div className="flex-1 flex flex-col space-y-4 overflow-y-auto p-4 rounded-lg bg-white shadow-sm">
           {messages.length === 0 && (
-            <div className="text-center text-gray-500 my-8">
-              <h2 className="text-2xl font-semibold mb-2">Start a conversation</h2>
-              <p>Ask anything to get started...</p>
+            <div className="flex-1 flex items-center justify-center text-center p-8">
+              <div className="max-w-sm">
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome!</h2>
+                <p className="text-gray-500">Start a conversation by typing a message below.</p>
+              </div>
             </div>
           )}
-          
+
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`mb-4 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'} max-w-[80%]`}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`p-3 rounded-lg ${
-                message.role === 'user' 
-                  ? 'bg-blue-500 text-white ml-auto' 
-                  : message.error 
-                    ? 'bg-red-100 text-red-900'
-                    : 'bg-gray-100 text-gray-900'
-              }`}>
-                <pre className="whitespace-pre-wrap font-sans">
-                  {message.content}
-                </pre>
-                
+              <div className={`max-w-[80%] rounded-xl px-4 py-2 shadow-sm
+                ${message.type === 'user' 
+                  ? 'bg-blue-600 text-white rounded-br-none' 
+                  : message.type === 'error'
+                    ? 'bg-red-100 text-red-800 rounded-bl-none'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}
+              >
+                <div className="whitespace-pre-wrap">{message.content}</div>
                 {message.raw && (
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-sm opacity-70">
-                      Show raw response
+                    <summary className="cursor-pointer text-sm opacity-80 hover:opacity-100">
+                      View details
                     </summary>
-                    <pre className="mt-2 p-2 bg-gray-800 text-gray-200 rounded text-sm overflow-auto">
+                    <pre className="mt-2 p-2 text-xs bg-black/5 rounded overflow-x-auto">
                       {JSON.stringify(message.raw, null, 2)}
                     </pre>
                   </details>
@@ -102,45 +92,40 @@ function GPTInterface() {
               </div>
             </div>
           ))}
-          
-          {loading && (
-            <div className="flex items-center gap-2 p-4">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150" />
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-300" />
+
+          {isLoading && (
+            <div className="flex items-center space-x-2 p-4">
+              <div className="flex space-x-1.5">
+                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-100"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce delay-200"></div>
+              </div>
             </div>
           )}
+          
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <form onSubmit={handleSubmit} className="flex gap-2">
+        {/* Input form */}
+        <div className="mt-4">
+          <form onSubmit={handleSubmit} className="flex space-x-4">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loading}
+              className="flex-1 p-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
             />
             <button
               type="submit"
-              disabled={loading || !inputValue.trim()}
-              className={`px-4 py-2 rounded-lg font-medium ${
-                loading || !inputValue.trim()
-                  ? 'bg-gray-300 cursor-not-allowed'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
+              disabled={isLoading || !inputValue.trim()}
+              className={`px-6 rounded-xl font-medium transition-colors
+                ${isLoading || !inputValue.trim()
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               Send
-            </button>
-            <button
-              type="button"
-              onClick={clearChat}
-              className="px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Clear
             </button>
           </form>
         </div>
@@ -149,4 +134,4 @@ function GPTInterface() {
   );
 }
 
-export default GPTInterface;
+export default ChatInterface;
