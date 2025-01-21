@@ -1,112 +1,121 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './GPTInterface.css';
+import streamlit as st
+import http.client
+import json
+from typing import Dict, Any
 
-function GPTInterface() {
-  const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
-
-    // Add user message
-    setMessages(prev => [...prev, { type: 'user', content: inputValue }]);
-    setInputValue('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('http://10.50.66.58:8081/v1/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'model1',
-          prompt: inputValue,
-          max_tokens: 256,
-          min_tokens: 128
-        }),
-      });
-
-      const data = await response.json();
-      setMessages(prev => [...prev, {
-        type: 'assistant',
-        content: data.choices?.[0]?.text || 'No response generated',
-        raw: data
-      }]);
-    } catch (error) {
-      setMessages(prev => [...prev, {
-        type: 'error',
-        content: 'Sorry, something went wrong. Please try again.'
-      }]);
-    } finally {
-      setIsLoading(false);
+def call_llm_api(prompt: str) -> Dict[Any, Any]:
+    """
+    Call the LLM API with the given prompt
+    """
+    conn = http.client.HTTPConnection("10.50.66.58", 8081)
+    
+    payload = json.dumps({
+        "model": "model1",
+        "prompt": prompt,
+        "max_tokens": 256,
+        "min_tokens": 128
+    })
+    
+    headers = {
+        'Content-Type': 'application/json'
     }
-  };
+    
+    try:
+        conn.request("POST", "/v1/completions", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        return json.loads(data.decode("utf-8"))
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
 
-  return (
-    <div className="chat-container">
-      <div className="messages-area">
-        {messages.length === 0 && (
-          <div className="welcome-message">
-            <h2>Welcome to Chat</h2>
-            <p>Start a conversation by typing a message below.</p>
-          </div>
-        )}
+def initialize_session_state():
+    """Initialize session state variables"""
+    if 'messages' not in st.session_state:
+        st.session_state.messages = []
 
-        {messages.map((message, index) => (
-          <div key={index} className={`message ${message.type}-message`}>
-            {message.content}
-            {message.raw && (
-              <div className="details-view">
-                <details>
-                  <summary>View details</summary>
-                  <pre>{JSON.stringify(message.raw, null, 2)}</pre>
-                </details>
-              </div>
-            )}
-          </div>
-        ))}
+def main():
+    st.set_page_config(
+        page_title="LLM Chat Interface",
+        page_icon="💭",
+        layout="wide"
+    )
 
-        {isLoading && (
-          <div className="loading">
-            <div className="loading-dot"></div>
-            <div className="loading-dot"></div>
-            <div className="loading-dot"></div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+    initialize_session_state()
 
-      <div className="input-area">
-        <form onSubmit={handleSubmit} className="input-form">
-          <input
-            type="text"
-            className="input-field"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={isLoading || !inputValue.trim()}
-          >
-            Send
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+    # Application title
+    st.title("💭 LLM Chat Interface")
 
-export default GPTInterface;
+    # Chat messages container
+    chat_container = st.container()
+
+    # Display chat messages
+    with chat_container:
+        for message in st.session_state.messages:
+            if message["role"] == "user":
+                st.write(f"You: {message['content']}")
+            elif message["role"] == "assistant":
+                with st.expander("Assistant Response", expanded=True):
+                    st.write(message["content"])
+                    if "raw" in message:
+                        with st.expander("Show raw response"):
+                            st.json(message["raw"])
+            elif message["role"] == "error":
+                st.error(message["content"])
+
+    # Input form
+    with st.form(key="chat_form", clear_on_submit=True):
+        col1, col2 = st.columns([6, 1])
+        
+        with col1:
+            user_input = st.text_area(
+                "Enter your message:",
+                key="user_input",
+                height=100
+            )
+        
+        with col2:
+            submit_button = st.form_submit_button("Send")
+
+        if submit_button and user_input:
+            # Add user message to chat
+            st.session_state.messages.append({
+                "role": "user",
+                "content": user_input
+            })
+
+            # Show loading spinner while waiting for response
+            with st.spinner("Generating response..."):
+                try:
+                    # Call LLM API
+                    response = call_llm_api(user_input)
+                    
+                    if "error" in response:
+                        st.session_state.messages.append({
+                            "role": "error",
+                            "content": f"Error: {response['error']}"
+                        })
+                    else:
+                        # Add assistant response to chat
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": response["choices"][0]["text"],
+                            "raw": response
+                        })
+                except Exception as e:
+                    st.session_state.messages.append({
+                        "role": "error",
+                        "content": f"An error occurred: {str(e)}"
+                    })
+
+            # Rerun to update the UI
+            st.experimental_rerun()
+
+    # Add a clear chat button
+    if st.button("Clear Chat"):
+        st.session_state.messages = []
+        st.experimental_rerun()
+
+if __name__ == "__main__":
+    main()
