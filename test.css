@@ -1,72 +1,87 @@
-Ah, this SSL error "EOF occurred in violation of protocol (_ssl.c:1006)" typically occurs when there's an SSL/TLS handshake failure. Here are a few ways to handle this:
+Let's try to debug this step by step. Could you tell me:
 
-1. First approach - Add SSL context with certificate verification:
+1. Are you running your own LLM server, or is this connecting to someone else's server?
+2. What kind of authentication does the server require (if any)?
+3. Can you confirm if port 8001 is definitely the HTTPS port? Sometimes HTTPS runs on different ports (like 443, 8443, etc.)
 
-```python
-import ssl
-
-def call_llm_api(prompt: str) -> dict:
-    """
-    Call the LLM API with the given prompt
-    """
-    # Create SSL context
-    context = ssl.create_default_context()
-    # If you're using self-signed certificates, you might need:
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE  # Warning: This reduces security, use only for testing
-    
-    # Create HTTPS connection with SSL context
-    conn = http.client.HTTPSConnection("10.50.66.58", 8001, context=context)
-    
-    # Rest of your code remains the same
-    payload = json.dumps({
-        "model": "model1",
-        "prompt": prompt,
-        "max_tokens": 256,
-        "min_tokens": 128
-    })
-    # ...
-```
-
-2. Alternative approach - Using requests library (generally more reliable for HTTPS):
+Here's another approach you could try using Python's `requests` library with more detailed error handling:
 
 ```python
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+import ssl
 
 def call_llm_api(prompt: str) -> dict:
-    """
-    Call the LLM API with the given prompt
-    """
-    url = "https://10.50.66.58:8001/v1/completions"
-    
-    payload = {
-        "model": "model1",
-        "prompt": prompt,
-        "max_tokens": 256,
-        "min_tokens": 128
-    }
-    
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    
     try:
-        # For self-signed certificates, use verify=False (only for testing)
-        response = requests.post(url, json=payload, headers=headers, verify=False)
-        response.raise_for_status()  # Raises an exception for 4XX/5XX status codes
+        # Create a session with retry strategy
+        session = requests.Session()
+        retries = Retry(total=3,
+                       backoff_factor=0.5,
+                       status_forcelist=[500, 502, 503, 504])
+        
+        # Create custom adapter with custom SSL configuration
+        class CustomHttpAdapter(HTTPAdapter):
+            def init_poolmanager(self, *args, **kwargs):
+                ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+                ctx.options |= 0x4  # OP_LEGACY_SERVER_CONNECT
+                kwargs['ssl_context'] = ctx
+                return super(CustomHttpAdapter, self).init_poolmanager(*args, **kwargs)
+        
+        adapter = CustomHttpAdapter(max_retries=retries)
+        session.mount('https://', adapter)
+        
+        url = "https://10.50.66.58:8001/v1/completions"
+        payload = {
+            "model": "model1",
+            "prompt": prompt,
+            "max_tokens": 256,
+            "min_tokens": 128
+        }
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        
+        response = session.post(
+            url,
+            json=payload,
+            headers=headers,
+            verify=False,  # For testing only
+            timeout=30
+        )
+        
+        # Print detailed response info for debugging
+        print(f"Status Code: {response.status_code}")
+        print(f"Response Headers: {response.headers}")
+        print(f"Response Content: {response.content}")
+        
+        response.raise_for_status()
         return response.json()
+        
+    except requests.exceptions.SSLError as e:
+        print(f"SSL Error: {str(e)}")
+        return {"error": f"SSL Error: {str(e)}"}
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection Error: {str(e)}")
+        return {"error": f"Connection Error: {str(e)}"}
     except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
-    except json.JSONDecodeError as e:
-        return {"error": "Failed to decode response: " + str(e)}
+        print(f"Request Error: {str(e)}")
+        return {"error": f"Request Error: {str(e)}"}
+    except Exception as e:
+        print(f"Unexpected Error: {str(e)}")
+        return {"error": f"Unexpected Error: {str(e)}"}
 ```
 
-Important Security Notes:
-1. Using `verify=False` or `CERT_NONE` disables certificate verification - only use this for testing or with trusted networks
-2. For production:
-   - Use proper SSL certificates
-   - Enable certificate verification
-   - Consider adding certificate pinning
-   - Don't skip hostname verification
+This code:
+1. Uses a retry strategy
+2. Adds more detailed error handling
+3. Prints out detailed response information
+4. Uses a custom adapter with legacy SSL options
 
-Would you like me to explain how to properly set up certificate verification for production use?
+The error you're getting ("EOF occurred in violation of protocol") often means there's a mismatch between the client and server's SSL/TLS versions. This could be because:
+
+1. The server is using an older SSL/TLS version
+2. The server's certificate is not properly configured
+3. There might be a proxy or firewall interfering with the HTTPS connection
+
+Can you try this code and share what error messages you get? That would help us narrow down the exact issue.
