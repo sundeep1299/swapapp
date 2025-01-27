@@ -1,0 +1,7 @@
+Looking at the image, the actual context size being utilized is very small:
+
+Total tokens = 263 (7 prompt tokens + 256 completion tokens)
+
+This is approximately 0.26K tokens (263/1000), nowhere near even 1K, let alone larger context windows like 8K, 32K or 128K. The "max_tokens" parameter is set to 256 and "min_tokens" to 128, which are constraints on the response length, not the context window size.
+
+While the model being used might be capable of handling larger contexts, this particular API call is only using a tiny fraction of whatever the maximum context window might be.
